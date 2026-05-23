@@ -4,13 +4,31 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useSession } from "@/features/auth/session-provider"
-import { getModuleByPath } from "@/lib/modules/registry"
+import { getModuleByPath, type ModuleEntry, type NavItem } from "@/lib/modules/registry"
 import { ModuleLauncher } from "@/components/app-shell/launcher"
 import { EntitlementGuard } from "@/components/app-shell/guard"
+import { CategoryTreeNav } from "@/components/app-shell/category-tree-nav"
 import { Icon } from "@/components/ui/icon"
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon } from "@/components/icons/outline"
+import { CheckIcon, ChevronDownIcon } from "@/components/icons/outline"
 import Logo from "@/components/brands/logo"
+import LogoCompact from "@/components/brands/logo-compact"
 
+/**
+ * App shell with two modes:
+ *
+ * - **Console mode** — when the path is not inside a module workspace
+ *   (e.g. `/`, `/organization/...`). There is NO sidebar; the topbar has
+ *   the app launcher and the profile menu only. The "console" is the
+ *   launcher view itself.
+ * - **Module mode** — when inside a module (e.g. `/inventory/...`). A
+ *   290px sidebar shows the Arsanawa compact logo + the module's name
+ *   (clickable → module dashboard) and the module's own nav. No console
+ *   links, no active-context block. The topbar additionally shows the
+ *   branch switcher for branch-scoped operations.
+ *
+ * Organization is intentionally NOT a module — it lives in the console and
+ * is always available; its screens use console-mode layout.
+ */
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const router = useRouter()
@@ -22,25 +40,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         organizationContext,
         selectCompany,
         selectBranch,
-        logout
+        logout,
     } = useSession()
 
-    const [companyOpen, setCompanyOpen] = useState(false)
     const [branchOpen, setBranchOpen] = useState(false)
     const [userOpen, setUserOpen] = useState(false)
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
-    const companyRef = useRef<HTMLDivElement>(null)
     const branchRef = useRef<HTMLDivElement>(null)
     const userRef = useRef<HTMLDivElement>(null)
 
-    // Close menus on click outside
+    // Close menus on outside click
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             const target = event.target as Node
-            if (companyRef.current && !companyRef.current.contains(target)) {
-                setCompanyOpen(false)
-            }
             if (branchRef.current && !branchRef.current.contains(target)) {
                 setBranchOpen(false)
             }
@@ -49,18 +62,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             }
         }
         document.addEventListener("mousedown", handleClickOutside)
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside)
-        }
+        return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
 
-    // Close mobile sidebar on route change
+    // Close mobile sidebar on route change (deferred to avoid a cascading render)
     useEffect(() => {
         let active = true
         void Promise.resolve().then(() => {
-            if (active) {
-                setMobileSidebarOpen(false)
-            }
+            if (active) setMobileSidebarOpen(false)
         })
         return () => {
             active = false
@@ -70,230 +79,70 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const activeCompany = companies.find((c) => c.company.id === activeCompanyId)?.company
     const activeBranch = organizationContext?.branches.find((b) => b.id === activeBranchId)
     const activeModule = getModuleByPath(pathname)
-
-    // Dynamic sidebar header & links
-    const showModuleNav = !!activeModule
-    const sidebarTitle = activeModule ? activeModule.label : "Arsanawa ERP"
-    const sidebarIcon = activeModule ? activeModule.icon : "grid_view"
-    const sidebarAccentColor = activeModule ? activeModule.accentColor : "#0b5c6a"
-
-    // Base navigation when not in a module
-    const defaultNavItems = [
-        { href: "/", label: "Overview", icon: "dashboard" },
-        { href: "/organization/companies", label: "Companies", icon: "business" },
-        { href: "/organization/modules", label: "Module Manager", icon: "settings_suggest" }
-    ]
-
-    const navItems = activeModule ? activeModule.nav : defaultNavItems
+    const inModule = Boolean(activeModule)
 
     const handleSignOut = async () => {
+        setUserOpen(false)
         await logout()
         router.push("/login")
     }
 
+    const handleSwitchCompany = async (companyId: number) => {
+        setUserOpen(false)
+        await selectCompany(companyId)
+        // Drop back to the console — the previous module may not be enabled
+        // for the newly active company.
+        router.push("/")
+    }
+
     return (
         <div className="min-h-screen bg-background text-foreground font-body">
-            {/* Mobile Sidebar Overlay */}
-            {mobileSidebarOpen && (
+            {/* ── Mobile sidebar backdrop (module mode only) ─────────────── */}
+            {inModule && mobileSidebarOpen && (
                 <div
                     className="fixed inset-0 z-40 bg-navy-900/40 backdrop-blur-sm lg:hidden"
                     onClick={() => setMobileSidebarOpen(false)}
                 />
             )}
 
-            {/* Sidebar - 290px */}
-            <aside
-                className={`fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-navy-100 bg-white transition-transform duration-300 lg:translate-x-0 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full" }`}
-            >
-                {/* Top Logo Section */}
-                <div className="flex h-16 items-center justify-between border-b border-navy-100 px-6">
-                    <Link href="/" className="flex items-center gap-2 select-none outline-none">
-                        {/* <Image
-                            src="/brand/logo-teal.svg"
-                            alt="Arsanawa Logo"
-                            width={140}
-                            height={35}
-                            className="h-8 w-auto"
-                        /> */}
-                        <Logo className="h-6 w-auto" />
-                    </Link>
-                    <button
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-50 lg:hidden"
-                        onClick={() => setMobileSidebarOpen(false)}
-                    >
-                        <Icon name="close" className="text-xl" />
-                    </button>
-                </div>
+            {/* ── Module sidebar (only in module mode) ───────────────────── */}
+            {inModule && activeModule && (
+                <ModuleSidebar
+                    module={activeModule}
+                    pathname={pathname}
+                    mobileOpen={mobileSidebarOpen}
+                    onCloseMobile={() => setMobileSidebarOpen(false)}
+                />
+            )}
 
-                {/* Workspace Context Display */}
-                {activeCompany && (
-                    <div className="px-6 py-4 border-b border-navy-100/50 bg-navy-50/30">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-navy-500 font-display">
-                            Active Context
-                        </p>
-                        <div className="mt-1.5 flex items-center gap-3">
-                            <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-brand text-lg text-white"
-                                style={{ backgroundColor: sidebarAccentColor }}
+            {/* ── Main column ────────────────────────────────────────────── */}
+            <div className={`flex flex-col min-h-screen ${inModule ? "lg:pl-[290px]" : ""}`}>
+                {/* Topbar */}
+                <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-navy-100/50 bg-white/80 px-6 backdrop-blur-md">
+                    <div className="flex items-center gap-4">
+                        {inModule && (
+                            <button
+                                type="button"
+                                className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-50 lg:hidden cursor-pointer"
+                                onClick={() => setMobileSidebarOpen(true)}
+                                aria-label="Open module sidebar"
                             >
-                                {activeCompany.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="overflow-hidden">
-                                <p className="truncate text-sm font-bold text-navy-900 leading-tight">
-                                    {activeCompany.name}
-                                </p>
-                                <p className="truncate text-xs text-navy-500 font-medium">
-                                    {activeBranch ? activeBranch.name : "Select Branch"}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Dynamic Sidebar Navigation */}
-                <div className="flex-1 overflow-y-auto px-4 py-6">
-                    <div className="mb-4 px-2 flex items-center justify-between">
-                        <span
-                            className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest font-display"
-                            style={{ color: sidebarAccentColor }}
-                        >
-                            <Icon name={sidebarIcon} className="text-base" />
-                            {sidebarTitle}
-                        </span>
-                        {showModuleNav && (
-                            <Link
-                                href="/"
-                                className="flex h-5 w-5 items-center justify-center rounded bg-navy-100 text-navy-600 hover:bg-navy-200 transition-colors"
-                                title="Back to Console Home"
-                            >
-                                <Icon name="arrow_back" className="text-xs font-bold" />
+                                <Icon name="menu" className="text-2xl" />
+                            </button>
+                        )}
+                        {!inModule && (
+                            <Link href="/" className="flex items-center gap-2 select-none outline-none">
+                                <Logo className="h-6 w-auto" />
                             </Link>
                         )}
                     </div>
 
-                    <nav className="grid gap-1">
-                        {navItems.map((item) => {
-                            const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 outline-none select-none cursor-pointer"
-                                    style={{
-                                        backgroundColor: active ? `${sidebarAccentColor}15` : "transparent",
-                                        color: active ? sidebarAccentColor : "var(--color-navy-700)"
-                                    }}
-                                >
-                                    <Icon
-                                        name={item.icon}
-                                        className={`text-xl transition-transform duration-150 group-hover:scale-105`}
-                                    />
-                                    <span>{item.label}</span>
-                                </Link>
-                            )
-                        })}
-                    </nav>
-                </div>
-
-                {/* Sidebar Footer */}
-                <div className="border-t border-navy-100 p-4 bg-navy-50/20">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700 font-bold">
-                            {user?.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="overflow-hidden">
-                            <p className="truncate text-sm font-bold text-navy-900 leading-tight">
-                                {user?.name}
-                            </p>
-                            <p className="truncate text-xs text-navy-500 font-medium">{user?.email}</p>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content Layout Wrapper */}
-            <div className="flex flex-col min-h-screen lg:pl-[290px]">
-                {/* Topbar - Sticky & Glassmorphic */}
-                <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-navy-100/50 bg-white/80 px-6 backdrop-blur-md">
-                    {/* Left Elements: Hamburger, Breadcrumbs */}
-                    <div className="flex items-center gap-4">
-                        <button
-                            className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-50 lg:hidden cursor-pointer"
-                            onClick={() => setMobileSidebarOpen(true)}
-                        >
-                            <Icon name="menu" className="text-2xl" />
-                        </button>
-
-                        {/* Breadcrumb Path */}
-                        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-navy-500 font-display">
-                            <Link href="/" className="hover:text-teal-700 transition-colors">
-                                Console
-                            </Link>
-                            {activeModule && (
-                                <>
-                                    <ChevronRightIcon className="w-4 h-4" />
-                                    <Link href={activeModule.route} className="hover:text-teal-700 transition-colors">
-                                        {activeModule.label}
-                                    </Link>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Right Elements: Switchers, Launcher, Profile */}
-                    <div className="flex items-center gap-3">
-                        {/* Company Switcher Dropdown */}
-                        <div className="relative" ref={companyRef}>
-                            <button
-                                onClick={() => setCompanyOpen(!companyOpen)}
-                                className="flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-3 py-1.5 text-xs font-bold text-navy-700 hover:bg-navy-50 transition-colors outline-none cursor-pointer"
-                            >
-                                <Icon name="business" className="text-sm text-teal-700" />
-                                <span className="max-w-[120px] text-sm truncate">
-                                    {activeCompany ? activeCompany.name : "Select Company"}
-                                </span>
-                                <ChevronDownIcon className="w-4 h-4 text-navy-400" />
-                            </button>
-
-                            {companyOpen && (
-                                <div className="absolute right-0 mt-2 z-50 w-64 rounded-lg border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
-                                    <div className="px-4 py-1.5 border-b border-navy-50 mb-1.5">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
-                                            Switch Company
-                                        </p>
-                                    </div>
-                                    <div className="max-h-60 overflow-y-auto px-1.5">
-                                        {companies.map((entry) => (
-                                            <button
-                                                key={entry.company.id}
-                                                onClick={async () => {
-                                                    setCompanyOpen(false)
-                                                    await selectCompany(entry.company.id)
-                                                }}
-                                                className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${entry.company.id === activeCompanyId ? "bg-teal-50 text-teal-700" : "text-navy-700 hover:bg-navy-50" }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
-                                                        {entry.company.name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <span className="truncate text-sm">{entry.company.name}</span>
-                                                </div>
-                                                {entry.company.id === activeCompanyId && (
-                                                    <div className="rounded-full bg-teal-700 p-1 text-white">
-                                                        <CheckIcon className="w-4 h-4" />
-                                                    </div>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Branch Switcher Dropdown (Scoped to company) */}
-                        {activeCompany && (
+                        {/* Branch switcher — only meaningful inside a module */}
+                        {inModule && activeCompany && (
                             <div className="relative" ref={branchRef}>
                                 <button
+                                    type="button"
                                     onClick={() => setBranchOpen(!branchOpen)}
                                     className="flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-3 py-1.5 text-xs font-bold text-navy-700 hover:bg-navy-50 transition-colors outline-none cursor-pointer"
                                 >
@@ -315,11 +164,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             {organizationContext?.branches.map((branch) => (
                                                 <button
                                                     key={branch.id}
+                                                    type="button"
                                                     onClick={async () => {
                                                         setBranchOpen(false)
                                                         await selectBranch(branch.id)
                                                     }}
-                                                    className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${branch.id === activeBranchId ? "bg-orange-50 text-orange-700" : "text-navy-700 hover:bg-navy-50" }`}
+                                                    className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${branch.id === activeBranchId ? "bg-orange-50 text-orange-700" : "text-navy-700 hover:bg-navy-50"}`}
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
@@ -345,20 +195,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </div>
                         )}
 
-                        {/* Waffle Launcher */}
+                        {/* Waffle app launcher */}
                         <ModuleLauncher />
 
-                        {/* User Profile Menu */}
+                        {/* Profile dropdown — holds Switch Organization + Go to Console + Sign out */}
                         <div className="relative" ref={userRef}>
                             <button
+                                type="button"
                                 onClick={() => setUserOpen(!userOpen)}
                                 className="flex items-center justify-center h-9 w-9 rounded-xl bg-teal-100 text-teal-700 font-bold border border-teal-200 hover:scale-102 active:scale-98 transition-all outline-none cursor-pointer"
+                                aria-label="Account menu"
                             >
                                 {user?.name.charAt(0).toUpperCase()}
                             </button>
 
                             {userOpen && (
-                                <div className="absolute right-0 mt-2 z-50 w-56 rounded-2xl border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                                <div className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
                                     <div className="px-4 py-2 border-b border-navy-50 mb-1.5">
                                         <p className="truncate text-xs font-bold text-navy-950 leading-tight">
                                             {user?.name}
@@ -367,7 +219,53 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             {user?.email}
                                         </p>
                                     </div>
+
+                                    {/* Switch Organization — when the user belongs to more than one */}
+                                    {companies.length > 1 && (
+                                        <>
+                                            <div className="px-4 pt-1.5 pb-1">
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
+                                                    Switch Organization
+                                                </p>
+                                            </div>
+                                            <div className="max-h-44 overflow-y-auto px-1.5 mb-1.5">
+                                                {companies.map((entry) => (
+                                                    <button
+                                                        key={entry.company.id}
+                                                        type="button"
+                                                        onClick={() => handleSwitchCompany(entry.company.id)}
+                                                        className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${entry.company.id === activeCompanyId ? "bg-teal-50 text-teal-700" : "text-navy-700 hover:bg-navy-50"}`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
+                                                                {entry.company.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <span className="truncate text-sm">{entry.company.name}</span>
+                                                        </div>
+                                                        {entry.company.id === activeCompanyId && (
+                                                            <div className="rounded-full bg-teal-700 p-1 text-white">
+                                                                <CheckIcon className="w-4 h-4" />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="border-t border-navy-50 mb-1.5" />
+                                        </>
+                                    )}
+
+                                    {/* Always-available link back to the console launcher */}
+                                    <Link
+                                        href="/"
+                                        onClick={() => setUserOpen(false)}
+                                        className="flex w-full items-center gap-3 px-4 py-2 text-left text-xs font-semibold text-navy-700 hover:bg-navy-50 transition-colors outline-none cursor-pointer"
+                                    >
+                                        <Icon name="grid_view" className="text-sm" />
+                                        <span>Go to Console</span>
+                                    </Link>
+
                                     <button
+                                        type="button"
                                         onClick={handleSignOut}
                                         className="flex w-full items-center gap-3 px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors outline-none cursor-pointer"
                                     >
@@ -380,11 +278,105 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
 
-                {/* Main Workspace Frame */}
+                {/* Workspace */}
                 <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
                     <EntitlementGuard>{children}</EntitlementGuard>
                 </main>
             </div>
+        </div>
+    )
+}
+
+/**
+ * Per-module sidebar — Arsanawa compact logo + module name (linked to the
+ * module dashboard) at the top, then the module's own nav. No active-context
+ * block, no console links: it belongs exclusively to the module.
+ */
+function ModuleSidebar({
+    module,
+    pathname,
+    mobileOpen,
+    onCloseMobile,
+}: {
+    module: ModuleEntry
+    pathname: string
+    mobileOpen: boolean
+    onCloseMobile: () => void
+}) {
+    return (
+        <aside
+            className={`fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-navy-100 bg-white transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        >
+            {/* Sidebar header: Arsanawa compact mark + module name → module dashboard */}
+            <div className="flex h-16 items-center justify-between border-b border-navy-100 px-6">
+                <Link
+                    href={module.route}
+                    className="flex items-center gap-2.5 select-none outline-none group"
+                >
+                    <LogoCompact className="h-6 w-auto shrink-0" />
+                    <span
+                        className="text-sm font-bold tracking-tight font-display group-hover:opacity-80 transition-opacity"
+                        style={{ color: module.accentColor }}
+                    >
+                        {module.label}
+                    </span>
+                </Link>
+                <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-50 lg:hidden"
+                    onClick={onCloseMobile}
+                    aria-label="Close sidebar"
+                >
+                    <Icon name="close" className="text-xl" />
+                </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-6">
+                <nav className="grid gap-1">
+                    {module.nav.map((item) => (
+                        <SidebarNavItem
+                            key={item.href}
+                            item={item}
+                            pathname={pathname}
+                            accentColor={module.accentColor}
+                        />
+                    ))}
+                </nav>
+            </div>
+        </aside>
+    )
+}
+
+function SidebarNavItem({
+    item,
+    pathname,
+    accentColor,
+}: {
+    item: NavItem
+    pathname: string
+    accentColor: string
+}) {
+    const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+
+    return (
+        <div>
+            <Link
+                href={item.href}
+                className="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 outline-none select-none cursor-pointer"
+                style={{
+                    backgroundColor: active ? `${accentColor}15` : "transparent",
+                    color: active ? accentColor : "var(--color-navy-700)",
+                }}
+            >
+                <Icon
+                    name={item.icon}
+                    className="text-xl transition-transform duration-150 group-hover:scale-105"
+                />
+                <span>{item.label}</span>
+            </Link>
+            {item.tree === "inventory-categories" && active && (
+                <CategoryTreeNav targetRoute={item.href} accentColor={accentColor} />
+            )}
         </div>
     )
 }

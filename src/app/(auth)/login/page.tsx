@@ -13,7 +13,7 @@ export default function LoginPage() {
                         className="absolute -top-40 -left-40 scale-150 rotate-45 w-[800px] h-[800px] text-teal-800"
                     />
                     <FlameDecoration
-                        className="absolute -bottom-20 -right-20 scale-110 w-[600px] h-[600px] text-orange-500"
+                        className="absolute -bottom-48 -right-48 scale-110 w-[600px] h-[600px] text-orange-500"
                     />
                 </div>
 

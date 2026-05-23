@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Providers } from "@/components/providers"
+import { ProgressBar } from "@/components/ui/progress-bar"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -20,7 +22,12 @@ export default function RootLayout({
                 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Manrope:wght@200..800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
             </head>
             <body className="flex min-h-full flex-col">
-                <Providers>{children}</Providers>
+                <Providers>
+                    <Suspense fallback={null}>
+                        <ProgressBar />
+                    </Suspense>
+                    {children}
+                </Providers>
             </body>
         </html>
     )

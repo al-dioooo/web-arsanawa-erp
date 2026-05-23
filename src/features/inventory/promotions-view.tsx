@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -365,20 +366,18 @@ export function PromotionsView() {
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <SelectField
+                                <SearchableSelect
                                     label="Branch scope"
                                     value={discountForm.branch_id}
-                                    onChange={(event) =>
-                                        setDiscountForm((current) => ({ ...current, branch_id: event.target.value }))
+                                    onChange={(val) =>
+                                        setDiscountForm((current) => ({ ...current, branch_id: String(val) }))
                                     }
-                                >
-                                    <option value="">Company-wide</option>
-                                    {branches.map((branch) => (
-                                        <option key={branch.id} value={branch.id}>
-                                            {branch.name}
-                                        </option>
-                                    ))}
-                                </SelectField>
+                                    options={branches.map((branch) => ({
+                                        value: branch.id,
+                                        label: branch.name
+                                    }))}
+                                    placeholder="Company-wide"
+                                />
 
                                 <Field
                                     label="Min Qty Requirement"
@@ -415,6 +414,7 @@ export function PromotionsView() {
 
                             <Button
                                 type="submit"
+                                size="xl"
                                 disabled={isLoading}
                                 className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
                             >
@@ -464,20 +464,18 @@ export function PromotionsView() {
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <SelectField
+                                <SearchableSelect
                                     label="Branch scope"
                                     value={rewardForm.branch_id}
-                                    onChange={(event) =>
-                                        setRewardForm((current) => ({ ...current, branch_id: event.target.value }))
+                                    onChange={(val) =>
+                                        setRewardForm((current) => ({ ...current, branch_id: String(val) }))
                                     }
-                                >
-                                    <option value="">Company-wide</option>
-                                    {branches.map((branch) => (
-                                        <option key={branch.id} value={branch.id}>
-                                            {branch.name}
-                                        </option>
-                                    ))}
-                                </SelectField>
+                                    options={branches.map((branch) => ({
+                                        value: branch.id,
+                                        label: branch.name
+                                    }))}
+                                    placeholder="Company-wide"
+                                />
 
                                 <Field
                                     label="Min Qty Requirement"
@@ -514,6 +512,7 @@ export function PromotionsView() {
 
                             <Button
                                 type="submit"
+                                size="xl"
                                 disabled={isLoading}
                                 className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
                             >

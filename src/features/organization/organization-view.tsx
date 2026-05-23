@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { CompanyCreateForm } from "@/features/organization/company-create-form"
 import { useSession } from "@/features/auth/session-provider"
@@ -126,7 +127,7 @@ export function OrganizationView() {
                                 placeholder="HQ"
                             />
                         </div>
-                        <Button type="submit" variant="secondary" className="cursor-pointer" disabled={!activeCompanyId || isLoading}>
+                        <Button type="submit" variant="secondary" size="xl" className="w-full cursor-pointer" disabled={!activeCompanyId || isLoading}>
                             Add Branch
                         </Button>
                     </form>
@@ -146,20 +147,18 @@ export function OrganizationView() {
                             }
                             required
                         />
-                        <SelectField
+                        <SearchableSelect
                             label="Branch Assignment"
                             value={membershipForm.branch_id}
-                            onChange={(event) =>
-                                setMembershipForm((current) => ({ ...current, branch_id: event.target.value }))
+                            onChange={(val) =>
+                                setMembershipForm((current) => ({ ...current, branch_id: String(val) }))
                             }
-                        >
-                            <option value="">No branch assignment (Company-wide)</option>
-                            {organizationContext?.branches.map((branch) => (
-                                <option key={branch.id} value={branch.id}>
-                                    {branch.name}
-                                </option>
-                            ))}
-                        </SelectField>
+                            options={organizationContext?.branches.map((branch) => ({
+                                value: branch.id,
+                                label: branch.name
+                            })) || []}
+                            placeholder="No branch assignment (Company-wide)"
+                        />
                         <SelectField
                             label="System Role"
                             value={membershipForm.role}
@@ -171,7 +170,7 @@ export function OrganizationView() {
                             <option value="admin">Admin</option>
                         </SelectField>
                         <div className="mt-auto pt-6">
-                            <Button type="submit" variant="secondary" className="w-full cursor-pointer" disabled={!activeCompanyId || isLoading}>
+                            <Button type="submit" variant="secondary" size="xl" className="w-full cursor-pointer" disabled={!activeCompanyId || isLoading}>
                                 Add Member
                             </Button>
                         </div>

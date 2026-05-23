@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Field, SelectField } from "@/components/ui/field"
+import { Field } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -278,31 +279,27 @@ export function StockView() {
                             <span>Stock Filter</span>
                         </h2>
                         <div className="grid gap-3">
-                            <SelectField
+                            <SearchableSelect
                                 label="Branch Context"
                                 value={selectedBranchId ?? ""}
-                                onChange={(event) => setSelectedBranchId(event.target.value ? Number(event.target.value) : null)}
-                            >
-                                <option value="">All Branches</option>
-                                {branches.map((branch) => (
-                                    <option key={branch.id} value={branch.id}>
-                                        {branch.name}
-                                    </option>
-                                ))}
-                            </SelectField>
+                                onChange={(val) => setSelectedBranchId(val ? Number(val) : null)}
+                                options={branches.map((branch) => ({
+                                    value: branch.id,
+                                    label: branch.name
+                                }))}
+                                placeholder="All Branches"
+                            />
 
-                            <SelectField
+                            <SearchableSelect
                                 label="Product Variant"
                                 value={selectedVariantId ?? ""}
-                                onChange={(event) => setSelectedVariantId(event.target.value ? Number(event.target.value) : null)}
-                            >
-                                <option value="">Select Variant</option>
-                                {variants.map((variant) => (
-                                    <option key={variant.id} value={variant.id}>
-                                        {variant.product_name} · {variant.sku}
-                                    </option>
-                                ))}
-                            </SelectField>
+                                onChange={(val) => setSelectedVariantId(val ? Number(val) : null)}
+                                options={variants.map((variant) => ({
+                                    value: variant.id,
+                                    label: `${variant.product_name} · ${variant.sku}`
+                                }))}
+                                placeholder="Select Variant"
+                            />
                         </div>
                     </div>
 
@@ -316,39 +313,35 @@ export function StockView() {
                             <span>Record Receipt</span>
                         </h2>
                         <div className="grid gap-3">
-                            <SelectField
+                            <SearchableSelect
                                 label="Receipt Branch"
                                 value={receiptForm.branch_id}
-                                onChange={(event) => {
-                                    setReceiptForm((current) => ({ ...current, branch_id: event.target.value }))
-                                    setSelectedBranchId(event.target.value ? Number(event.target.value) : null)
+                                onChange={(val) => {
+                                    setReceiptForm((current) => ({ ...current, branch_id: String(val) }))
+                                    setSelectedBranchId(val ? Number(val) : null)
                                 }}
                                 required
-                            >
-                                <option value="">Select Branch</option>
-                                {branches.map((branch) => (
-                                    <option key={branch.id} value={branch.id}>
-                                        {branch.name}
-                                    </option>
-                                ))}
-                            </SelectField>
+                                options={branches.map((branch) => ({
+                                    value: branch.id,
+                                    label: branch.name
+                                }))}
+                                placeholder="Select Branch"
+                            />
 
-                            <SelectField
+                            <SearchableSelect
                                 label="Receipt Variant"
                                 value={receiptForm.product_variant_id}
-                                onChange={(event) => {
-                                    setReceiptForm((current) => ({ ...current, product_variant_id: event.target.value }))
-                                    setSelectedVariantId(event.target.value ? Number(event.target.value) : null)
+                                onChange={(val) => {
+                                    setReceiptForm((current) => ({ ...current, product_variant_id: String(val) }))
+                                    setSelectedVariantId(val ? Number(val) : null)
                                 }}
                                 required
-                            >
-                                <option value="">Select Variant</option>
-                                {variants.map((variant) => (
-                                    <option key={variant.id} value={variant.id}>
-                                        {variant.product_name} · {variant.sku}
-                                    </option>
-                                ))}
-                            </SelectField>
+                                options={variants.map((variant) => ({
+                                    value: variant.id,
+                                    label: `${variant.product_name} · ${variant.sku}`
+                                }))}
+                                placeholder="Select Variant"
+                            />
 
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <Field
@@ -408,6 +401,7 @@ export function StockView() {
 
                             <Button
                                 type="submit"
+                                size="xl"
                                 disabled={isLoading || !branches.length || !variants.length}
                                 className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
                             >

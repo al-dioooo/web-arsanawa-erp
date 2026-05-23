@@ -1,8 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Field, SelectField } from "@/components/ui/field"
+import { Field } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -22,6 +24,7 @@ import type {
 
 export function CatalogueView() {
     const { token, activeCompanyId } = useSession()
+    const searchParams = useSearchParams()
     const [categories, setCategories] = useState<Category[]>([])
     const [brands, setBrands] = useState<Brand[]>([])
     const [units, setUnits] = useState<UnitOfMeasure[]>([])
@@ -35,6 +38,18 @@ export function CatalogueView() {
     // Filters & Search
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategory, setSelectedCategory] = useState("")
+
+    // Sync category filter from `?category=<id>` (set by the sidebar category tree).
+    useEffect(() => {
+        const param = searchParams.get("category") ?? ""
+        let active = true
+        void Promise.resolve().then(() => {
+            if (active) setSelectedCategory(param)
+        })
+        return () => {
+            active = false
+        }
+    }, [searchParams])
     const [selectedBrand, setSelectedBrand] = useState("")
     const [selectedStatus, setSelectedStatus] = useState("")
 
@@ -336,53 +351,46 @@ export function CatalogueView() {
                                     placeholder="e.g. Original"
                                 />
                             </div>
-                            <SelectField
+                            <SearchableSelect
                                 label="Base Unit"
                                 value={productForm.base_uom_id}
-                                onChange={(event) =>
-                                    setProductForm((current) => ({ ...current, base_uom_id: event.target.value }))
+                                onChange={(val) =>
+                                    setProductForm((current) => ({ ...current, base_uom_id: String(val) }))
                                 }
                                 required
-                            >
-                                <option value="">Select unit</option>
-                                {units.map((unit) => (
-                                    <option key={unit.id} value={unit.id}>
-                                        {unit.name} ({unit.code})
-                                    </option>
-                                ))}
-                            </SelectField>
+                                options={units.map((unit) => ({
+                                    value: unit.id,
+                                    label: `${unit.name} (${unit.code})`
+                                }))}
+                                placeholder="Select unit"
+                            />
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <SelectField
+                                <SearchableSelect
                                     label="Category"
                                     value={productForm.category_id}
-                                    onChange={(event) =>
-                                        setProductForm((current) => ({ ...current, category_id: event.target.value }))
+                                    onChange={(val) =>
+                                        setProductForm((current) => ({ ...current, category_id: String(val) }))
                                     }
-                                >
-                                    <option value="">None</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {"- ".repeat(category.depth)}
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </SelectField>
-                                <SelectField
+                                    options={categories.map((category) => ({
+                                        value: category.id,
+                                        label: `${"- ".repeat(category.depth)}${category.name}`
+                                    }))}
+                                    placeholder="None"
+                                />
+                                <SearchableSelect
                                     label="Brand"
                                     value={productForm.brand_id}
-                                    onChange={(event) =>
-                                        setProductForm((current) => ({ ...current, brand_id: event.target.value }))
+                                    onChange={(val) =>
+                                        setProductForm((current) => ({ ...current, brand_id: String(val) }))
                                     }
-                                >
-                                    <option value="">None</option>
-                                    {brands.map((brand) => (
-                                        <option key={brand.id} value={brand.id}>
-                                            {brand.name}
-                                        </option>
-                                    ))}
-                                </SelectField>
+                                    options={brands.map((brand) => ({
+                                        value: brand.id,
+                                        label: brand.name
+                                    }))}
+                                    placeholder="None"
+                                />
                             </div>
-                            <Button type="submit" disabled={isLoading || !units.length} className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2">
+                            <Button type="submit" size="xl" disabled={isLoading || !units.length} className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2">
                                 Create Product
                             </Button>
                         </div>
@@ -407,7 +415,7 @@ export function CatalogueView() {
                                 placeholder="e.g. Snacks"
                                 required
                             />
-                            <Button type="submit" variant="secondary" disabled={isLoading} className="cursor-pointer">
+                            <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full cursor-pointer">
                                 Add Category
                             </Button>
                         </div>
@@ -433,7 +441,7 @@ export function CatalogueView() {
                                     placeholder="e.g. Arsanawa Foods"
                                     required
                                 />
-                                <Button type="submit" variant="secondary" disabled={isLoading} className="cursor-pointer">
+                                <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full cursor-pointer">
                                     Add Brand
                                 </Button>
                             </div>
@@ -470,7 +478,7 @@ export function CatalogueView() {
                                         required
                                     />
                                 </div>
-                                <Button type="submit" variant="secondary" disabled={isLoading} className="cursor-pointer">
+                                <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full cursor-pointer">
                                     Add Unit
                                 </Button>
                             </div>

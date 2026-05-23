@@ -1,5 +1,6 @@
 import type { ApiEnvelope, ApiValidationError } from "@/lib/types"
 import { sessionStore } from "@/features/auth/session-store"
+import { progressManager } from "@/lib/progress"
 
 const fallbackApiUrl = "http://localhost:8000"
 
@@ -65,61 +66,66 @@ export async function apiRequest<T>(
     init: RequestInit = {},
     options: ApiRequestOptions = {}
 ): Promise<ApiEnvelope<T>> {
-    const headers = new Headers(init.headers)
-    headers.set("Accept", "application/json")
+    progressManager.start()
+    try {
+        const headers = new Headers(init.headers)
+        headers.set("Accept", "application/json")
 
-    if (!(init.body instanceof FormData) && init.body !== undefined) {
-        headers.set("Content-Type", "application/json")
-    }
-
-    const token = options.skipAuth ? null : (options.token ?? sessionStore.getToken())
-    const companyId = options.companyId ?? sessionStore.getActiveCompanyId()
-    const branchId = options.branchId ?? sessionStore.getActiveBranchId()
-
-    if (token) {
-        headers.set("Authorization", `Bearer ${token}`)
-    }
-
-    if (companyId) {
-        headers.set("X-Company-Id", String(companyId))
-    }
-
-    if (branchId) {
-        headers.set("X-Branch-Id", String(branchId))
-    }
-
-    const response = await fetch(`${apiBaseUrl()}${path}`, {
-        ...init,
-        headers,
-    })
-
-    if (response.status === 401 && token && !options.isRetry && path !== "/api/v1/auth/refresh") {
-        if (!refreshPromise) {
-            refreshPromise = handleTokenRefresh().finally(() => {
-                refreshPromise = null
-            })
+        if (!(init.body instanceof FormData) && init.body !== undefined) {
+            headers.set("Content-Type", "application/json")
         }
 
-        const newToken = await refreshPromise
-        if (newToken) {
-            return apiRequest<T>(path, init, {
-                ...options,
-                token: newToken,
-                isRetry: true
-            })
+        const token = options.skipAuth ? null : (options.token ?? sessionStore.getToken())
+        const companyId = options.companyId ?? sessionStore.getActiveCompanyId()
+        const branchId = options.branchId ?? sessionStore.getActiveBranchId()
+
+        if (token) {
+            headers.set("Authorization", `Bearer ${token}`)
         }
+
+        if (companyId) {
+            headers.set("X-Company-Id", String(companyId))
+        }
+
+        if (branchId) {
+            headers.set("X-Branch-Id", String(branchId))
+        }
+
+        const response = await fetch(`${apiBaseUrl()}${path}`, {
+            ...init,
+            headers,
+        })
+
+        if (response.status === 401 && token && !options.isRetry && path !== "/api/v1/auth/refresh") {
+            if (!refreshPromise) {
+                refreshPromise = handleTokenRefresh().finally(() => {
+                    refreshPromise = null
+                })
+            }
+
+            const newToken = await refreshPromise
+            if (newToken) {
+                return apiRequest<T>(path, init, {
+                    ...options,
+                    token: newToken,
+                    isRetry: true
+                })
+            }
+        }
+
+        const payload = (await response.json().catch(() => ({
+            message: "The API returned an invalid response.",
+            data: null,
+        }))) as ApiEnvelope<T> | ApiValidationError
+
+        if (!response.ok) {
+            throw new ApiError(response.status, payload as ApiValidationError)
+        }
+
+        return payload as ApiEnvelope<T>
+    } finally {
+        progressManager.done()
     }
-
-    const payload = (await response.json().catch(() => ({
-        message: "The API returned an invalid response.",
-        data: null,
-    }))) as ApiEnvelope<T> | ApiValidationError
-
-    if (!response.ok) {
-        throw new ApiError(response.status, payload as ApiValidationError)
-    }
-
-    return payload as ApiEnvelope<T>
 }
 
 export function jsonBody(data: unknown): string {

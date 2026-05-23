@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Field, SelectField } from "@/components/ui/field"
+import { Field } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -338,20 +339,18 @@ export function PricingView() {
                                 required
                             />
 
-                            <SelectField
+                            <SearchableSelect
                                 label="Branch context (optional)"
                                 value={priceListForm.branch_id}
-                                onChange={(event) =>
-                                    setPriceListForm((current) => ({ ...current, branch_id: event.target.value }))
+                                onChange={(val) =>
+                                    setPriceListForm((current) => ({ ...current, branch_id: String(val) }))
                                 }
-                            >
-                                <option value="">Company-wide (All branches)</option>
-                                {branches.map((branch) => (
-                                    <option key={branch.id} value={branch.id}>
-                                        {branch.name}
-                                    </option>
-                                ))}
-                            </SelectField>
+                                options={branches.map((branch) => ({
+                                    value: branch.id,
+                                    label: branch.name
+                                }))}
+                                placeholder="Company-wide (All branches)"
+                            />
 
                             <label className="flex min-h-11 items-center gap-3 rounded-md border border-navy-100 bg-white px-3 text-sm font-medium text-navy-800 cursor-pointer select-none">
                                 <input
@@ -367,6 +366,7 @@ export function PricingView() {
 
                             <Button
                                 type="submit"
+                                size="xl"
                                 disabled={isLoading}
                                 className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
                             >
@@ -397,21 +397,19 @@ export function PricingView() {
                             </div>
 
                             <div className="grid gap-3">
-                                <SelectField
+                                <SearchableSelect
                                     label="Selected Variant"
                                     value={priceForm.product_variant_id}
-                                    onChange={(event) =>
-                                        setPriceForm((current) => ({ ...current, product_variant_id: event.target.value }))
+                                    onChange={(val) =>
+                                        setPriceForm((current) => ({ ...current, product_variant_id: String(val) }))
                                     }
                                     required
-                                >
-                                    <option value="">Select Variant</option>
-                                    {variants.map((v) => (
-                                        <option key={v.id} value={v.id}>
-                                            {v.product_name} ({v.sku})
-                                        </option>
-                                    ))}
-                                </SelectField>
+                                    options={variants.map((v) => ({
+                                        value: v.id,
+                                        label: `${v.product_name} (${v.sku})`
+                                    }))}
+                                    placeholder="Select Variant"
+                                />
 
                                 <Field
                                     label="Price (IDR)"
@@ -442,6 +440,7 @@ export function PricingView() {
 
                                 <Button
                                     type="submit"
+                                    size="xl"
                                     disabled={isLoading}
                                     className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
                                 >
