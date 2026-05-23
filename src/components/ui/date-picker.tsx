@@ -32,6 +32,7 @@ export function DatePicker({
     className = "",
 }: DatePickerProps) {
     const [isOpen, setIsOpen] = React.useState(false)
+    const [position, setPosition] = React.useState<"top" | "bottom">("bottom")
     const containerRef = React.useRef<HTMLDivElement>(null)
 
     // Parse value date
@@ -139,6 +140,16 @@ export function DatePicker({
         return `${parsedDate.getFullYear()}-${parsedDate.getMonth()}-${parsedDate.getDate()}`
     }, [parsedDate])
 
+    const handleToggleOpen = () => {
+        if (!isOpen && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect()
+            const viewportHeight = window.innerHeight
+            const spaceBelow = viewportHeight - rect.bottom
+            setPosition(spaceBelow < 350 ? "top" : "bottom")
+        }
+        setIsOpen(!isOpen)
+    }
+
     return (
         <div ref={containerRef} className={`grid gap-1.5 text-sm font-medium text-navy-700 relative ${className}`}>
             {label && <span>{label}</span>}
@@ -149,19 +160,22 @@ export function DatePicker({
                     required={required && !value}
                     value={displayValue}
                     placeholder={placeholder}
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={handleToggleOpen}
                     className="min-h-11 w-full rounded-md border border-navy-100 bg-white pl-3 pr-10 text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 cursor-pointer"
                 />
                 <button
                     type="button"
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={handleToggleOpen}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-navy-500 hover:text-teal-700 transition cursor-pointer"
                 >
                     <Icon name="calendar_month" className="text-lg" />
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-50 mt-1 w-[280px] rounded-xl border border-navy-100 bg-white p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className={cn(
+                        "absolute z-50 w-[280px] rounded-xl border border-navy-100 bg-white p-4 shadow-lg animate-in fade-in duration-150",
+                        position === "bottom" ? "top-full mt-1 slide-in-from-top-2" : "bottom-full mb-1 slide-in-from-bottom-2"
+                    )}>
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">
                             <button
