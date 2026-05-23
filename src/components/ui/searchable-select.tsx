@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Icon } from "@/components/ui/icon"
+import { Highlight, HighlightItem } from "@/components/ui/highlight"
 
 export type Option = {
     value: string | number
@@ -74,28 +75,36 @@ export function SearchableSelect({
                 {isOpen && (
                     <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-navy-100 bg-white py-1 text-sm text-navy-900 outline-none select-none">
                         {filteredOptions.length > 0 ? (
-                            filteredOptions.map((opt) => (
-                                <li
-                                    key={opt.value}
-                                    onClick={() => {
-                                        onChange(opt.value)
-                                        setIsOpen(false)
-                                        setSearchQuery("")
-                                    }}
-                                    className={`relative cursor-pointer py-2 pl-3 pr-9 select-none transition hover:bg-navy-50 hover:text-teal-700 ${
-                                        String(opt.value) === String(value)
-                                            ? "bg-teal-50/50 text-teal-700 font-semibold"
-                                            : ""
-                                    }`}
-                                >
-                                    {opt.label}
-                                    {String(opt.value) === String(value) && (
-                                        <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-teal-700">
-                                            <Icon name="check" size={16} />
-                                        </span>
-                                    )}
-                                </li>
-                            ))
+                            <Highlight
+                                value={value ? String(value) : null}
+                                containerClassName="flex flex-col gap-0.5 px-1"
+                                className="bg-teal-50/50 rounded-md"
+                                hover={true}
+                            >
+                                {filteredOptions.map((opt) => (
+                                    <HighlightItem key={opt.value} value={String(opt.value)}>
+                                        <li
+                                            onClick={() => {
+                                                onChange(opt.value)
+                                                setIsOpen(false)
+                                                setSearchQuery("")
+                                            }}
+                                            className={`relative cursor-pointer py-2 pl-3 pr-9 select-none transition-colors rounded-md ${
+                                                String(opt.value) === String(value)
+                                                    ? "text-teal-700 font-semibold"
+                                                    : "text-navy-900"
+                                            }`}
+                                        >
+                                            {opt.label}
+                                            {String(opt.value) === String(value) && (
+                                                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-teal-700">
+                                                    <Icon name="check" size={16} />
+                                                </span>
+                                            )}
+                                        </li>
+                                    </HighlightItem>
+                                ))}
+                            </Highlight>
                         ) : (
                             <li className="relative py-2 pl-3 pr-9 text-navy-400 italic">
                                 No options found
