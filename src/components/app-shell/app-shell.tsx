@@ -10,6 +10,7 @@ import { EntitlementGuard } from "@/components/app-shell/guard"
 import { CategoryTreeNav } from "@/components/app-shell/category-tree-nav"
 import { Icon } from "@/components/ui/icon"
 import { CheckIcon, ChevronDownIcon } from "@/components/icons/outline"
+import { Highlight, HighlightItem } from "@/components/ui/highlight"
 import Logo from "@/components/brands/logo"
 import LogoCompact from "@/components/brands/logo-compact"
 
@@ -161,29 +162,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             </p>
                                         </div>
                                         <div className="max-h-60 overflow-y-auto px-1.5">
-                                            {organizationContext?.branches.map((branch) => (
-                                                <button
-                                                    key={branch.id}
-                                                    type="button"
-                                                    onClick={async () => {
-                                                        setBranchOpen(false)
-                                                        await selectBranch(branch.id)
-                                                    }}
-                                                    className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${branch.id === activeBranchId ? "bg-orange-50 text-orange-700" : "text-navy-700 hover:bg-navy-50"}`}
+                                            {organizationContext?.branches && organizationContext.branches.length > 0 && (
+                                                <Highlight
+                                                    value={activeBranchId ? String(activeBranchId) : null}
+                                                    containerClassName="flex flex-col gap-0.5"
+                                                    className="bg-orange-50/70 rounded-md"
+                                                    hover={true}
                                                 >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
-                                                            {branch.code || "B"}
-                                                        </div>
-                                                        <span className="truncate text-sm">{branch.name}</span>
-                                                    </div>
-                                                    {branch.id === activeBranchId && (
-                                                        <div className="rounded-full bg-orange-500 p-1 text-white">
-                                                            <CheckIcon className="w-4 h-4" />
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ))}
+                                                    {organizationContext.branches.map((branch) => (
+                                                        <HighlightItem key={branch.id} value={String(branch.id)}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={async () => {
+                                                                    setBranchOpen(false)
+                                                                    await selectBranch(branch.id)
+                                                                }}
+                                                                className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${branch.id === activeBranchId ? "text-orange-700" : "text-navy-700"}`}
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
+                                                                        {branch.code || "B"}
+                                                                    </div>
+                                                                    <span className="truncate text-sm">{branch.name}</span>
+                                                                </div>
+                                                                {branch.id === activeBranchId && (
+                                                                    <div className="rounded-full bg-orange-500 p-1 text-white">
+                                                                        <CheckIcon className="w-4 h-4" />
+                                                                    </div>
+                                                                )}
+                                                            </button>
+                                                        </HighlightItem>
+                                                    ))}
+                                                </Highlight>
+                                            )}
                                             {(!organizationContext?.branches || organizationContext.branches.length === 0) && (
                                                 <div className="px-4 py-3 text-xs text-navy-400 text-center font-medium">
                                                     No branches available
