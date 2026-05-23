@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { DatePicker } from "@/components/ui/date-picker"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -424,12 +425,11 @@ export function PricingView() {
                                     required
                                 />
 
-                                <Field
+                                <DatePicker
                                     label="Effective From"
-                                    type="date"
                                     value={priceForm.effective_from}
-                                    onChange={(event) =>
-                                        setPriceForm((current) => ({ ...current, effective_from: event.target.value }))
+                                    onChange={(val) =>
+                                        setPriceForm((current) => ({ ...current, effective_from: val }))
                                     }
                                     required
                                 />

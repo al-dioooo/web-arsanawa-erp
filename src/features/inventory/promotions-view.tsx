@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { DatePicker } from "@/components/ui/date-picker"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -392,21 +393,19 @@ export function PromotionsView() {
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Field
+                                <DatePicker
                                     label="Effective From"
-                                    type="date"
                                     value={discountForm.effective_from}
-                                    onChange={(event) =>
-                                        setDiscountForm((current) => ({ ...current, effective_from: event.target.value }))
+                                    onChange={(val) =>
+                                        setDiscountForm((current) => ({ ...current, effective_from: val }))
                                     }
                                     required
                                 />
-                                <Field
+                                <DatePicker
                                     label="Effective To"
-                                    type="date"
                                     value={discountForm.effective_to}
-                                    onChange={(event) =>
-                                        setDiscountForm((current) => ({ ...current, effective_to: event.target.value }))
+                                    onChange={(val) =>
+                                        setDiscountForm((current) => ({ ...current, effective_to: val }))
                                     }
                                     placeholder="Optional"
                                 />
@@ -490,21 +489,19 @@ export function PromotionsView() {
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Field
+                                <DatePicker
                                     label="Effective From"
-                                    type="date"
                                     value={rewardForm.effective_from}
-                                    onChange={(event) =>
-                                        setRewardForm((current) => ({ ...current, effective_from: event.target.value }))
+                                    onChange={(val) =>
+                                        setRewardForm((current) => ({ ...current, effective_from: val }))
                                     }
                                     required
                                 />
-                                <Field
+                                <DatePicker
                                     label="Effective To"
-                                    type="date"
                                     value={rewardForm.effective_to}
-                                    onChange={(event) =>
-                                        setRewardForm((current) => ({ ...current, effective_to: event.target.value }))
+                                    onChange={(val) =>
+                                        setRewardForm((current) => ({ ...current, effective_to: val }))
                                     }
                                     placeholder="Optional"
                                 />

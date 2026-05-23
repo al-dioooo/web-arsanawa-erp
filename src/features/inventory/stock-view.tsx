@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { DatePicker } from "@/components/ui/date-picker"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
@@ -380,21 +381,19 @@ export function StockView() {
                             />
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Field
+                                <DatePicker
                                     label="Received At"
-                                    type="date"
                                     value={receiptForm.received_at}
-                                    onChange={(event) =>
-                                        setReceiptForm((current) => ({ ...current, received_at: event.target.value }))
+                                    onChange={(val) =>
+                                        setReceiptForm((current) => ({ ...current, received_at: val }))
                                     }
                                     required
                                 />
-                                <Field
+                                <DatePicker
                                     label="Expiry Date"
-                                    type="date"
                                     value={receiptForm.expiry_date}
-                                    onChange={(event) =>
-                                        setReceiptForm((current) => ({ ...current, expiry_date: event.target.value }))
+                                    onChange={(val) =>
+                                        setReceiptForm((current) => ({ ...current, expiry_date: val }))
                                     }
                                 />
                             </div>
