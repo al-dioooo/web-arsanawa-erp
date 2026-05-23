@@ -46,58 +46,55 @@ export function Highlight({
 }: HighlightProps) {
     const [activeValue, setActiveValueState] = React.useState<string | null>(value ?? defaultValue ?? null)
     const [hoveredValue, setHoveredValue] = React.useState<string | null>(null)
-    const [indicatorStyle, setIndicatorStyle] = React.useState<React.CSSProperties>({
-        opacity: 0,
-        position: "absolute",
-        left: 0,
-        top: 0,
-        width: 0,
-        height: 0,
-    })
 
     const containerRef = React.useRef<HTMLDivElement>(null)
+    const indicatorRef = React.useRef<HTMLDivElement>(null)
     const itemsMap = React.useRef<Map<string, HTMLElement>>(new Map())
 
     const activeValueToUse = value !== undefined ? value : activeValue
 
-    const registerItem = React.useCallback((val: string, element: HTMLElement) => {
-        itemsMap.current.set(val, element)
-        updatePosition()
-    }, [hoveredValue, activeValueToUse])
-
-    const unregisterItem = React.useCallback((val: string) => {
-        itemsMap.current.delete(val)
-        updatePosition()
-    }, [hoveredValue, activeValueToUse])
+    const [prevValue, setPrevValue] = React.useState(value)
+    if (value !== prevValue) {
+        setPrevValue(value)
+        setActiveValueState(value ?? null)
+    }
 
     const updatePosition = React.useCallback(() => {
-        if (!containerRef.current) return
+        if (!containerRef.current || !indicatorRef.current) return
 
         const targetValue = hoveredValue ?? activeValueToUse
         if (!targetValue) {
-            setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }))
+            indicatorRef.current.style.opacity = "0"
             return
         }
 
         const targetElement = itemsMap.current.get(targetValue)
         if (!targetElement) {
-            setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }))
+            indicatorRef.current.style.opacity = "0"
             return
         }
 
         const containerRect = containerRef.current.getBoundingClientRect()
         const targetRect = targetElement.getBoundingClientRect()
 
-        setIndicatorStyle({
-            position: "absolute",
-            top: targetRect.top - containerRect.top,
-            left: targetRect.left - containerRect.left,
-            width: targetRect.width,
-            height: targetRect.height,
-            opacity: 1,
-            pointerEvents: "none",
-        })
+        indicatorRef.current.style.position = "absolute"
+        indicatorRef.current.style.top = `${targetRect.top - containerRect.top}px`
+        indicatorRef.current.style.left = `${targetRect.left - containerRect.left}px`
+        indicatorRef.current.style.width = `${targetRect.width}px`
+        indicatorRef.current.style.height = `${targetRect.height}px`
+        indicatorRef.current.style.opacity = "1"
+        indicatorRef.current.style.pointerEvents = "none"
     }, [hoveredValue, activeValueToUse])
+
+    const registerItem = React.useCallback((val: string, element: HTMLElement) => {
+        itemsMap.current.set(val, element)
+        updatePosition()
+    }, [updatePosition])
+
+    const unregisterItem = React.useCallback((val: string) => {
+        itemsMap.current.delete(val)
+        updatePosition()
+    }, [updatePosition])
 
     React.useEffect(() => {
         updatePosition()
@@ -105,12 +102,6 @@ export function Highlight({
         window.addEventListener("resize", updatePosition)
         return () => window.removeEventListener("resize", updatePosition)
     }, [updatePosition])
-
-    React.useEffect(() => {
-        if (value !== undefined) {
-            setActiveValueState(value)
-        }
-    }, [value])
 
     const handleActiveValueChange = (val: string | null) => {
         setActiveValueState(val)
@@ -135,9 +126,11 @@ export function Highlight({
                 onMouseLeave={() => setHoveredValue(null)}
             >
                 <div
+                    ref={indicatorRef}
                     style={{
                         ...style,
-                        ...indicatorStyle,
+                        position: "absolute",
+                        opacity: 0,
                     }}
                     className={cn(
                         "transition-all duration-200 ease-out z-0",
@@ -148,6 +141,12 @@ export function Highlight({
             </div>
         </HighlightContext.Provider>
     )
+}
+
+type HighlightItemChildProps = React.HTMLAttributes<HTMLElement> & {
+    ref?: React.Ref<HTMLElement>
+    "data-active"?: string
+    "data-hovered"?: string
 }
 
 type HighlightItemProps = {
@@ -186,7 +185,7 @@ export function HighlightItem({
     const isActive = activeValue === value
     const isHovered = hoveredValue === value
 
-    const element = React.Children.only(children) as React.ReactElement<any>
+    const element = React.Children.only(children) as React.ReactElement<HighlightItemChildProps>
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
         if (hover) {

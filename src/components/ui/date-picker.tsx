@@ -36,7 +36,7 @@ export function DatePicker({
     const containerRef = React.useRef<HTMLDivElement>(null)
 
     // Parse value date
-    const parsedDate = React.useMemo(() => {
+    const parsedDate = (() => {
         if (!value) return null
         const parts = value.split("-")
         if (parts.length !== 3) return null
@@ -45,17 +45,30 @@ export function DatePicker({
         const d = parseInt(parts[2], 10)
         const date = new Date(y, m, d)
         return isNaN(date.getTime()) ? null : date
-    }, [value])
+    })()
 
     // Current month/year shown in picker
     const [viewDate, setViewDate] = React.useState(() => parsedDate ?? new Date())
 
     // Update view date if value changed
-    React.useEffect(() => {
-        if (parsedDate) {
-            setViewDate(parsedDate)
+    const [prevValue, setPrevValue] = React.useState(value)
+    if (value !== prevValue) {
+        setPrevValue(value)
+        if (!value) {
+            setViewDate(new Date())
+        } else {
+            const parts = value.split("-")
+            if (parts.length === 3) {
+                const y = parseInt(parts[0], 10)
+                const m = parseInt(parts[1], 10) - 1
+                const d = parseInt(parts[2], 10)
+                const date = new Date(y, m, d)
+                if (!isNaN(date.getTime())) {
+                    setViewDate(date)
+                }
+            }
         }
-    }, [parsedDate])
+    }
 
     // Close on click outside
     React.useEffect(() => {
@@ -89,56 +102,51 @@ export function DatePicker({
     }
 
     // Grid days math
-    const daysGrid = React.useMemo(() => {
-        const firstDayOfMonth = new Date(viewYear, viewMonth, 1)
-        const firstDayOfWeek = firstDayOfMonth.getDay()
-        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
-        const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate()
+    const firstDayOfMonth = new Date(viewYear, viewMonth, 1)
+    const firstDayOfWeek = firstDayOfMonth.getDay()
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+    const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate()
 
-        const cells = []
+    const daysGrid = []
 
-        // Prev month padding
-        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-            cells.push({
-                day: daysInPrevMonth - i,
-                isCurrentMonth: false,
-                offsetMonth: -1,
-                key: `prev-${daysInPrevMonth - i}`,
-            })
-        }
+    // Prev month padding
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        daysGrid.push({
+            day: daysInPrevMonth - i,
+            isCurrentMonth: false,
+            offsetMonth: -1,
+            key: `prev-${daysInPrevMonth - i}`,
+        })
+    }
 
-        // Current month
-        for (let i = 1; i <= daysInMonth; i++) {
-            cells.push({
-                day: i,
-                isCurrentMonth: true,
-                offsetMonth: 0,
-                key: `curr-${i}`,
-            })
-        }
+    // Current month
+    for (let i = 1; i <= daysInMonth; i++) {
+        daysGrid.push({
+            day: i,
+            isCurrentMonth: true,
+            offsetMonth: 0,
+            key: `curr-${i}`,
+        })
+    }
 
-        // Next month padding
-        const remaining = 42 - cells.length
-        for (let i = 1; i <= remaining; i++) {
-            cells.push({
-                day: i,
-                isCurrentMonth: false,
-                offsetMonth: 1,
-                key: `next-${i}`,
-            })
-        }
-
-        return cells
-    }, [viewYear, viewMonth])
+    // Next month padding
+    const remaining = 42 - daysGrid.length
+    for (let i = 1; i <= remaining; i++) {
+        daysGrid.push({
+            day: i,
+            isCurrentMonth: false,
+            offsetMonth: 1,
+            key: `next-${i}`,
+        })
+    }
 
     const displayValue = parsedDate
         ? parsedDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
         : ""
 
-    const activeDayKey = React.useMemo(() => {
-        if (!parsedDate) return null
-        return `${parsedDate.getFullYear()}-${parsedDate.getMonth()}-${parsedDate.getDate()}`
-    }, [parsedDate])
+    const activeDayKey = parsedDate
+        ? `${parsedDate.getFullYear()}-${parsedDate.getMonth()}-${parsedDate.getDate()}`
+        : null
 
     const handleToggleOpen = () => {
         if (!isOpen && containerRef.current) {
