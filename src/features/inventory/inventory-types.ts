@@ -1,0 +1,120 @@
+export type Category = {
+  id: number;
+  company_id: number;
+  parent_id: number | null;
+  name: string;
+  path: string;
+  depth: number;
+  position: number;
+  is_active: boolean;
+};
+
+export type Brand = {
+  id: number;
+  company_id: number;
+  name: string;
+  is_active: boolean;
+};
+
+export type UnitOfMeasure = {
+  id: number;
+  company_id: number;
+  name: string;
+  code: string;
+  is_active: boolean;
+};
+
+export type ProductVariant = {
+  id: number;
+  product_id: number;
+  company_id: number;
+  sku: string;
+  barcode: string | null;
+  name: string | null;
+  attributes: Record<string, unknown> | null;
+  purchase_uom_id: number | null;
+  purchase_conversion_factor: string;
+  is_active: boolean;
+};
+
+export type InventoryProduct = {
+  id: number;
+  company_id: number;
+  category_id: number | null;
+  brand_id: number | null;
+  base_uom_id: number;
+  name: string;
+  description: string | null;
+  track_stock: boolean;
+  attributes: Record<string, unknown> | null;
+  status: string;
+  variants: ProductVariant[];
+  tags?: Array<{ id: number; name: string }>;
+};
+
+export type StockLot = {
+  id: number;
+  company_id: number;
+  branch_id: number;
+  product_variant_id: number;
+  lot_number: string | null;
+  received_quantity: string;
+  remaining_quantity: string;
+  unit_cost: string;
+  received_at: string | null;
+  expiry_date: string | null;
+  status: string;
+};
+
+export type StockMovement = {
+  id: number;
+  company_id: number;
+  branch_id: number;
+  product_variant_id: number;
+  stock_lot_id: number | null;
+  type: string;
+  quantity: string;
+  unit_cost: string | null;
+  reference_type: string | null;
+  reference_id: number | null;
+  notes: string | null;
+  occurred_at: string | null;
+};
+
+export type PriceList = {
+  id: number;
+  company_id: number;
+  name: string;
+  currency_id: number | null;
+  branch_id: number | null;
+  is_default: boolean;
+  is_active: boolean;
+};
+
+export type Discount = {
+  id: number;
+  company_id: number;
+  branch_id: number | null;
+  name: string;
+  calculation_type: "percentage" | "amount";
+  value: string;
+  min_quantity: number | null;
+  starting_item_number: number | null;
+  multiply: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  is_active: boolean;
+};
+
+export type Reward = {
+  id: number;
+  company_id: number;
+  branch_id: number | null;
+  name: string;
+  calculation_type: "percentage" | "amount";
+  value: string;
+  min_quantity: number | null;
+  effective_from: string | null;
+  effective_to: string | null;
+  is_active: boolean;
+};
