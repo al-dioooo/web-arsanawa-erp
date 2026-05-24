@@ -177,7 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                                     setBranchOpen(false)
                                                                     await selectBranch(branch.id)
                                                                 }}
-                                                                className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${branch.id === activeBranchId ? "text-orange-700" : "text-navy-700"}`}
+                                                                className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors outline-none cursor-pointer ${branch.id === activeBranchId ? "text-orange-700" : "text-navy-700"}`}
                                                             >
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
@@ -251,13 +251,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleSwitchCompany(entry.company.id)}
-                                                                className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors outline-none cursor-pointer ${entry.company.id === activeCompanyId ? "text-teal-700" : "text-navy-700"}`}
+                                                                className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors outline-none cursor-pointer ${entry.company.id === activeCompanyId ? "text-teal-700" : "text-navy-700"}`}
                                                             >
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-navy-100 text-[10px] font-bold text-navy-600">
                                                                         {entry.company.name.charAt(0).toUpperCase()}
                                                                     </div>
-                                                                    <span className="truncate text-sm">{entry.company.name}</span>
+                                                                    <span className="truncate">{entry.company.name}</span>
                                                                 </div>
                                                                 {entry.company.id === activeCompanyId && (
                                                                     <div className="rounded-full bg-teal-700 p-1 text-white">
@@ -275,6 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                                     <div className="px-1.5 mb-1 flex flex-col gap-0.5">
                                         <Highlight
+                                            value={pathname === "/" ? "go-to-console" : null}
                                             containerClassName="flex flex-col gap-0.5"
                                             className="bg-navy-50 rounded-md"
                                             hover={true}
@@ -283,10 +284,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                 <Link
                                                     href="/"
                                                     onClick={() => setUserOpen(false)}
-                                                    className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-xs font-semibold text-navy-700 transition-colors outline-none cursor-pointer rounded-md"
+                                                    className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
                                                     <Icon name="grid_view" className="text-sm" />
-                                                    <span>Go to Console</span>
+                                                    <span className="text-sm">Go to Console</span>
                                                 </Link>
                                             </HighlightItem>
 
@@ -294,10 +295,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                 <button
                                                     type="button"
                                                     onClick={handleSignOut}
-                                                    className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-xs font-semibold text-rose-600 transition-colors outline-none cursor-pointer rounded-md"
+                                                    className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-rose-600 transition-colors outline-none cursor-pointer rounded-md"
                                                 >
                                                     <Icon name="logout" className="text-sm" />
-                                                    <span>Sign out</span>
+                                                    <span className="text-sm">Sign out</span>
                                                 </button>
                                             </HighlightItem>
                                         </Highlight>
@@ -362,22 +363,22 @@ function ModuleSidebar({
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-6">
-                                <Highlight
-                                    value={module.nav.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href || null}
-                                    containerClassName="grid gap-1"
-                                    className="rounded-xl z-0"
-                                    style={{ backgroundColor: `${module.accentColor}15` }}
-                                    hover={true}
-                                >
-                                    {module.nav.map((item) => (
-                                        <SidebarNavItem
-                                            key={item.href}
-                                            item={item}
-                                            pathname={pathname}
-                                            accentColor={module.accentColor}
-                                        />
-                                    ))}
-                                </Highlight>
+                <Highlight
+                    value={module.nav.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href || null}
+                    containerClassName="grid gap-1"
+                    className="rounded-xl z-0"
+                    style={{ backgroundColor: `${module.accentColor}15` }}
+                    hover={true}
+                >
+                    {module.nav.map((item) => (
+                        <SidebarNavItem
+                            key={item.href}
+                            item={item}
+                            pathname={pathname}
+                            accentColor={module.accentColor}
+                        />
+                    ))}
+                </Highlight>
             </div>
         </aside>
     )
