@@ -43,5 +43,14 @@
         "reports": {
             "title": "Laporan"
         }
+    },
+    "pos": {
+        "nav": {
+            "register": "Kasir",
+            "shifts": "Shift",
+            "sales": "Penjualan",
+            "registers": "Register",
+            "reports": "Laporan"
+        }
     }
 }

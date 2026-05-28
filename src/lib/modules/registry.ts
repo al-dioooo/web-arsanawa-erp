@@ -119,7 +119,11 @@ export const moduleRegistry: ModuleEntry[] = [
         entitlementKey: "pos",
         permission: "pos.view",
         nav: [
-            { href: "/pos", label: "Register", icon: "receipt_long" },
+            { href: "/pos", label: "pos.nav.register", icon: "point_of_sale" },
+            { href: "/pos/shifts", label: "pos.nav.shifts", icon: "history" },
+            { href: "/pos/sales", label: "pos.nav.sales", icon: "receipt_long" },
+            { href: "/pos/registers", label: "pos.nav.registers", icon: "storefront" },
+            { href: "/pos/reports", label: "pos.nav.reports", icon: "insights" },
         ],
     },
 ]

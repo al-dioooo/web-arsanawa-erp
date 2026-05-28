@@ -43,5 +43,14 @@
         "reports": {
             "title": "Reports"
         }
+    },
+    "pos": {
+        "nav": {
+            "register": "Register",
+            "shifts": "Shifts",
+            "sales": "Sales",
+            "registers": "Registers",
+            "reports": "Reports"
+        }
     }
 }

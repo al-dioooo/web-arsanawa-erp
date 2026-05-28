@@ -253,3 +253,13 @@ textarea {
         @apply font-sans;
     }
 }
+
+@media print {
+    body {
+        background: #ffffff;
+    }
+
+    @page {
+        margin: 12mm;
+    }
+}

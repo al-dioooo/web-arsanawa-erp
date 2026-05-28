@@ -56,6 +56,62 @@ export const searchRegistry: SearchItem[] = [
         group: "Quick Actions",
         keywords: ["journal", "entry", "manual", "debit", "credit", "ledger"],
     },
+    {
+        id: "action-pos-open-shift",
+        label: "Open Shift",
+        description: "Start a cashier shift",
+        icon: "history",
+        href: "/pos",
+        group: "Quick Actions",
+        keywords: ["pos", "cashier", "register", "shift", "open"],
+    },
+
+    // ── POS ──────────────────────────────────────────────────────────────────
+    {
+        id: "pos-register",
+        label: "POS Register",
+        description: "Ring up counter and catering sales",
+        icon: "point_of_sale",
+        href: "/pos",
+        group: "Point of Sale",
+        keywords: ["cashier", "checkout", "sell", "payment"],
+    },
+    {
+        id: "pos-sales",
+        label: "Sales",
+        description: "Browse POS sales and catering orders",
+        icon: "receipt_long",
+        href: "/pos/sales",
+        group: "Point of Sale",
+        keywords: ["receipt", "orders", "void", "cancel"],
+    },
+    {
+        id: "pos-shifts",
+        label: "Shifts",
+        description: "Open and settle cashier shifts",
+        icon: "history",
+        href: "/pos/shifts",
+        group: "Point of Sale",
+        keywords: ["cashier", "settlement", "drawer"],
+    },
+    {
+        id: "pos-registers",
+        label: "Registers",
+        description: "Manage active POS registers",
+        icon: "storefront",
+        href: "/pos/registers",
+        group: "Point of Sale",
+        keywords: ["terminal", "branch", "cash account"],
+    },
+    {
+        id: "pos-reports",
+        label: "Reports",
+        description: "POS sales and shift reports",
+        icon: "insights",
+        href: "/pos/reports",
+        group: "Point of Sale",
+        keywords: ["sales report", "shift report", "settlement"],
+    },
 
     // ── Finance — Transactions ────────────────────────────────────────────────
     {
