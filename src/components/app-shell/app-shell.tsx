@@ -340,6 +340,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                 </Link>
                                             </HighlightItem>
 
+                                            <HighlightItem value="profile-settings">
+                                                <Link
+                                                    href="/profile"
+                                                    onClick={() => setUserOpen(false)}
+                                                    className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/profile" ? "text-navy-950 font-bold" : "text-navy-700"}`}
+                                                >
+                                                    <Icon name="manage_accounts" className="text-sm" />
+                                                    <span className="text-sm">Profile Settings</span>
+                                                </Link>
+                                            </HighlightItem>
+
+                                            <HighlightItem value="platform-settings">
+                                                <Link
+                                                    href="/platform/settings"
+                                                    onClick={() => setUserOpen(false)}
+                                                    className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/platform/settings" ? "text-navy-950 font-bold" : "text-navy-700"}`}
+                                                >
+                                                    <Icon name="tune" className="text-sm" />
+                                                    <span className="text-sm">Platform Settings</span>
+                                                </Link>
+                                            </HighlightItem>
+
                                             <HighlightItem value="sign-out">
                                                 <button
                                                     type="button"

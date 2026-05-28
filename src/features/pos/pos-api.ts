@@ -277,7 +277,7 @@ export async function getShiftReport(options: PosRequestOptions, shiftId: number
 export async function loadProductsForSale(options: PosRequestOptions) {
     const [products, categories] = await Promise.all([
         apiRequest<{ products: InventoryProduct[]; pagination: Pagination }>(
-            "/api/v1/inventory/products?per_page=200",
+            "/api/v1/inventory/products?per_page=100",
             {},
             options,
         ),
@@ -304,7 +304,7 @@ export async function resolveVariantPrice(
 
 export async function loadCustomers(options: PosRequestOptions): Promise<Customer[]> {
     const res = await apiRequest<{ partners: Customer[]; pagination: Pagination }>(
-        "/api/v1/partners?type=customer&status=active&per_page=200",
+        "/api/v1/partners?type=customer&status=active&per_page=100",
         {},
         options,
     )

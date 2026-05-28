@@ -54,18 +54,41 @@ export type AgingBucket = {
     total: string
 }
 
-// --- Mock Data (Temporary) ---
-// Since the Partners module is not fully implemented yet, we provide a mock list of partners for the UI.
-export function usePartners(companyId: number | null) {
+export type PartnerOption = {
+    id: number
+    company_id: number
+    type: "customer" | "supplier" | "both"
+    name: string
+    code: string | null
+    email: string | null
+    phone: string | null
+    tax_identifier: string | null
+    national_id: string | null
+    credit_limit: string | null
+    transaction_limit: string | null
+    status: string
+    notes: string | null
+}
+
+function queryString(params: Record<string, string | number | null | undefined>): string {
+    const search = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+            search.set(key, String(value))
+        }
+    })
+
+    const value = search.toString()
+    return value ? `?${value}` : ""
+}
+
+export function usePartners(companyId: number | null, type?: "customer" | "supplier" | "both") {
     return useQuery({
-        queryKey: ['finance', 'partners', companyId],
-        queryFn: async () => {
-            return [
-                { id: 1, name: "PT. Maju Jaya" },
-                { id: 2, name: "CV. Bintang Sentosa" },
-                { id: 3, name: "Toko Abadi" },
-            ]
-        },
+        queryKey: ['finance', 'partners', companyId, type ?? 'all'],
+        queryFn: () =>
+            apiRequest<{ partners: PartnerOption[] }>(
+                `/api/v1/partners${queryString({ type, status: "active", per_page: 100 })}`,
+            ).then(res => res.data?.partners || []),
         enabled: !!companyId,
     })
 }
@@ -133,9 +156,61 @@ export function useVoidInvoice() {
 }
 
 export function useARAging(companyId: number | null) {
+    const invoices = useInvoices(companyId)
+
     return useQuery({
         queryKey: ['finance', 'ar-aging', companyId],
-        queryFn: () => apiRequest<{ data: AgingBucket[] } | AgingBucket[]>('/api/v1/finance/ar-aging').then(res => Array.isArray(res.data) ? res.data : (('data' in res.data && res.data.data) || []) as AgingBucket[]),
-        enabled: !!companyId,
+        queryFn: () => Promise.resolve(buildAgingBuckets(invoices.data ?? [])),
+        enabled: !!companyId && invoices.isSuccess,
     })
+}
+
+function buildAgingBuckets(invoices: Invoice[]): AgingBucket[] {
+    const buckets = new Map<number, AgingBucket>()
+    const today = new Date()
+
+    invoices
+        .filter((invoice) => !["paid", "void"].includes(invoice.status))
+        .forEach((invoice) => {
+            const balance = Math.max(
+                Number(invoice.total ?? 0) - Number(invoice.amount_paid ?? 0),
+                0,
+            )
+
+            if (balance <= 0) return
+
+            const partnerId = invoice.partner_id
+            const bucket = buckets.get(partnerId) ?? {
+                partner_id: partnerId,
+                partner_name: invoice.partner?.name ?? `Partner #${partnerId}`,
+                current: "0",
+                days_1_30: "0",
+                days_31_60: "0",
+                days_61_90: "0",
+                over_90: "0",
+                total: "0",
+            }
+
+            const key = agingKey(invoice.due_date, today)
+            bucket[key] = String(Number(bucket[key]) + balance)
+            bucket.total = String(Number(bucket.total) + balance)
+            buckets.set(partnerId, bucket)
+        })
+
+    return [...buckets.values()]
+}
+
+function agingKey(
+    dueDateValue: string,
+    today: Date,
+): "current" | "days_1_30" | "days_31_60" | "days_61_90" | "over_90" {
+    const dueDate = new Date(dueDateValue)
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / 86_400_000)
+
+    if (daysOverdue <= 0) return "current"
+    if (daysOverdue <= 30) return "days_1_30"
+    if (daysOverdue <= 60) return "days_31_60"
+    if (daysOverdue <= 90) return "days_61_90"
+
+    return "over_90"
 }

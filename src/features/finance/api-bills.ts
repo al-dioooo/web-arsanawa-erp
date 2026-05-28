@@ -121,9 +121,61 @@ export function useVoidBill() {
 }
 
 export function useAPAging(companyId: number | null) {
+    const bills = useBills(companyId)
+
     return useQuery({
         queryKey: ['finance', 'ap-aging', companyId],
-        queryFn: () => apiRequest<{ data: APBucket[] } | APBucket[]>('/api/v1/finance/ap-aging').then(res => Array.isArray(res.data) ? res.data : (('data' in res.data && res.data.data) || []) as APBucket[]),
-        enabled: !!companyId,
+        queryFn: () => Promise.resolve(buildAgingBuckets(bills.data ?? [])),
+        enabled: !!companyId && bills.isSuccess,
     })
+}
+
+function buildAgingBuckets(bills: Bill[]): APBucket[] {
+    const buckets = new Map<number, APBucket>()
+    const today = new Date()
+
+    bills
+        .filter((bill) => !["paid", "void"].includes(bill.status))
+        .forEach((bill) => {
+            const balance = Math.max(
+                Number(bill.total ?? 0) - Number(bill.amount_paid ?? 0),
+                0,
+            )
+
+            if (balance <= 0) return
+
+            const partnerId = bill.partner_id
+            const bucket = buckets.get(partnerId) ?? {
+                partner_id: partnerId,
+                partner_name: bill.partner?.name ?? `Partner #${partnerId}`,
+                current: "0",
+                days_1_30: "0",
+                days_31_60: "0",
+                days_61_90: "0",
+                over_90: "0",
+                total: "0",
+            }
+
+            const key = agingKey(bill.due_date, today)
+            bucket[key] = String(Number(bucket[key]) + balance)
+            bucket.total = String(Number(bucket.total) + balance)
+            buckets.set(partnerId, bucket)
+        })
+
+    return [...buckets.values()]
+}
+
+function agingKey(
+    dueDateValue: string,
+    today: Date,
+): "current" | "days_1_30" | "days_31_60" | "days_61_90" | "over_90" {
+    const dueDate = new Date(dueDateValue)
+    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / 86_400_000)
+
+    if (daysOverdue <= 0) return "current"
+    if (daysOverdue <= 30) return "days_1_30"
+    if (daysOverdue <= 60) return "days_31_60"
+    if (daysOverdue <= 90) return "days_61_90"
+
+    return "over_90"
 }

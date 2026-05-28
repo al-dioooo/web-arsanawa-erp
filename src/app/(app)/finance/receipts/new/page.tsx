@@ -28,7 +28,7 @@ export default function NewReceiptPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
 
-    const { data: partners = [] } = usePartners(activeCompanyId)
+    const { data: partners = [] } = usePartners(activeCompanyId, "customer")
     const { data: accounts = [] } = useCOA(activeCompanyId)
     const { data: invoices = [] } = useInvoices(activeCompanyId)
     const createPayment = useCreatePayment()

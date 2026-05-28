@@ -35,7 +35,7 @@ export default function NewInvoicePage() {
     const { activeCompanyId } = useSession()
 
     // Data sources
-    const { data: partners = [] } = usePartners(activeCompanyId)
+    const { data: partners = [] } = usePartners(activeCompanyId, "customer")
     const { data: accounts = [] } = useCOA(activeCompanyId)
     const { data: taxRates = [] } = useTaxRates(activeCompanyId)
     const createInvoice = useCreateInvoice()

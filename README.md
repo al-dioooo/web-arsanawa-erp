@@ -10,6 +10,9 @@ organization, and module workspaces used by ERP operators.
 - Authenticated app shell with console and module workspace modes
 - Company and branch context switching
 - Organization screens for company creation and module entitlements
+- Identity profile settings and user lookup
+- Platform settings for currencies and module configuration
+- Partners workspace for customers, suppliers, contacts, and addresses
 - Dashboard and app launcher
 - Initial Inventory workspace:
   - Catalogue
@@ -115,8 +118,12 @@ src/components/
 src/features/
 |-- auth/
 |-- dashboard/
+|-- identity/
 |-- inventory/
-`-- organization/
+|-- organization/
+|-- partners/
+|-- platform/
+`-- pos/
 
 src/lib/
 |-- api-client.ts
@@ -136,10 +143,15 @@ src/lib/
 | `/dashboard` | Company-scoped dashboard |
 | `/organization/companies` | Company management |
 | `/organization/modules` | Module entitlement management |
+| `/profile` | Identity profile settings and user lookup |
+| `/platform/settings` | Platform currencies and module settings |
+| `/partners` | Customers, suppliers, contacts, and addresses |
 | `/inventory/catalogue` | Inventory catalogue |
 | `/inventory/stock` | Stock operations and queries |
 | `/inventory/pricing` | Price lists and variant prices |
 | `/inventory/promotions` | Discounts and rewards |
+| `/finance` | Finance dashboard and sub-workspaces |
+| `/pos` | POS register and operational workspaces |
 
 Module route access is filtered by organization entitlements and permissions returned by
 the API.

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useSession } from "@/features/auth/session-provider"
+import { canManageEntitlements } from "@/features/auth/access"
 import { moduleRegistry, type ModuleEntry } from "@/lib/modules/registry"
 import { Icon } from "@/components/ui/icon"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -22,7 +23,7 @@ export default function ConsolePage() {
     const { user, modules, activeCompanyId, companies, organizationContext } = useSession()
 
     const activeCompany = companies.find((c) => c.company.id === activeCompanyId)?.company
-    const isAdmin = organizationContext?.membership?.role === "admin"
+    const canManageModules = canManageEntitlements(organizationContext?.membership)
 
     const enabledSet = new Set(modules?.enabled ?? [])
     const availableSet = new Set(modules?.available ?? [])
@@ -36,7 +37,35 @@ export default function ConsolePage() {
             route: "/organization/companies",
             description: "Companies, branches, members, and roles.",
         },
-        ...(isAdmin
+        {
+            key: "profile",
+            label: "Profile",
+            icon: "manage_accounts",
+            accentColor: "#137d90",
+            route: "/profile",
+            description: "Identity, locale, timezone, and user lookup.",
+        },
+        ...(activeCompany
+            ? [
+                  {
+                      key: "partners",
+                      label: "Partners",
+                      icon: "groups",
+                      accentColor: "#f47b50",
+                      route: "/partners",
+                      description: "Customers, suppliers, contacts, and addresses.",
+                  } satisfies Tile,
+                  {
+                      key: "platform-settings",
+                      label: "Platform Settings",
+                      icon: "tune",
+                      accentColor: "#6f7d90",
+                      route: "/platform/settings",
+                      description: "Currencies and company module settings.",
+                  } satisfies Tile,
+              ]
+            : []),
+        ...(canManageModules
             ? [
                   {
                       key: "module-manager",
@@ -113,11 +142,11 @@ export default function ConsolePage() {
                                 No applications installed
                             </p>
                             <p className="mt-1 text-xs text-navy-500 font-body">
-                                {isAdmin
+                                {canManageModules
                                     ? "Open the Module Manager to install apps for this company."
                                     : "Ask your administrator to install apps for this company."}
                             </p>
-                            {isAdmin && (
+                            {canManageModules && (
                                 <Link
                                     href="/organization/modules"
                                     className="mt-4 inline-flex min-h-9 items-center justify-center rounded-xl bg-teal-700 hover:bg-teal-900 px-4 text-xs font-bold text-white transition-colors cursor-pointer"
@@ -128,7 +157,7 @@ export default function ConsolePage() {
                         </div>
                     )}
 
-                    {isAdmin && installableModules.length > 0 && (
+                    {canManageModules && installableModules.length > 0 && (
                         <div className="grid gap-3">
                             <p className="text-xs font-bold uppercase tracking-widest text-navy-400 font-display">
                                 Available to install

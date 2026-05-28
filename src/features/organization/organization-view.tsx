@@ -7,6 +7,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { CompanyCreateForm } from "@/features/organization/company-create-form"
 import { useSession } from "@/features/auth/session-provider"
+import { canManageOrganization } from "@/features/auth/access"
+import { OrganizationAdminPanel } from "@/features/organization/organization-admin-panel"
 
 export function OrganizationView() {
     const {
@@ -22,6 +24,7 @@ export function OrganizationView() {
     const [branchForm, setBranchForm] = useState({ name: "", code: "" })
     const [membershipForm, setMembershipForm] = useState({ user_id: "", branch_id: "", role: "member" })
     const activeCompany = companies.find((entry) => entry.company.id === activeCompanyId)
+    const canManage = canManageOrganization(organizationContext?.membership)
 
     async function submitBranch(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -80,6 +83,12 @@ export function OrganizationView() {
                 <h2 className="text-lg font-bold text-navy-900 font-display mb-4">Create Company</h2>
                 <CompanyCreateForm />
             </section>
+
+            <OrganizationAdminPanel
+                companyId={activeCompanyId}
+                canManage={canManage}
+                branches={organizationContext?.branches ?? []}
+            />
 
             <section className="grid gap-6 xl:grid-cols-2">
                 {/* Branches Manager */}

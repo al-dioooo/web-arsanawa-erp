@@ -6,7 +6,13 @@ import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
-import { useCOA, useCreateAccount, type COAAccount } from "@/features/finance/api"
+import {
+    useCOA,
+    useCreateAccount,
+    useDeleteAccount,
+    useUpdateAccount,
+    type COAAccount,
+} from "@/features/finance/api"
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -26,6 +32,8 @@ type AccountFormData = {
 export default function COAPage() {
     const { activeCompanyId } = useSession()
     const { data: accounts = [], isLoading } = useCOA(activeCompanyId)
+    const updateAccount = useUpdateAccount()
+    const deleteAccount = useDeleteAccount()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     // Compute flat list for the table by flattening the tree
@@ -47,17 +55,17 @@ export default function COAPage() {
                 </div>
             </FilterBar>
 
-            <DataTable columns={["Code", "Name", "Type", "Balance", "Postable", "Status"]}>
+            <DataTable columns={["Code", "Name", "Type", "Balance", "Postable", "Status", "Actions"]}>
                 {isLoading && (
                     <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
+                        <td colSpan={7} className="px-6 py-8 text-center text-navy-500">
                             Loading accounts...
                         </td>
                     </tr>
                 )}
                 {!isLoading && flatAccounts.length === 0 && (
                     <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
+                        <td colSpan={7} className="px-6 py-8 text-center text-navy-500">
                             No accounts found. Create one to get started.
                         </td>
                     </tr>
@@ -83,6 +91,29 @@ export default function COAPage() {
                         </td>
                         <td className="px-6 py-4">
                             <StatusBadge status={account.is_active ? "active" : "inactive"} />
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        updateAccount.mutate({
+                                            id: account.id,
+                                            data: { is_active: !account.is_active },
+                                        })
+                                    }
+                                    className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-bold text-navy-700 transition-colors hover:bg-navy-100 cursor-pointer"
+                                >
+                                    {account.is_active ? "Deactivate" : "Activate"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => deleteAccount.mutate(account.id)}
+                                    className="rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 cursor-pointer"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 ))}

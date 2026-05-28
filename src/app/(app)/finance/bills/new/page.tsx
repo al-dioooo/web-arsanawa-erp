@@ -5,7 +5,7 @@ import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { useSession } from "@/features/auth/session-provider"
 import { useCreateBill } from "@/features/finance/api-bills"
-import { usePartners } from "@/features/finance/api-invoices" // Reusing mock partners
+import { usePartners } from "@/features/finance/api-invoices"
 import { useCOA, useTaxRates, type COAAccount } from "@/features/finance/api"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -33,7 +33,7 @@ export default function NewBillPage() {
     const { activeCompanyId } = useSession()
 
     // Data dependencies
-    const { data: partners = [] } = usePartners(activeCompanyId)
+    const { data: partners = [] } = usePartners(activeCompanyId, "supplier")
     const { data: accounts = [] } = useCOA(activeCompanyId)
     const { data: taxRates = [] } = useTaxRates(activeCompanyId)
     const createBill = useCreateBill()

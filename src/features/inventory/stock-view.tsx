@@ -11,7 +11,10 @@ import { useSession } from "@/features/auth/session-provider"
 import {
     loadInventory,
     loadStockSnapshot,
+    recordAdjustment,
+    recordIssue,
     recordReceipt,
+    recordTransfer,
 } from "@/features/inventory/inventory-api"
 import type {
     ProductVariant,
@@ -63,6 +66,20 @@ export function StockView() {
         lot_number: "",
         received_at: today(),
         expiry_date: "",
+    })
+    const [issueForm, setIssueForm] = useState({
+        quantity: "",
+        notes: "",
+    })
+    const [adjustmentForm, setAdjustmentForm] = useState({
+        quantity: "",
+        unit_cost: "",
+        notes: "",
+    })
+    const [transferForm, setTransferForm] = useState({
+        to_branch_id: "",
+        quantity: "",
+        notes: "",
     })
 
     const requestOptions = useMemo(() => {
@@ -165,6 +182,24 @@ export function StockView() {
         }
     }, [selectedBranchId, selectedVariantId])
 
+    useEffect(() => {
+        let active = true
+        void Promise.resolve().then(() => {
+            if (!active) return
+
+            setTransferForm((current) => {
+                if (branches.length < 2) return current
+                if (current.to_branch_id && Number(current.to_branch_id) !== selectedBranchId) return current
+
+                const targetBranch = branches.find((branch) => branch.id !== selectedBranchId) ?? branches[0]
+                return { ...current, to_branch_id: targetBranch ? String(targetBranch.id) : "" }
+            })
+        })
+        return () => {
+            active = false
+        }
+    }, [branches, selectedBranchId])
+
     async function handleReceiptSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         if (!requestOptions) return
@@ -195,6 +230,90 @@ export function StockView() {
             await refreshStock()
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : "Failed to record receipt.")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    async function handleIssueSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        if (!requestOptions || !selectedBranchId || !selectedVariantId) return
+
+        setIsLoading(true)
+        setError(null)
+        setMessage(null)
+
+        try {
+            await recordIssue(requestOptions, {
+                branch_id: selectedBranchId,
+                product_variant_id: selectedVariantId,
+                quantity: Number(issueForm.quantity),
+                notes: issueForm.notes || null,
+            })
+
+            setMessage("Stock issue recorded successfully.")
+            setIssueForm({ quantity: "", notes: "" })
+            await refreshStock()
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : "Failed to record issue.")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    async function handleAdjustmentSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        if (!requestOptions || !selectedBranchId || !selectedVariantId) return
+
+        setIsLoading(true)
+        setError(null)
+        setMessage(null)
+
+        try {
+            await recordAdjustment(requestOptions, {
+                branch_id: selectedBranchId,
+                product_variant_id: selectedVariantId,
+                quantity: Number(adjustmentForm.quantity),
+                unit_cost: adjustmentForm.unit_cost ? Number(adjustmentForm.unit_cost) : undefined,
+                notes: adjustmentForm.notes || null,
+            })
+
+            setMessage("Stock adjustment recorded successfully.")
+            setAdjustmentForm({ quantity: "", unit_cost: "", notes: "" })
+            await refreshStock()
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : "Failed to record adjustment.")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    async function handleTransferSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        if (!requestOptions || !selectedBranchId || !selectedVariantId || !transferForm.to_branch_id) return
+
+        setIsLoading(true)
+        setError(null)
+        setMessage(null)
+
+        try {
+            await recordTransfer(requestOptions, {
+                from_branch_id: selectedBranchId,
+                to_branch_id: Number(transferForm.to_branch_id),
+                items: [
+                    {
+                        product_variant_id: selectedVariantId,
+                        quantity: Number(transferForm.quantity),
+                    },
+                ],
+                notes: transferForm.notes || null,
+            })
+
+            setMessage("Stock transfer recorded successfully.")
+            setTransferForm((current) => ({ ...current, quantity: "", notes: "" }))
+            await refreshStock()
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : "Failed to record transfer.")
         } finally {
             setIsLoading(false)
         }
@@ -405,6 +524,158 @@ export function StockView() {
                                 className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
                             >
                                 Record Receipt
+                            </Button>
+                        </div>
+                    </form>
+
+                    <form
+                        className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
+                        onSubmit={handleIssueSubmit}
+                    >
+                        <h2 className="text-base font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-2">
+                            <Icon name="remove_circle" size={20} className="text-rose-600" />
+                            <span>Record Issue</span>
+                        </h2>
+                        <div className="grid gap-3">
+                            <Field
+                                label="Issue quantity"
+                                type="number"
+                                min="0.0001"
+                                step="0.0001"
+                                value={issueForm.quantity}
+                                onChange={(event) =>
+                                    setIssueForm((current) => ({ ...current, quantity: event.target.value }))
+                                }
+                                required
+                            />
+                            <Field
+                                label="Issue notes"
+                                value={issueForm.notes}
+                                onChange={(event) =>
+                                    setIssueForm((current) => ({ ...current, notes: event.target.value }))
+                                }
+                                placeholder="Reason or reference"
+                            />
+                            <Button
+                                type="submit"
+                                variant="secondary"
+                                disabled={isLoading || !selectedBranchId || !selectedVariantId}
+                            >
+                                Record issue
+                            </Button>
+                        </div>
+                    </form>
+
+                    <form
+                        className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
+                        onSubmit={handleAdjustmentSubmit}
+                    >
+                        <h2 className="text-base font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-2">
+                            <Icon name="sync_alt" size={20} className="text-teal-700" />
+                            <span>Record Adjustment</span>
+                        </h2>
+                        <div className="grid gap-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Field
+                                    label="Adjustment quantity"
+                                    type="number"
+                                    step="0.0001"
+                                    value={adjustmentForm.quantity}
+                                    onChange={(event) =>
+                                        setAdjustmentForm((current) => ({
+                                            ...current,
+                                            quantity: event.target.value,
+                                        }))
+                                    }
+                                    required
+                                />
+                                <Field
+                                    label="Adjustment cost"
+                                    type="number"
+                                    min="0"
+                                    step="0.0001"
+                                    value={adjustmentForm.unit_cost}
+                                    onChange={(event) =>
+                                        setAdjustmentForm((current) => ({
+                                            ...current,
+                                            unit_cost: event.target.value,
+                                        }))
+                                    }
+                                    placeholder="Optional"
+                                />
+                            </div>
+                            <Field
+                                label="Adjustment notes"
+                                value={adjustmentForm.notes}
+                                onChange={(event) =>
+                                    setAdjustmentForm((current) => ({ ...current, notes: event.target.value }))
+                                }
+                                placeholder="Stock count or correction"
+                            />
+                            <Button
+                                type="submit"
+                                variant="secondary"
+                                disabled={isLoading || !selectedBranchId || !selectedVariantId}
+                            >
+                                Record adjustment
+                            </Button>
+                        </div>
+                    </form>
+
+                    <form
+                        className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
+                        onSubmit={handleTransferSubmit}
+                    >
+                        <h2 className="text-base font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-2">
+                            <Icon name="swap_horiz" size={20} className="text-orange-500" />
+                            <span>Record Transfer</span>
+                        </h2>
+                        <div className="grid gap-3">
+                            <SearchableSelect
+                                label="Destination branch"
+                                value={transferForm.to_branch_id}
+                                onChange={(val) =>
+                                    setTransferForm((current) => ({ ...current, to_branch_id: String(val) }))
+                                }
+                                required
+                                options={branches
+                                    .filter((branch) => branch.id !== selectedBranchId)
+                                    .map((branch) => ({
+                                        value: branch.id,
+                                        label: branch.name,
+                                    }))}
+                                placeholder="Select destination"
+                            />
+                            <Field
+                                label="Transfer quantity"
+                                type="number"
+                                min="0.0001"
+                                step="0.0001"
+                                value={transferForm.quantity}
+                                onChange={(event) =>
+                                    setTransferForm((current) => ({ ...current, quantity: event.target.value }))
+                                }
+                                required
+                            />
+                            <Field
+                                label="Transfer notes"
+                                value={transferForm.notes}
+                                onChange={(event) =>
+                                    setTransferForm((current) => ({ ...current, notes: event.target.value }))
+                                }
+                                placeholder="Transfer memo"
+                            />
+                            <Button
+                                type="submit"
+                                variant="secondary"
+                                disabled={
+                                    isLoading ||
+                                    !selectedBranchId ||
+                                    !selectedVariantId ||
+                                    !transferForm.to_branch_id
+                                }
+                            >
+                                Record transfer
                             </Button>
                         </div>
                     </form>

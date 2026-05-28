@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "@/features/auth/session-provider"
+import { canManageEntitlements } from "@/features/auth/access"
 import { moduleRegistry } from "@/lib/modules/registry"
 import { Icon } from "@/components/ui/icon"
 
@@ -49,7 +50,7 @@ export function ModuleLauncher() {
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [isOpen])
 
-    const isAdmin = organizationContext?.membership?.role === "admin"
+    const canManageModules = canManageEntitlements(organizationContext?.membership)
     const enabledSet = new Set(modules?.enabled ?? [])
 
     const consoleTiles: LauncherTile[] = [
@@ -60,7 +61,28 @@ export function ModuleLauncher() {
             accentColor: "#0b5c6a",
             route: "/organization/companies",
         },
-        ...(isAdmin
+        {
+            key: "profile",
+            label: "Profile",
+            icon: "manage_accounts",
+            accentColor: "#137d90",
+            route: "/profile",
+        },
+        {
+            key: "partners",
+            label: "Partners",
+            icon: "groups",
+            accentColor: "#f47b50",
+            route: "/partners",
+        },
+        {
+            key: "platform-settings",
+            label: "Settings",
+            icon: "tune",
+            accentColor: "#6f7d90",
+            route: "/platform/settings",
+        },
+        ...(canManageModules
             ? [
                   {
                       key: "module-manager",

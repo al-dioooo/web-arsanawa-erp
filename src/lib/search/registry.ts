@@ -113,6 +113,35 @@ export const searchRegistry: SearchItem[] = [
         keywords: ["sales report", "shift report", "settlement"],
     },
 
+    // ── Shared Console ───────────────────────────────────────────────────────
+    {
+        id: "profile-settings",
+        label: "Profile Settings",
+        description: "Identity, locale, timezone, and user lookup",
+        icon: "manage_accounts",
+        href: "/profile",
+        group: "Console",
+        keywords: ["profile", "identity", "locale", "timezone", "user lookup"],
+    },
+    {
+        id: "platform-settings",
+        label: "Platform Settings",
+        description: "Currencies and company module settings",
+        icon: "tune",
+        href: "/platform/settings",
+        group: "Console",
+        keywords: ["platform", "settings", "currency", "configuration"],
+    },
+    {
+        id: "partners",
+        label: "Partners",
+        description: "Customers, suppliers, contacts, and addresses",
+        icon: "groups",
+        href: "/partners",
+        group: "Console",
+        keywords: ["partner", "customer", "supplier", "contact", "address"],
+    },
+
     // ── Finance — Transactions ────────────────────────────────────────────────
     {
         id: "finance-dashboard",

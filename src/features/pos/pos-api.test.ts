@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cancelSale, listSales } from "@/features/pos/pos-api"
+import { cancelSale, listSales, loadCustomers, loadProductsForSale } from "@/features/pos/pos-api"
 
 describe("POS API", () => {
     beforeEach(() => {
@@ -61,5 +61,48 @@ describe("POS API", () => {
         const [url, init] = vi.mocked(fetch).mock.calls[0]
         expect(String(url)).toContain("/api/v1/pos/sales/44/cancel")
         expect(init?.method).toBe("POST")
+    })
+
+    it("loads active customers within the Partners API pagination limit", async () => {
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                message: "Partners retrieved.",
+                data: {
+                    partners: [],
+                    pagination: { current_page: 1, last_page: 1, per_page: 100, total: 0 },
+                },
+            }),
+        } as Response)
+
+        await loadCustomers({ token: "token", companyId: 9 })
+
+        const [url] = vi.mocked(fetch).mock.calls[0]
+        expect(String(url)).toContain("/api/v1/partners?")
+        expect(String(url)).toContain("type=customer")
+        expect(String(url)).toContain("status=active")
+        expect(String(url)).toContain("per_page=100")
+    })
+
+    it("loads sale products within the Inventory API pagination limit", async () => {
+        vi.mocked(fetch).mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                message: "OK",
+                data: {
+                    products: [],
+                    categories: [],
+                    pagination: { current_page: 1, last_page: 1, per_page: 100, total: 0 },
+                },
+            }),
+        } as Response)
+
+        await loadProductsForSale({ token: "token", companyId: 9 })
+
+        const [url] = vi.mocked(fetch).mock.calls[0]
+        expect(String(url)).toContain("/api/v1/inventory/products?")
+        expect(String(url)).toContain("per_page=100")
     })
 })

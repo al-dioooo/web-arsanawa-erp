@@ -6,7 +6,7 @@ import { useForm, Controller } from "react-hook-form"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { useSession } from "@/features/auth/session-provider"
 import { useCreatePayment } from "@/features/finance/api-payments"
-import { usePartners } from "@/features/finance/api-invoices" // Mock partners
+import { usePartners } from "@/features/finance/api-invoices"
 import { useBills } from "@/features/finance/api-bills"
 import { useCOA, type COAAccount } from "@/features/finance/api"
 import { Field } from "@/components/ui/field"
@@ -30,7 +30,7 @@ export default function NewPaymentPage() {
     const { activeCompanyId } = useSession()
 
     // Data dependencies
-    const { data: partners = [] } = usePartners(activeCompanyId)
+    const { data: partners = [] } = usePartners(activeCompanyId, "supplier")
     const { data: accounts = [] } = useCOA(activeCompanyId)
     const { data: bills = [] } = useBills(activeCompanyId)
     const createPayment = useCreatePayment()

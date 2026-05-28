@@ -43,6 +43,7 @@ function filterItems(query: string): SearchItem[] {
 
 const GROUP_ACCENT: Record<string, string> = {
     "Quick Actions":      "text-teal-700",
+    "Console":            "text-teal-700",
     "Finance":            "text-amber-600",
     "Finance — Reports":  "text-amber-600",
     "Finance — Settings": "text-amber-600",

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "@/features/auth/session-provider"
+import { canManageEntitlements } from "@/features/auth/access"
 import { getModuleByPath } from "@/lib/modules/registry"
 import { Icon } from "@/components/ui/icon"
 
@@ -15,7 +16,7 @@ export function EntitlementGuard({ children }: { children: React.ReactNode }) {
     if (activeModule && activeModule.entitlementKey) {
         const isEnabled = modules?.enabled.includes(activeModule.entitlementKey)
         if (!isEnabled) {
-            const isAdmin = organizationContext?.membership?.role === "admin"
+            const canManageModules = canManageEntitlements(organizationContext?.membership)
 
             return (
                 <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
@@ -29,7 +30,7 @@ export function EntitlementGuard({ children }: { children: React.ReactNode }) {
                         The <strong className="text-navy-700 font-semibold">{activeModule.label}</strong> module is not currently enabled for this company context.
                     </p>
 
-                    {isAdmin ? (
+                    {canManageModules ? (
                         <div className="mt-8 flex flex-col sm:flex-row gap-3">
                             <Link
                                 href="/organization/modules"

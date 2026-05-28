@@ -4,10 +4,8 @@ import { useMemo } from "react"
 import { useSession } from "@/features/auth/session-provider"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
-import { titleCase } from "@/lib/format"
 import { Icon } from "@/components/ui/icon"
-
-const knownModules = ["inventory", "finance", "pos", "accounting", "reporting"]
+import { moduleRegistry } from "@/lib/modules/registry"
 
 export function ModulesView() {
     const {
@@ -29,13 +27,21 @@ export function ModulesView() {
     async function toggleModule(moduleName: string, enabled: boolean) {
         if (!activeCompanyId) return
 
-        const modulesPayload = knownModules.map((m) => {
-            if (m === moduleName) {
-                return { module: m, is_enabled: enabled }
+        const modulesPayload = moduleRegistry.map((moduleEntry) => {
+            const entitlement = entitlementMap.get(moduleEntry.key)
+
+            if (moduleEntry.key === moduleName) {
+                return {
+                    module: moduleEntry.key,
+                    is_enabled: enabled,
+                    expires_at: entitlement?.expires_at ?? null,
+                }
             }
+
             return {
-                module: m,
-                is_enabled: entitlementMap.get(m)?.is_enabled ?? false
+                module: moduleEntry.key,
+                is_enabled: entitlement?.is_enabled ?? false,
+                expires_at: entitlement?.expires_at ?? null,
             }
         })
 
@@ -65,44 +71,28 @@ export function ModulesView() {
                 <h2 className="text-lg font-bold text-navy-900 font-display mb-6">Available Modules</h2>
                 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {knownModules.map((moduleName) => {
-                        const enabled = entitlementMap.get(moduleName)?.is_enabled ?? false
-                        const iconMap: Record<string, string> = {
-                            inventory: "inventory_2",
-                            finance: "payments",
-                            pos: "point_of_sale",
-                            accounting: "account_balance",
-                            reporting: "analytics"
-                        }
-                        const colorMap: Record<string, string> = {
-                            inventory: "#f47b50",
-                            finance: "#fbbe57",
-                            pos: "#a37565",
-                            accounting: "#0b5c6a",
-                            reporting: "#2b3674"
-                        }
-                        const moduleIcon = iconMap[moduleName] || "extension"
-                        const accentColor = colorMap[moduleName] || "#0b5c6a"
+                    {moduleRegistry.map((moduleEntry) => {
+                        const enabled = entitlementMap.get(moduleEntry.key)?.is_enabled ?? false
 
                         return (
-                            <article key={moduleName} className="flex flex-col justify-between rounded-xl border border-navy-100 bg-navy-50/20 p-5 transition-all hover:border-navy-200">
+                            <article key={moduleEntry.key} className="flex flex-col justify-between rounded-xl border border-navy-100 bg-navy-50/20 p-5 transition-all hover:border-navy-200">
                                 <div>
                                     <div className="flex items-start justify-between gap-3">
                                         <div
                                             className="flex h-11 w-11 items-center justify-center rounded-xl font-brand text-lg"
-                                            style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+                                            style={{ backgroundColor: `${moduleEntry.accentColor}15`, color: moduleEntry.accentColor }}
                                         >
-                                            <Icon name={moduleIcon} className="text-xl" />
+                                            <Icon name={moduleEntry.icon} className="text-xl" />
                                         </div>
                                         <StatusPill tone={enabled ? "green" : "neutral"}>
                                             {enabled ? "Active" : "Disabled"}
                                         </StatusPill>
                                     </div>
                                     <h3 className="mt-4 text-base font-bold text-navy-900 leading-tight">
-                                        {titleCase(moduleName)}
+                                        {moduleEntry.label}
                                     </h3>
                                     <p className="mt-2 text-xs leading-relaxed text-navy-500 font-body">
-                                        Manage {moduleName} operations, analytics, and tenant database mappings.
+                                        Manage {moduleEntry.label.toLowerCase()} operations, analytics, and tenant database mappings.
                                     </p>
                                 </div>
                                 
@@ -110,8 +100,9 @@ export function ModulesView() {
                                     type="button"
                                     variant={enabled ? "outline" : "default"}
                                     className="mt-6 w-full cursor-pointer"
+                                    aria-label={`${enabled ? "Disable" : "Enable"} ${moduleEntry.label} module`}
                                     disabled={!activeCompanyId || isLoading}
-                                    onClick={() => toggleModule(moduleName, !enabled)}
+                                    onClick={() => toggleModule(moduleEntry.key, !enabled)}
                                 >
                                     {enabled ? "Disable Module" : "Enable Module"}
                                 </Button>

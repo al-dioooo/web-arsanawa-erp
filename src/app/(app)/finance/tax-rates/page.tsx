@@ -6,7 +6,12 @@ import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
-import { useTaxRates, useCreateTaxRate } from "@/features/finance/api"
+import {
+    useCreateTaxRate,
+    useDeleteTaxRate,
+    useTaxRates,
+    useUpdateTaxRate,
+} from "@/features/finance/api"
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -24,6 +29,8 @@ type TaxRateFormData = {
 export default function TaxRatesPage() {
     const { activeCompanyId } = useSession()
     const { data: taxRates = [], isLoading } = useTaxRates(activeCompanyId)
+    const updateTaxRate = useUpdateTaxRate()
+    const deleteTaxRate = useDeleteTaxRate()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<"ppn" | "pph">("ppn")
 
@@ -66,17 +73,17 @@ export default function TaxRatesPage() {
                 </button>
             </div>
 
-            <DataTable columns={["Tax Name", "Type", "Rate (%)", "Status"]}>
+            <DataTable columns={["Tax Name", "Type", "Rate (%)", "Status", "Actions"]}>
                 {isLoading && (
                     <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-navy-500">
+                        <td colSpan={5} className="px-6 py-8 text-center text-navy-500">
                             Loading tax rates...
                         </td>
                     </tr>
                 )}
                 {!isLoading && filteredRates.length === 0 && (
                     <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-navy-500">
+                        <td colSpan={5} className="px-6 py-8 text-center text-navy-500">
                             No {activeTab.toUpperCase()} tax rates found.
                         </td>
                     </tr>
@@ -88,6 +95,29 @@ export default function TaxRatesPage() {
                         <td className="px-6 py-4 text-navy-900 font-bold">{parseFloat(rate.rate).toString()}%</td>
                         <td className="px-6 py-4">
                             <StatusBadge status={rate.is_active ? 'active' : 'inactive'} />
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        updateTaxRate.mutate({
+                                            id: rate.id,
+                                            data: { is_active: !rate.is_active },
+                                        })
+                                    }
+                                    className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-bold text-navy-700 transition-colors hover:bg-navy-100 cursor-pointer"
+                                >
+                                    {rate.is_active ? "Deactivate" : "Activate"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => deleteTaxRate.mutate(rate.id)}
+                                    className="rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 cursor-pointer"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 ))}
