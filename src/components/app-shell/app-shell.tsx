@@ -4,13 +4,17 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useSession } from "@/features/auth/session-provider"
-import { getModuleByPath, type ModuleEntry, type NavItem } from "@/lib/modules/registry"
+import { getModuleByPath, isNavGroup, type ModuleEntry, type NavItem } from "@/lib/modules/registry"
+import { useTranslations, useLocale } from 'next-intl'
+import { setUserLocale } from '@/actions/locale'
 import { ModuleLauncher } from "@/components/app-shell/launcher"
 import { EntitlementGuard } from "@/components/app-shell/guard"
 import { CategoryTreeNav } from "@/components/app-shell/category-tree-nav"
+import { COATreeNav } from "@/features/finance/components/coa-tree-nav"
 import { Icon } from "@/components/ui/icon"
 import { CheckIcon, ChevronDownIcon } from "@/components/icons/outline"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
+import { useCommandPalette } from "@/lib/search/command-palette-context"
 import Logo from "@/components/brands/logo"
 import LogoCompact from "@/components/brands/logo-compact"
 
@@ -43,6 +47,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         selectBranch,
         logout,
     } = useSession()
+
+    const locale = useLocale()
+    const { open: openSearch } = useCommandPalette()
 
     const [branchOpen, setBranchOpen] = useState(false)
     const [userOpen, setUserOpen] = useState(false)
@@ -206,6 +213,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </div>
                         )}
 
+                        {/* Global search trigger — ⌘K */}
+                        <button
+                            type="button"
+                            onClick={openSearch}
+                            className="hidden sm:flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-3 py-1.5 text-xs font-semibold text-navy-400 hover:text-navy-600 hover:border-navy-200 hover:bg-navy-50 transition-colors outline-none cursor-pointer select-none"
+                            aria-label="Open global search"
+                        >
+                            <Icon name="search" size={14} className="shrink-0" />
+                            <span className="hidden md:inline">Search…</span>
+                            <kbd className="font-display font-bold text-[10px] text-navy-300 tracking-wide">⌘K</kbd>
+                        </button>
+
                         {/* Waffle app launcher */}
                         <ModuleLauncher />
 
@@ -273,6 +292,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                         </>
                                     )}
 
+                                    {/* Language */}
+                                    <div className="mb-1">
+                                        <div className="px-4 pt-1.5 pb-1">
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
+                                                Language
+                                            </p>
+                                        </div>
+                                        <div className="px-2 pb-1.5">
+                                            <div className="flex gap-1 bg-navy-50 rounded-xl p-1">
+                                                {([
+                                                    { code: 'id', label: 'Indonesia' },
+                                                    { code: 'en', label: 'English' },
+                                                ] as const).map(({ code, label }) => (
+                                                    <button
+                                                        key={code}
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            await setUserLocale(code)
+                                                            router.refresh()
+                                                        }}
+                                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${locale === code ? 'bg-white text-teal-700 shadow-sm' : 'text-navy-500 hover:text-navy-700'}`}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="border-t border-navy-50 mb-1.5" />
+
                                     <div className="px-1.5 mb-1 flex flex-col gap-0.5">
                                         <Highlight
                                             value={pathname === "/" ? "go-to-console" : null}
@@ -334,6 +383,17 @@ function ModuleSidebar({
     mobileOpen: boolean
     onCloseMobile: () => void
 }) {
+    const t = useTranslations()
+
+    // Flatten all items to compute active state for the highlight container
+    const activeHref = module.nav.reduce<string | null>((found, item) => {
+        if (found) return found;
+        if (isNavGroup(item)) {
+            return item.items.find((subItem) => pathname === subItem.href || pathname.startsWith(`${subItem.href}/`))?.href || null;
+        }
+        return (pathname === item.href || pathname.startsWith(`${item.href}/`)) ? item.href : null;
+    }, null);
+
     return (
         <aside
             className={`fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-navy-100 bg-white transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
@@ -364,20 +424,45 @@ function ModuleSidebar({
 
             <div className="flex-1 overflow-y-auto px-4 py-6">
                 <Highlight
-                    value={module.nav.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href || null}
+                    value={activeHref}
                     containerClassName="grid gap-1"
                     className="rounded-xl z-0"
                     style={{ backgroundColor: `${module.accentColor}15` }}
                     hover={true}
                 >
-                    {module.nav.map((item) => (
-                        <SidebarNavItem
-                            key={item.href}
-                            item={item}
-                            pathname={pathname}
-                            accentColor={module.accentColor}
-                        />
-                    ))}
+                    {module.nav.map((item, idx) => {
+                        if (isNavGroup(item)) {
+                            return (
+                                <div key={`group-${idx}`} className="mb-4 mt-2 first:mt-0">
+                                    <div className="px-4 py-1.5 mb-1">
+                                        <p className="text-[10px] tracking-widest text-navy-400 font-display uppercase font-bold">
+                                            {item.label.includes('.') ? t(item.label) : item.label}
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-1">
+                                        {item.items.map((subItem) => (
+                                            <SidebarNavItem
+                                                key={subItem.href}
+                                                item={subItem}
+                                                pathname={pathname}
+                                                accentColor={module.accentColor}
+                                                t={t}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        }
+                        return (
+                            <SidebarNavItem
+                                key={item.href}
+                                item={item}
+                                pathname={pathname}
+                                accentColor={module.accentColor}
+                                t={t}
+                            />
+                        )
+                    })}
                 </Highlight>
             </div>
         </aside>
@@ -388,12 +473,15 @@ function SidebarNavItem({
     item,
     pathname,
     accentColor,
+    t,
 }: {
     item: NavItem
     pathname: string
     accentColor: string
+    t?: (key: string) => string
 }) {
     const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+    const label = t && item.label.includes('.') ? t(item.label) : item.label
 
     return (
         <div>
@@ -409,11 +497,14 @@ function SidebarNavItem({
                         name={item.icon}
                         className="text-xl transition-transform duration-150 group-hover:scale-105"
                     />
-                    <span>{item.label}</span>
+                    <span>{label}</span>
                 </Link>
             </HighlightItem>
             {item.tree === "inventory-categories" && active && (
                 <CategoryTreeNav targetRoute={item.href} accentColor={accentColor} />
+            )}
+            {item.tree === "finance-coa" && active && (
+                <COATreeNav targetRoute={item.href} accentColor={accentColor} />
             )}
         </div>
     )

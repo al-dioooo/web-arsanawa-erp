@@ -1,25 +1,135 @@
-import type { HTMLAttributes } from "react"
+import {
+    AppWindow,
+    ArrowDownWideNarrow,
+    BadgePercent,
+    Banknote,
+    BarChart3,
+    BookOpen,
+    Building2,
+    Calendar,
+    Check,
+    CheckCircle2,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    CircleAlert,
+    CircleDollarSign,
+    CircleHelp,
+    CircleOff,
+    CircleX,
+    ClipboardCheck,
+    ClipboardList,
+    Clock,
+    FileCheck2,
+    FileText,
+    Grid2X2,
+    History,
+    Hourglass,
+    Info,
+    Landmark,
+    LibraryBig,
+    List,
+    Lock,
+    LogOut,
+    Menu,
+    NotebookText,
+    Package,
+    Percent,
+    Plus,
+    Receipt,
+    ReceiptText,
+    Search,
+    SearchX,
+    Settings,
+    ShieldX,
+    ShoppingCart,
+    Store,
+    Tags,
+    Trash2,
+    TrendingUp,
+    Wallet,
+    Warehouse,
+    X,
+    Zap,
+    type LucideIcon,
+} from "lucide-react"
+import type { ComponentPropsWithoutRef } from "react"
 
 export type IconName = string
 
-interface IconProps extends HTMLAttributes<HTMLSpanElement> {
+const icons: Record<string, LucideIcon> = {
+    account_balance: Landmark,
+    account_balance_wallet: Wallet,
+    account_tree: LibraryBig,
+    add: Plus,
+    apps: AppWindow,
+    arrow_drop_down: ChevronDown,
+    attach_money: CircleDollarSign,
+    balance: ArrowDownWideNarrow,
+    bar_chart: BarChart3,
+    block: ShieldX,
+    bolt: Zap,
+    business: Building2,
+    calendar_month: Calendar,
+    calendar_today: Calendar,
+    cancel: CircleX,
+    card_membership: BadgePercent,
+    check: Check,
+    check_circle: CheckCircle2,
+    chevron_left: ChevronLeft,
+    chevron_right: ChevronRight,
+    close: X,
+    corporate_fare: Building2,
+    delete: Trash2,
+    delete_forever: Trash2,
+    description: FileText,
+    edit: FileCheck2,
+    error: CircleAlert,
+    error_outline: CircleAlert,
+    extension: AppWindow,
+    fact_check: ClipboardCheck,
+    format_list_bulleted: List,
+    grid_view: Grid2X2,
+    history: History,
+    hourglass_empty: Hourglass,
+    info: Info,
+    insights: BarChart3,
+    inventory_2: Package,
+    list_alt: ClipboardList,
+    local_offer: Tags,
+    lock: Lock,
+    logout: LogOut,
+    menu: Menu,
+    menu_book: BookOpen,
+    money_off: CircleOff,
+    open_in_new: AppWindow,
+    payments: Banknote,
+    pending: Clock,
+    percent: Percent,
+    point_of_sale: ShoppingCart,
+    receipt: Receipt,
+    receipt_long: ReceiptText,
+    request_quote: NotebookText,
+    rule: ClipboardCheck,
+    savings: Landmark,
+    search: Search,
+    search_off: SearchX,
+    sell: Tags,
+    settings: Settings,
+    settings_suggest: Settings,
+    storefront: Store,
+    trending_up: TrendingUp,
+    warehouse: Warehouse,
+    warning: CircleAlert,
+}
+
+interface IconProps extends ComponentPropsWithoutRef<"svg"> {
     name: IconName
     size?: number
 }
 
 export function Icon({ name, size = 24, className = "", ...props }: IconProps) {
-    return (
-        <span
-            {...props}
-            className={`material-symbols-outlined select-none align-middle ${className}`}
-            style={{
-                fontSize: size,
-                width: size,
-                height: size,
-                ...props.style,
-            }}
-        >
-            {name}
-        </span>
-    )
+    const Component = icons[name] ?? CircleHelp
+
+    return <Component {...props} aria-hidden="true" className={`inline-block select-none align-middle ${className}`} size={size} />
 }

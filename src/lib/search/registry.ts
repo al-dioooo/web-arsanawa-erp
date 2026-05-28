@@ -1,0 +1,312 @@
+export type SearchItem = {
+    id: string
+    label: string
+    description: string
+    icon: string
+    href: string
+    group: string
+    /** Extra terms matched but not displayed */
+    keywords: string[]
+}
+
+export const searchRegistry: SearchItem[] = [
+    // ── Quick Actions ─────────────────────────────────────────────────────────
+    {
+        id: "action-new-invoice",
+        label: "New Invoice",
+        description: "Create a customer invoice",
+        icon: "request_quote",
+        href: "/finance/invoices/new",
+        group: "Quick Actions",
+        keywords: ["create", "invoice", "ar", "receivable", "customer", "sale"],
+    },
+    {
+        id: "action-new-bill",
+        label: "New Bill",
+        description: "Record a supplier bill",
+        icon: "receipt",
+        href: "/finance/bills/new",
+        group: "Quick Actions",
+        keywords: ["create", "bill", "ap", "payable", "supplier", "vendor", "purchase"],
+    },
+    {
+        id: "action-record-payment",
+        label: "Record Payment",
+        description: "Record an outgoing payment",
+        icon: "account_balance_wallet",
+        href: "/finance/payments/new",
+        group: "Quick Actions",
+        keywords: ["payment", "outgoing", "pay", "cash", "transfer"],
+    },
+    {
+        id: "action-record-receipt",
+        label: "Record Receipt",
+        description: "Record an incoming receipt",
+        icon: "savings",
+        href: "/finance/receipts/new",
+        group: "Quick Actions",
+        keywords: ["receipt", "incoming", "receive", "cash", "collection"],
+    },
+    {
+        id: "action-new-journal",
+        label: "New Journal Entry",
+        description: "Create a manual journal entry",
+        icon: "menu_book",
+        href: "/finance/journals/new",
+        group: "Quick Actions",
+        keywords: ["journal", "entry", "manual", "debit", "credit", "ledger"],
+    },
+
+    // ── Finance — Transactions ────────────────────────────────────────────────
+    {
+        id: "finance-dashboard",
+        label: "Finance Dashboard",
+        description: "Financial overview and KPIs",
+        icon: "payments",
+        href: "/finance",
+        group: "Finance",
+        keywords: ["finance", "dashboard", "overview", "kpi", "summary"],
+    },
+    {
+        id: "finance-invoices",
+        label: "Invoices",
+        description: "Customer invoices (AR)",
+        icon: "request_quote",
+        href: "/finance/invoices",
+        group: "Finance",
+        keywords: ["invoice", "ar", "accounts receivable", "customer", "billing"],
+    },
+    {
+        id: "finance-bills",
+        label: "Bills",
+        description: "Supplier bills (AP)",
+        icon: "receipt",
+        href: "/finance/bills",
+        group: "Finance",
+        keywords: ["bill", "ap", "accounts payable", "supplier", "vendor"],
+    },
+    {
+        id: "finance-payments",
+        label: "Payments",
+        description: "Outgoing payments to suppliers",
+        icon: "account_balance_wallet",
+        href: "/finance/payments",
+        group: "Finance",
+        keywords: ["payment", "outgoing", "supplier", "vendor", "disbursement"],
+    },
+    {
+        id: "finance-receipts",
+        label: "Receipts",
+        description: "Incoming payments from customers",
+        icon: "savings",
+        href: "/finance/receipts",
+        group: "Finance",
+        keywords: ["receipt", "incoming", "customer", "collection"],
+    },
+    {
+        id: "finance-goods-receipts",
+        label: "Goods Receipts",
+        description: "Receive goods from purchase orders",
+        icon: "inventory_2",
+        href: "/finance/goods-receipts",
+        group: "Finance",
+        keywords: ["goods", "receipt", "grn", "purchase", "delivery", "stock"],
+    },
+    {
+        id: "finance-approvals",
+        label: "Approval Requests",
+        description: "Pending transaction approvals",
+        icon: "fact_check",
+        href: "/finance/approval-requests",
+        group: "Finance",
+        keywords: ["approval", "pending", "review", "authorize", "workflow"],
+    },
+    {
+        id: "finance-activity",
+        label: "Activity Log",
+        description: "All recent financial transactions",
+        icon: "history",
+        href: "/finance/activity",
+        group: "Finance",
+        keywords: ["activity", "log", "history", "audit", "transactions"],
+    },
+
+    // ── Finance — Payables & Receivables ─────────────────────────────────────
+    {
+        id: "finance-ap",
+        label: "Accounts Payable",
+        description: "Supplier balances and aging",
+        icon: "money_off",
+        href: "/finance/ap",
+        group: "Finance",
+        keywords: ["ap", "accounts payable", "supplier", "aging", "outstanding"],
+    },
+    {
+        id: "finance-ar",
+        label: "Accounts Receivable",
+        description: "Customer balances and aging",
+        icon: "attach_money",
+        href: "/finance/ar",
+        group: "Finance",
+        keywords: ["ar", "accounts receivable", "customer", "aging", "outstanding"],
+    },
+
+    // ── Finance — Cash & Bank ─────────────────────────────────────────────────
+    {
+        id: "finance-cash-bank",
+        label: "Cash & Bank",
+        description: "Cash accounts and bank balances",
+        icon: "account_balance",
+        href: "/finance/cash-bank",
+        group: "Finance",
+        keywords: ["cash", "bank", "balance", "account", "treasury"],
+    },
+
+    // ── Finance — Reports ─────────────────────────────────────────────────────
+    {
+        id: "finance-journals",
+        label: "Journal Entries",
+        description: "General ledger journal entries",
+        icon: "menu_book",
+        href: "/finance/journals",
+        group: "Finance — Reports",
+        keywords: ["journal", "ledger", "entry", "debit", "credit", "gl"],
+    },
+    {
+        id: "finance-trial-balance",
+        label: "Trial Balance",
+        description: "Debit / credit balance report",
+        icon: "balance",
+        href: "/finance/reports/trial-balance",
+        group: "Finance — Reports",
+        keywords: ["trial balance", "report", "debit", "credit", "accounts"],
+    },
+    {
+        id: "finance-profit-loss",
+        label: "Income Statement",
+        description: "Revenue, expenses, and net profit",
+        icon: "trending_up",
+        href: "/finance/reports/profit-loss",
+        group: "Finance — Reports",
+        keywords: ["income", "profit", "loss", "p&l", "revenue", "expenses", "statement"],
+    },
+    {
+        id: "finance-tax-returns",
+        label: "Tax Returns (SPT)",
+        description: "PPN and PPh 23 filing",
+        icon: "description",
+        href: "/finance/tax-returns",
+        group: "Finance — Reports",
+        keywords: ["tax", "spt", "ppn", "vat", "pph", "withholding", "return", "filing"],
+    },
+
+    // ── Finance — Data Master ─────────────────────────────────────────────────
+    {
+        id: "finance-coa",
+        label: "Chart of Accounts",
+        description: "Account hierarchy and structure",
+        icon: "account_tree",
+        href: "/finance/coa",
+        group: "Finance — Settings",
+        keywords: ["chart of accounts", "coa", "account", "ledger", "structure"],
+    },
+    {
+        id: "finance-periods",
+        label: "Accounting Periods",
+        description: "Open and close fiscal periods",
+        icon: "calendar_month",
+        href: "/finance/periods",
+        group: "Finance — Settings",
+        keywords: ["period", "fiscal", "accounting", "close", "open", "month", "year"],
+    },
+    {
+        id: "finance-tax-rates",
+        label: "Tax Rates",
+        description: "PPN and withholding tax rates",
+        icon: "receipt_long",
+        href: "/finance/tax-rates",
+        group: "Finance — Settings",
+        keywords: ["tax rate", "ppn", "pph", "vat", "percentage", "withholding"],
+    },
+    {
+        id: "finance-account-mappings",
+        label: "Account Mappings",
+        description: "Automatic journal posting rules",
+        icon: "settings",
+        href: "/finance/account-mappings",
+        group: "Finance — Settings",
+        keywords: ["mapping", "account", "automatic", "posting", "rule", "config"],
+    },
+    {
+        id: "finance-approval-matrices",
+        label: "Approval Matrices",
+        description: "Approval thresholds and chains",
+        icon: "rule",
+        href: "/finance/approval-matrices",
+        group: "Finance — Settings",
+        keywords: ["approval", "matrix", "threshold", "workflow", "chain", "limit"],
+    },
+
+    // ── Inventory ─────────────────────────────────────────────────────────────
+    {
+        id: "inventory-catalogue",
+        label: "Product Catalogue",
+        description: "Products, variants, SKUs",
+        icon: "list_alt",
+        href: "/inventory/catalogue",
+        group: "Inventory",
+        keywords: ["product", "catalogue", "catalog", "sku", "variant", "item"],
+    },
+    {
+        id: "inventory-stock",
+        label: "Stock",
+        description: "Inventory levels and movements",
+        icon: "warehouse",
+        href: "/inventory/stock",
+        group: "Inventory",
+        keywords: ["stock", "inventory", "warehouse", "levels", "quantity", "movement"],
+    },
+    {
+        id: "inventory-pricing",
+        label: "Pricing",
+        description: "Price lists and tier pricing",
+        icon: "sell",
+        href: "/inventory/pricing",
+        group: "Inventory",
+        keywords: ["price", "pricing", "list", "tier", "rate", "cost"],
+    },
+    {
+        id: "inventory-promotions",
+        label: "Promotions",
+        description: "Discounts and promotional rules",
+        icon: "percent",
+        href: "/inventory/promotions",
+        group: "Inventory",
+        keywords: ["promotion", "discount", "promo", "offer", "deal", "percent"],
+    },
+
+    // ── Organization ──────────────────────────────────────────────────────────
+    {
+        id: "org-companies",
+        label: "Companies",
+        description: "Manage organizations and branches",
+        icon: "business",
+        href: "/organization/companies",
+        group: "Organization",
+        keywords: ["company", "organization", "branch", "entity", "tenant"],
+    },
+    {
+        id: "org-modules",
+        label: "Module Settings",
+        description: "Enable or configure ERP modules",
+        icon: "apps",
+        href: "/organization/modules",
+        group: "Organization",
+        keywords: ["module", "settings", "enable", "configure", "setup"],
+    },
+]
+
+/** All unique group names in display order */
+export const searchGroups = Array.from(
+    new Set(searchRegistry.map((item) => item.group))
+)

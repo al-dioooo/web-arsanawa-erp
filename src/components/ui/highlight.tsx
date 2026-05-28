@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { motion, useSpring, useTransform } from "motion/react"
 import { cn } from "@/lib/utils"
 
 type HighlightContextType = {
@@ -34,6 +35,8 @@ type HighlightProps = {
     hover?: boolean
 }
 
+const SPRING = { type: "spring", stiffness: 380, damping: 30, mass: 0.6 } as const
+
 export function Highlight({
     children,
     value,
@@ -46,45 +49,60 @@ export function Highlight({
 }: HighlightProps) {
     const [activeValue, setActiveValueState] = React.useState<string | null>(value ?? defaultValue ?? null)
     const [hoveredValue, setHoveredValue] = React.useState<string | null>(null)
+    const [visible, setVisible] = React.useState(false)
 
     const containerRef = React.useRef<HTMLDivElement>(null)
-    const indicatorRef = React.useRef<HTMLDivElement>(null)
     const itemsMap = React.useRef<Map<string, HTMLElement>>(new Map())
 
     const activeValueToUse = value !== undefined ? value : activeValue
 
+    // Keep internal state in sync with controlled `value` prop
     const [prevValue, setPrevValue] = React.useState(value)
     if (value !== prevValue) {
         setPrevValue(value)
         setActiveValueState(value ?? null)
     }
 
+    // Spring-driven position values
+    const springTop    = useSpring(0, SPRING)
+    const springLeft   = useSpring(0, SPRING)
+    const springWidth  = useSpring(0, SPRING)
+    const springHeight = useSpring(0, SPRING)
+    const springOpacity = useTransform(springHeight, (h) => (visible && h > 0 ? 1 : 0))
+
     const updatePosition = React.useCallback(() => {
-        if (!containerRef.current || !indicatorRef.current) return
+        if (!containerRef.current) return
 
         const targetValue = hoveredValue ?? activeValueToUse
         if (!targetValue) {
-            indicatorRef.current.style.opacity = "0"
+            setVisible(false)
             return
         }
 
         const targetElement = itemsMap.current.get(targetValue)
         if (!targetElement) {
-            indicatorRef.current.style.opacity = "0"
+            setVisible(false)
             return
         }
 
         const containerRect = containerRef.current.getBoundingClientRect()
-        const targetRect = targetElement.getBoundingClientRect()
+        const targetRect    = targetElement.getBoundingClientRect()
 
-        indicatorRef.current.style.position = "absolute"
-        indicatorRef.current.style.top = `${targetRect.top - containerRect.top}px`
-        indicatorRef.current.style.left = `${targetRect.left - containerRect.left}px`
-        indicatorRef.current.style.width = `${targetRect.width}px`
-        indicatorRef.current.style.height = `${targetRect.height}px`
-        indicatorRef.current.style.opacity = "1"
-        indicatorRef.current.style.pointerEvents = "none"
-    }, [hoveredValue, activeValueToUse])
+        // Snap position on first appearance (no spring from 0,0)
+        if (!visible) {
+            springTop.jump(targetRect.top  - containerRect.top)
+            springLeft.jump(targetRect.left - containerRect.left)
+            springWidth.jump(targetRect.width)
+            springHeight.jump(targetRect.height)
+        } else {
+            springTop.set(targetRect.top  - containerRect.top)
+            springLeft.set(targetRect.left - containerRect.left)
+            springWidth.set(targetRect.width)
+            springHeight.set(targetRect.height)
+        }
+
+        setVisible(true)
+    }, [hoveredValue, activeValueToUse, visible, springTop, springLeft, springWidth, springHeight])
 
     const registerItem = React.useCallback((val: string, element: HTMLElement) => {
         itemsMap.current.set(val, element)
@@ -97,10 +115,12 @@ export function Highlight({
     }, [updatePosition])
 
     React.useEffect(() => {
-        updatePosition()
-        
+        const frame = window.requestAnimationFrame(updatePosition)
         window.addEventListener("resize", updatePosition)
-        return () => window.removeEventListener("resize", updatePosition)
+        return () => {
+            window.cancelAnimationFrame(frame)
+            window.removeEventListener("resize", updatePosition)
+        }
     }, [updatePosition])
 
     const handleActiveValueChange = (val: string | null) => {
@@ -122,20 +142,22 @@ export function Highlight({
         >
             <div
                 ref={containerRef}
-                className={cn("relative z-10", containerClassName)}
+                className={cn("relative", containerClassName)}
                 onMouseLeave={() => setHoveredValue(null)}
             >
-                <div
-                    ref={indicatorRef}
+                <motion.div
+                    aria-hidden="true"
                     style={{
                         ...style,
                         position: "absolute",
-                        opacity: 0,
+                        top:     springTop,
+                        left:    springLeft,
+                        width:   springWidth,
+                        height:  springHeight,
+                        opacity: springOpacity,
+                        pointerEvents: "none",
                     }}
-                    className={cn(
-                        "transition-all duration-200 ease-out z-0",
-                        className
-                    )}
+                    className={cn("z-0", className)}
                 />
                 {children}
             </div>

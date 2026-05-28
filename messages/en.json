@@ -1,0 +1,47 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "new": "New"
+    },
+    "finance": {
+        "nav": {
+            "transactions": "TRANSACTIONS",
+            "payablesAndReceivables": "PAYABLES & RECEIVABLES",
+            "cashAndBank": "CASH & BANK",
+            "reports": "REPORTS",
+            "dataMaster": "DATA MASTER",
+            "goodsReceipts": "Goods Receipts",
+            "bills": "Bills",
+            "invoices": "Invoices",
+            "payments": "Payments",
+            "receipts": "Receipts",
+            "activity": "Activity History",
+            "ap": "AP — Accounts Payable",
+            "ar": "AR — Accounts Receivable",
+            "cashBank": "Cash & Bank",
+            "journals": "Journals & General Ledger",
+            "trialBalance": "Trial Balance",
+            "coa": "COA / Accounts",
+            "periods": "Periods",
+            "taxRates": "Taxes",
+            "accountMappings": "Account Mappings",
+            "cashFlow": "Cash Flow",
+            "approvalRequests": "Approval Requests",
+            "approvalMatrices": "Approval Matrix",
+            "taxReturns": "Tax Returns (SPT)",
+            "profitLoss": "Income Statement"
+        },
+        "transactions": {
+            "title": "Transactions"
+        },
+        "dataMaster": {
+            "title": "Data Master"
+        },
+        "reports": {
+            "title": "Reports"
+        }
+    }
+}

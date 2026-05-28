@@ -1,7 +1,7 @@
 // The module registry lists ERP module *apps* — Organization is intentionally
 // NOT a module: it lives in the console (always available, cannot be uninstalled).
 
-export type NavTreeKind = "inventory-categories"
+export type NavTreeKind = "inventory-categories" | "finance-coa"
 
 export type NavItem = {
     href: string
@@ -12,6 +12,16 @@ export type NavItem = {
     tree?: NavTreeKind
 }
 
+export type NavGroup = {
+    kind: "group"
+    label: string
+    items: NavItem[]
+}
+
+export function isNavGroup(item: NavItem | NavGroup): item is NavGroup {
+    return "kind" in item && item.kind === "group"
+}
+
 export type ModuleEntry = {
     key: string
     label: string
@@ -19,7 +29,7 @@ export type ModuleEntry = {
     accentColor: string
     /** Module home / dashboard route — used by the sidebar logo link. */
     route: string
-    nav: NavItem[]
+    nav: Array<NavItem | NavGroup>
     entitlementKey?: string
     permission?: string
 }
@@ -49,7 +59,55 @@ export const moduleRegistry: ModuleEntry[] = [
         entitlementKey: "finance",
         permission: "finance.view",
         nav: [
-            { href: "/finance", label: "Cash Flow", icon: "trending_up" },
+            {
+                kind: "group",
+                label: "finance.nav.transactions",
+                items: [
+                    { href: "/finance/goods-receipts", label: "finance.nav.goodsReceipts", icon: "inventory_2" },
+                    { href: "/finance/bills", label: "finance.nav.bills", icon: "receipt" },
+                    { href: "/finance/invoices", label: "finance.nav.invoices", icon: "request_quote" },
+                    { href: "/finance/payments", label: "finance.nav.payments", icon: "account_balance_wallet" },
+                    { href: "/finance/receipts", label: "finance.nav.receipts", icon: "savings" },
+                    { href: "/finance/approval-requests", label: "finance.nav.approvalRequests", icon: "fact_check" },
+                    { href: "/finance/activity", label: "finance.nav.activity", icon: "history" }
+                ]
+            },
+            {
+                kind: "group",
+                label: "finance.nav.payablesAndReceivables",
+                items: [
+                    { href: "/finance/ap", label: "finance.nav.ap", icon: "money_off" },
+                    { href: "/finance/ar", label: "finance.nav.ar", icon: "attach_money" }
+                ]
+            },
+            {
+                kind: "group",
+                label: "finance.nav.cashAndBank",
+                items: [
+                    { href: "/finance/cash-bank", label: "finance.nav.cashBank", icon: "account_balance" }
+                ]
+            },
+            {
+                kind: "group",
+                label: "finance.nav.reports",
+                items: [
+                    { href: "/finance/journals", label: "finance.nav.journals", icon: "menu_book" },
+                    { href: "/finance/reports/trial-balance", label: "finance.nav.trialBalance", icon: "balance" },
+                    { href: "/finance/reports/profit-loss", label: "finance.nav.profitLoss", icon: "trending_up" },
+                    { href: "/finance/tax-returns", label: "finance.nav.taxReturns", icon: "description" }
+                ]
+            },
+            {
+                kind: "group",
+                label: "finance.nav.dataMaster",
+                items: [
+                    { href: "/finance/coa", label: "finance.nav.coa", icon: "account_tree", tree: "finance-coa" as NavTreeKind },
+                    { href: "/finance/periods", label: "finance.nav.periods", icon: "calendar_month" },
+                    { href: "/finance/tax-rates", label: "finance.nav.taxRates", icon: "receipt_long" },
+                    { href: "/finance/account-mappings", label: "finance.nav.accountMappings", icon: "settings" },
+                    { href: "/finance/approval-matrices", label: "finance.nav.approvalMatrices", icon: "rule" }
+                ]
+            }
         ],
     },
     {

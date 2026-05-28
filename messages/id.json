@@ -1,0 +1,47 @@
+{
+    "common": {
+        "save": "Simpan",
+        "cancel": "Batal",
+        "delete": "Hapus",
+        "edit": "Ubah",
+        "new": "Baru"
+    },
+    "finance": {
+        "nav": {
+            "transactions": "TRANSAKSI",
+            "payablesAndReceivables": "HUTANG & PIUTANG",
+            "cashAndBank": "KAS & BANK",
+            "reports": "LAPORAN",
+            "dataMaster": "DATA MASTER",
+            "goodsReceipts": "Penerimaan BB",
+            "bills": "Tagihan",
+            "invoices": "Faktur",
+            "payments": "Pembayaran",
+            "receipts": "Penerimaan",
+            "activity": "Riwayat",
+            "ap": "AP — Hutang Usaha",
+            "ar": "AR — Piutang Usaha",
+            "cashBank": "Kas & Bank",
+            "journals": "Jurnal & Buku Besar",
+            "trialBalance": "Neraca Saldo",
+            "coa": "COA / Akun",
+            "periods": "Periode",
+            "taxRates": "Pajak",
+            "accountMappings": "Pemetaan Akun",
+            "cashFlow": "Cash Flow",
+            "approvalRequests": "Permintaan Persetujuan",
+            "approvalMatrices": "Matriks Persetujuan",
+            "taxReturns": "SPT Pajak",
+            "profitLoss": "Laporan Laba Rugi"
+        },
+        "transactions": {
+            "title": "Transaksi"
+        },
+        "dataMaster": {
+            "title": "Data Master"
+        },
+        "reports": {
+            "title": "Laporan"
+        }
+    }
+}

@@ -179,10 +179,10 @@
     --radius-pill: 9999px;
 
     --font-brand: "Acorn", Georgia, serif;
-    --font-display: "Manrope", "DM Sans", sans-serif;
-    --font-ui: "DM Sans", system-ui, sans-serif;
+    --font-display: "Poppins", system-ui, sans-serif;
+    --font-ui: "Poppins", system-ui, sans-serif;
     --font-body: "Poppins", system-ui, sans-serif;
-    --font-sans: "DM Sans", system-ui, sans-serif;
+    --font-sans: "Poppins", system-ui, sans-serif;
 
     --shadow-card: none;
     --shadow-card-hover: none;
