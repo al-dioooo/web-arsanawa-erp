@@ -9,6 +9,7 @@ import { InputDate } from "@/components/ui/input-date"
 import { MotionLinkItem } from "@/components/ui/motion-link"
 import { StatusPill } from "@/components/ui/status-pill"
 import { useSession } from "@/features/auth/session-provider"
+import { InventoryPageHeader, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import {
     getStockMovement,
     listProductUnits,
@@ -22,6 +23,7 @@ import {
 } from "@/features/inventory/inventory-api"
 import type { ProductUnit, StockLot, StockMovement } from "@/features/inventory/inventory-types"
 import { compactDateTime } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 type RequestOptions = { token: string; companyId: number }
 type Branch = { id: number; name: string }
@@ -95,29 +97,28 @@ function useStockOptions() {
 function PageHeader({
     title,
     description,
+    isCompanyScoped,
     status,
 }: {
     title: string
     description: string
+    isCompanyScoped?: boolean
     status?: string
 }) {
     return (
-        <header className="border-b border-navy-100 pb-5">
-            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-teal-700">Inventory · Stock Movement</p>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                    <h1 className="font-brand text-2xl font-bold text-navy-950">{title}</h1>
-                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-500">{description}</p>
-                </div>
-                {status ? <StatusPill tone="neutral">{status}</StatusPill> : null}
-            </div>
-        </header>
+        <InventoryPageHeader
+            eyebrow="Inventory · Stock Movement"
+            title={title}
+            description={description}
+            isCompanyScoped={isCompanyScoped}
+            status={status ? <StatusPill tone="neutral">{status}</StatusPill> : undefined}
+        />
     )
 }
 
 function ActionLink({ href, icon, label, description }: { href: string; icon: string; label: string; description: string }) {
     return (
-        <MotionLinkItem href={href} icon={icon} label={label}>
+        <MotionLinkItem href={href} icon={icon} label={label} className="rounded-2xl">
             {description}
         </MotionLinkItem>
     )
@@ -193,20 +194,20 @@ export function StockOverviewView() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader title="Stock Overview" description="Review valuation, on-hand levels, active lots, and recent immutable stock movements." status={requestOptions ? "Company scoped" : "No company"} />
-            <section className="rounded-lg border border-navy-100 bg-white p-5">
+            <PageHeader title="Stock Overview" description="Review valuation, on-hand levels, active lots, and recent immutable stock movements." isCompanyScoped={Boolean(requestOptions)} />
+            <section className={cn(inventorySurfaceClass, "p-5")}>
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             </section>
             <section className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-lg border border-navy-100 bg-white p-5">
+                <div className={cn(inventorySurfaceClass, "p-5")}>
                     <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Active Context Value</p>
                     <p className="mt-2 font-brand text-2xl font-bold text-navy-950">{moneyLabel(snapshot.totalValue)}</p>
                 </div>
-                <div className="rounded-lg border border-navy-100 bg-white p-5">
+                <div className={cn(inventorySurfaceClass, "p-5")}>
                     <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Selected On Hand</p>
                     <p className="mt-2 font-brand text-2xl font-bold text-teal-700">{numberLabel(snapshot.selectedOnHand)}</p>
                 </div>
-                <div className="rounded-lg border border-navy-100 bg-white p-5">
+                <div className={cn(inventorySurfaceClass, "p-5")}>
                     <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Active Lots</p>
                     <p className="mt-2 font-brand text-2xl font-bold text-orange-500">{snapshot.lots.filter((lot) => lot.status === "active").length}</p>
                 </div>
@@ -255,13 +256,13 @@ export function StockLotsView() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader title="Stock Lots" description="Track open batches, remaining quantities, and Product Unit cost context." />
-            <section className="rounded-lg border border-navy-100 bg-white p-5">
+            <PageHeader title="Stock Lots" description="Track open batches, remaining quantities, and Product Unit cost context." isCompanyScoped={Boolean(requestOptions)} />
+            <section className={cn(inventorySurfaceClass, "p-5")}>
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             </section>
             <section className="grid gap-3">
                 {lots.map((lot) => (
-                    <article key={lot.id} className="rounded-lg border border-navy-100 bg-white p-4">
+                    <article key={lot.id} className={cn(inventorySurfaceClass, "p-4")}>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <p className="font-bold text-navy-950">{lot.lot_number ?? `Lot #${lot.id}`}</p>
@@ -274,7 +275,7 @@ export function StockLotsView() {
                         </div>
                     </article>
                 ))}
-                {lots.length === 0 && <p className="rounded-lg border border-navy-100 bg-white p-6 text-center text-sm font-semibold text-navy-400">No lots registered for this context.</p>}
+                {lots.length === 0 && <p className={cn(inventorySurfaceClass, "p-6 text-center text-sm font-semibold text-navy-400")}>No lots registered for this context.</p>}
             </section>
         </div>
     )
@@ -316,11 +317,11 @@ export function StockMovementsView() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader title="Movement Ledger" description="Read-only stock movement audit trail for receipts, issues, adjustments, and transfers." status={`${movements.length} of ${total}`} />
-            <section className="rounded-lg border border-navy-100 bg-white p-5">
+            <PageHeader title="Movement Ledger" description="Read-only stock movement audit trail for receipts, issues, adjustments, and transfers." isCompanyScoped={Boolean(requestOptions)} status={`${movements.length} of ${total}`} />
+            <section className={cn(inventorySurfaceClass, "p-5")}>
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             </section>
-            <div className="overflow-x-auto rounded-lg border border-navy-100 bg-white">
+            <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
                 <table className="w-full min-w-[720px] text-left text-sm">
                     <thead className="bg-navy-50/40 text-xs font-bold uppercase tracking-wider text-navy-500">
                         <tr>
@@ -368,9 +369,9 @@ export function StockMovementDetailView({ movementId }: { movementId: number }) 
 
     return (
         <div className="grid gap-6">
-            <PageHeader title={`Movement #${movementId}`} description="Immutable movement audit details. Stock movements cannot be edited or deleted from the UI." />
+            <PageHeader title={`Movement #${movementId}`} description="Immutable movement audit details. Stock movements cannot be edited or deleted from the UI." isCompanyScoped={Boolean(requestOptions)} />
             {movement ? (
-                <section className="grid gap-4 rounded-lg border border-navy-100 bg-white p-5 md:grid-cols-2">
+                <section className={cn("grid gap-4 p-5 md:grid-cols-2", inventorySurfaceClass)}>
                     <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Product Unit</p>
                         <p className="mt-1 font-bold text-navy-950">{movement.product_unit?.sku ?? movement.product_unit_id}</p>
@@ -397,7 +398,7 @@ export function StockMovementDetailView({ movementId }: { movementId: number }) 
                     </div>
                 </section>
             ) : (
-                <p className="rounded-lg border border-navy-100 bg-white p-6 text-sm font-semibold text-navy-400">Loading movement detail...</p>
+                <p className={cn(inventorySurfaceClass, "p-6 text-sm font-semibold text-navy-400")}>Loading movement detail...</p>
             )}
         </div>
     )
@@ -406,18 +407,20 @@ export function StockMovementDetailView({ movementId }: { movementId: number }) 
 function StockFormShell({
     title,
     description,
+    isCompanyScoped,
     onSubmit,
     children,
 }: {
     title: string
     description: string
+    isCompanyScoped: boolean
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
     children: React.ReactNode
 }) {
     return (
         <div className="grid gap-6">
-            <PageHeader title={title} description={description} />
-            <form className="grid gap-4 rounded-lg border border-navy-100 bg-white p-5" onSubmit={onSubmit}>{children}</form>
+            <PageHeader title={title} description={description} isCompanyScoped={isCompanyScoped} />
+            <form className={cn("grid gap-4 p-5", inventorySurfaceClass)} onSubmit={onSubmit}>{children}</form>
         </div>
     )
 }
@@ -471,8 +474,8 @@ export function StockReceiptView() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader title="New Receipt" description="Receive stock into a branch using a Product Unit sellable SKU." />
-            <form className="grid gap-4 rounded-lg border border-navy-100 bg-white p-5" onSubmit={submit}>
+            <PageHeader title="New Receipt" description="Receive stock into a branch using a Product Unit sellable SKU." isCompanyScoped={Boolean(requestOptions)} />
+            <form className={cn("grid gap-4 p-5", inventorySurfaceClass)} onSubmit={submit}>
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
                 <div className="grid gap-3 md:grid-cols-2">
                     <Field label="Quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
@@ -500,11 +503,11 @@ export function StockIssueView() {
     }
 
     return (
-        <StockFormShell title="New Issue" description="Issue Product Unit stock out of a branch." onSubmit={(event) => void submit(event)}>
+        <StockFormShell title="New Issue" description="Issue Product Unit stock out of a branch." isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             <Field label="Issue quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
             <Field label="Issue notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit">Record Issue</Button>
+            <Button type="submit" size="xl">Record Issue</Button>
         </StockFormShell>
     )
 }
@@ -522,14 +525,14 @@ export function StockAdjustmentView() {
     }
 
     return (
-        <StockFormShell title="New Adjustment" description="Correct Product Unit stock with a signed quantity." onSubmit={(event) => void submit(event)}>
+        <StockFormShell title="New Adjustment" description="Correct Product Unit stock with a signed quantity." isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Adjustment quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
                 <Field label="Adjustment cost" type="number" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} />
             </div>
             <Field label="Adjustment notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit">Record Adjustment</Button>
+            <Button type="submit" size="xl">Record Adjustment</Button>
         </StockFormShell>
     )
 }
@@ -565,7 +568,7 @@ export function StockTransferView() {
     }
 
     return (
-        <StockFormShell title="New Transfer" description="Move Product Unit stock between branches." onSubmit={(event) => void submit(event)}>
+        <StockFormShell title="New Transfer" description="Move Product Unit stock between branches." isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             <SelectField label="Destination branch" value={toBranchId ?? ""} onChange={(event) => setToBranchId(Number(event.target.value))}>
                 {branches.filter((branch) => branch.id !== branchId).map((branch) => (
@@ -574,7 +577,7 @@ export function StockTransferView() {
             </SelectField>
             <Field label="Transfer quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
             <Field label="Transfer notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" disabled={!toBranchId}>Record Transfer</Button>
+            <Button type="submit" size="xl" disabled={!toBranchId}>Record Transfer</Button>
         </StockFormShell>
     )
 }

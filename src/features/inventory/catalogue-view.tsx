@@ -11,6 +11,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
+import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
 import {
     createBrand,
     createCategory,
@@ -141,27 +142,11 @@ export function CatalogueView() {
 
     return (
         <div className="grid gap-6">
-            {/* Header section */}
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Inventory
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            Product Catalogue
-                        </h1>
-                        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-500 font-body">
-                            Manage company-scoped products, custom variants, categories, brands, and units of measure.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <StatusPill tone={activeCompanyId ? "green" : "amber"}>
-                            {activeCompanyId ? "Company scoped" : "No company"}
-                        </StatusPill>
-                    </div>
-                </div>
-            </section>
+            <InventoryPageHeader
+                title="Product Catalogue"
+                description="Manage company-scoped products, custom variants, categories, brands, and units of measure."
+                isCompanyScoped={Boolean(activeCompanyId)}
+            />
 
             {/* Filter and Content section */}
             <div className="grid gap-6 xl:grid-cols-[1fr_380px]">

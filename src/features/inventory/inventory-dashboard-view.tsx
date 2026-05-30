@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/icon"
-import { StatusPill } from "@/components/ui/status-pill"
 import { useSession } from "@/features/auth/session-provider"
 import { loadInventoryDashboardSummary, type InventoryRequestOptions } from "@/features/inventory/inventory-api"
+import { InventoryPageHeader, inventoryPrimaryActionLinkClass, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import type { InventoryDashboardSummary } from "@/features/inventory/inventory-types"
 import { formatIDR } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -93,32 +93,16 @@ export function InventoryDashboardView() {
 
     return (
         <div className="grid gap-6">
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Inventory
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            Inventory Dashboard
-                        </h1>
-                        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-500 font-body">
-                            Track catalogue readiness, sellable SKUs, stock value, and movement work that still needs attention.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap items-start gap-2">
-                        <StatusPill tone={activeCompanyId ? "green" : "amber"}>
-                            {activeCompanyId ? "Company scoped" : "No company"}
-                        </StatusPill>
-                        <Link
-                            href="/inventory/master/products"
-                            className="inline-flex h-11 items-center justify-center rounded-md bg-teal-700 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-800"
-                        >
-                            New Product
-                        </Link>
-                    </div>
-                </div>
-            </section>
+            <InventoryPageHeader
+                title="Inventory Dashboard"
+                description="Track catalogue readiness, sellable SKUs, stock value, and movement work that still needs attention."
+                isCompanyScoped={Boolean(activeCompanyId)}
+                actions={(
+                    <Link href="/inventory/master/products" className={inventoryPrimaryActionLinkClass}>
+                        New Product
+                    </Link>
+                )}
+            />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {kpis.map((kpi) => (
@@ -150,7 +134,7 @@ export function InventoryDashboardView() {
                 ))}
             </div>
 
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
+            <section className={cn(inventorySurfaceClass, "p-6")}>
                 <div className="mb-4 flex items-center justify-between gap-4">
                     <h2 className="flex items-center gap-2 text-base font-bold text-navy-900 font-display">
                         <Icon name="bolt" className="text-navy-400" />

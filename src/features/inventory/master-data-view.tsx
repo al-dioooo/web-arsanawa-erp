@@ -10,8 +10,8 @@ import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
-import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
+import { InventoryPageHeader, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import {
     createBrand,
     createCategory,
@@ -48,6 +48,7 @@ import type {
     VariantGroup,
     VariantMaster,
 } from "@/features/inventory/inventory-types"
+import { cn } from "@/lib/utils"
 
 export type InventoryMasterKind =
     | "categories"
@@ -241,35 +242,32 @@ export function InventoryMasterDataView({
 
     return (
         <div className="grid gap-6">
-            <header className="flex flex-col gap-4 border-b border-navy-100 pb-5 md:flex-row md:items-end md:justify-between">
-                <div>
-                    <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-teal-700">
-                        <Icon name={config.icon} size={16} />
-                        <span>Inventory Master</span>
-                    </div>
-                    <h1 className="font-brand text-2xl font-bold text-navy-950">{heading(config, mode)}</h1>
-                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-500">
-                        {descriptionFor(kind)}
-                    </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {mode !== "list" && (
-                        <Link href={config.base}>
-                            <Button variant="secondary" type="button">Back to List</Button>
-                        </Link>
-                    )}
-                    {mode === "list" && (
-                        <Link href={`${config.base}/new`}>
-                            <Button type="button" className="bg-teal-700 text-white hover:bg-teal-800">New {config.singular}</Button>
-                        </Link>
-                    )}
-                    {mode === "detail" && itemId && (
-                        <Link href={`${config.base}/${itemId}/edit`}>
-                            <Button type="button" className="bg-teal-700 text-white hover:bg-teal-800">Edit</Button>
-                        </Link>
-                    )}
-                </div>
-            </header>
+            <InventoryPageHeader
+                eyebrow="Inventory Master"
+                icon={config.icon}
+                title={heading(config, mode)}
+                description={descriptionFor(kind)}
+                isCompanyScoped={Boolean(activeCompanyId)}
+                actions={(
+                    <>
+                        {mode !== "list" && (
+                            <Link href={config.base}>
+                                <Button variant="secondary" size="xl" type="button">Back to List</Button>
+                            </Link>
+                        )}
+                        {mode === "list" && (
+                            <Link href={`${config.base}/new`}>
+                                <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">New {config.singular}</Button>
+                            </Link>
+                        )}
+                        {mode === "detail" && itemId && (
+                            <Link href={`${config.base}/${itemId}/edit`}>
+                                <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">Edit</Button>
+                            </Link>
+                        )}
+                    </>
+                )}
+            />
 
             {mode === "list" && (
                 <section className="grid gap-4">
@@ -296,7 +294,7 @@ export function InventoryMasterDataView({
             )}
 
             {(mode === "create" || mode === "edit") && (
-                <form onSubmit={submitForm} className="grid gap-5 rounded-lg border border-navy-100 bg-white p-5">
+                <form onSubmit={submitForm} className={cn("grid gap-5 p-5", inventorySurfaceClass)}>
                     <FormFields
                         kind={kind}
                         form={form}
@@ -310,9 +308,9 @@ export function InventoryMasterDataView({
                     />
                     <div className="flex justify-end gap-3 border-t border-navy-100 pt-4">
                         <Link href={config.base}>
-                            <Button type="button" variant="secondary">Cancel</Button>
+                            <Button type="button" variant="secondary" size="xl">Cancel</Button>
                         </Link>
-                        <Button type="submit" disabled={isLoading} className="bg-teal-700 text-white hover:bg-teal-800">
+                        <Button type="submit" size="xl" disabled={isLoading} className="bg-teal-700 text-white hover:bg-teal-800">
                             {isLoading ? "Saving..." : "Save"}
                         </Button>
                     </div>
@@ -368,7 +366,7 @@ function MasterTable({
     rows: Array<{ id: number; title: string; meta: string; status: boolean }>
 }) {
     return (
-        <div className="overflow-x-auto rounded-lg border border-navy-100 bg-white">
+        <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
             <table className="w-full min-w-[620px] text-left text-sm">
                 <thead className="border-b border-navy-100 bg-navy-50/60 text-xs uppercase tracking-wider text-navy-500">
                     <tr>
@@ -415,13 +413,13 @@ function DetailPanel({
     onDelete: () => void
 }) {
     if (!active) {
-        return <div className="rounded-lg border border-navy-100 bg-white p-8 text-center text-navy-400">Record not found.</div>
+        return <div className={cn("p-8 text-center text-navy-400", inventorySurfaceClass)}>Record not found.</div>
     }
 
     const details = detailRows(kind, active)
 
     return (
-        <section className="grid gap-4 rounded-lg border border-navy-100 bg-white p-5">
+        <section className={cn("grid gap-4 p-5", inventorySurfaceClass)}>
             <div className="grid gap-4 md:grid-cols-2">
                 {details.map(([label, value]) => (
                     <div key={label} className="border-b border-navy-50 pb-3">
