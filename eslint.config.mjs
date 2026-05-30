@@ -13,7 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "node_modules_old/**",
     "next-env.d.ts",
-    "src/components/icons/*.jsx",
+    "src/components/icons/outline.tsx",
+    "src/components/icons/solid.tsx",
   ]),
 ]);
 
