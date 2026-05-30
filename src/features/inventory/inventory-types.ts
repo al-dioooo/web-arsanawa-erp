@@ -93,6 +93,8 @@ export type StockLot = {
     company_id: number;
     branch_id: number;
     product_variant_id: number;
+    product_unit_id: number | null;
+    product_unit?: ProductUnit | null;
     lot_number: string | null;
     received_quantity: string;
     remaining_quantity: string;
@@ -107,7 +109,10 @@ export type StockMovement = {
     company_id: number;
     branch_id: number;
     product_variant_id: number;
+    product_unit_id: number | null;
+    product_unit?: ProductUnit | null;
     stock_lot_id: number | null;
+    lot?: StockLot | null;
     type: string;
     quantity: string;
     unit_cost: string | null;

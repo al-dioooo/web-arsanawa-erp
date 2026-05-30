@@ -1,5 +1,4 @@
-import Link from "next/link"
-import { Icon } from "@/components/ui/icon"
+import { MotionLinkItem } from "@/components/ui/motion-link"
 
 export default function CataloguePage() {
     const links = [
@@ -23,10 +22,9 @@ export default function CataloguePage() {
             </header>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {links.map(([label, href, icon]) => (
-                    <Link key={href} href={href} className="flex items-center gap-3 rounded-lg border border-navy-100 bg-white p-4 text-sm font-bold text-navy-800 transition hover:border-teal-300 hover:bg-teal-50/40">
-                        <Icon name={icon} className="text-teal-700" />
-                        <span>{label}</span>
-                    </Link>
+                    <MotionLinkItem key={href} href={href} icon={icon} label={label} className="min-h-20">
+                        Open {label}
+                    </MotionLinkItem>
                 ))}
             </div>
         </div>

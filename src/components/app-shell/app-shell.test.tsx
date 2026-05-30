@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { AppShell } from "@/components/app-shell/app-shell"
 import { useSession } from "@/features/auth/session-provider"
@@ -52,6 +52,19 @@ function mockSession() {
             username: "aliceevr",
             email: "hello@al.is-a.dev",
             email_verified_at: null,
+        },
+        profile: {
+            id: 1,
+            name: "Alice Evergarden",
+            username: "aliceevr",
+            email: "hello@al.is-a.dev",
+            profile: {
+                display_name: "Alice Profile",
+                avatar: null,
+                locale: "id",
+                timezone: "Asia/Jakarta",
+            },
+            status: { status: "active" },
         },
         companies: [
             {
@@ -130,5 +143,18 @@ describe("AppShell module sidebar", () => {
 
         expect(screen.getByRole("link", { name: /Laporan/ })).toHaveStyle({ color: "#a37565" })
         expect(screen.getByRole("link", { name: /Kasir/ })).not.toHaveStyle({ color: "#a37565" })
+    })
+
+    it("uses the current session profile display name in the account menu", () => {
+        render(
+            <AppShell>
+                <div>Reports page</div>
+            </AppShell>,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "shell.accountMenu" }))
+
+        expect(screen.getByText("Alice Profile")).toBeInTheDocument()
+        expect(screen.queryByText("Alice Evergarden")).not.toBeInTheDocument()
     })
 })

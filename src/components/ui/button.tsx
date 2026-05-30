@@ -1,5 +1,7 @@
-import { Button as ButtonPrimitive } from "@base-ui/react/button"
+"use client"
+
 import { cva, type VariantProps } from "class-variance-authority"
+import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -45,11 +47,20 @@ function Button({
     className,
     variant = "default",
     size = "default",
+    disabled,
     ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: HTMLMotionProps<"button"> & VariantProps<typeof buttonVariants>) {
+    const shouldReduceMotion = useReducedMotion()
+    const interactive = !disabled && !shouldReduceMotion
+
     return (
-        <ButtonPrimitive
+        <motion.button
             data-slot="button"
+            data-motion-control="button"
+            disabled={disabled}
+            whileHover={interactive ? { y: -1, scale: 1.015 } : undefined}
+            whileTap={interactive ? { y: 0, scale: 0.97 } : undefined}
+            transition={{ type: "spring", stiffness: 520, damping: 34, mass: 0.55 }}
             className={cn(buttonVariants({ variant, size, className }))}
             {...props}
         />

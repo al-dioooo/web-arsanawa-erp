@@ -1,0 +1,47 @@
+"use client"
+
+import Link, { type LinkProps } from "next/link"
+import { motion, useReducedMotion } from "motion/react"
+import type { AnchorHTMLAttributes, ReactNode } from "react"
+import { Icon } from "@/components/ui/icon"
+import { cn } from "@/lib/utils"
+
+type MotionLinkItemProps = LinkProps &
+    Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps> & {
+        label: string
+        icon?: string
+        children?: ReactNode
+    }
+
+export function MotionLinkItem({
+    label,
+    icon,
+    children,
+    className,
+    ...props
+}: MotionLinkItemProps) {
+    const shouldReduceMotion = useReducedMotion()
+
+    return (
+        <motion.div
+            whileHover={shouldReduceMotion ? undefined : { y: -2, scale: 1.01 }}
+            whileTap={shouldReduceMotion ? undefined : { y: 0, scale: 0.985 }}
+            transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.6 }}
+        >
+            <Link
+                data-motion-control="link-item"
+                className={cn(
+                    "group flex min-h-24 flex-col justify-between rounded-lg border border-navy-100 bg-white p-4 text-left transition-colors hover:border-teal-300 hover:bg-teal-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700/20",
+                    className,
+                )}
+                {...props}
+            >
+                <span className="flex items-center gap-2 text-sm font-bold text-navy-900">
+                    {icon ? <Icon name={icon} className="text-teal-700" /> : null}
+                    {label}
+                </span>
+                {children ? <span className="mt-3 text-xs leading-relaxed text-navy-500">{children}</span> : null}
+            </Link>
+        </motion.div>
+    )
+}

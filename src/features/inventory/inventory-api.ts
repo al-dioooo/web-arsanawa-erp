@@ -71,7 +71,7 @@ export async function loadInventory(options: InventoryRequestOptions) {
 export async function loadStockSnapshot(
     options: InventoryRequestOptions,
     branchId: number | null,
-    productVariantId: number | null,
+    productUnitId: number | null,
 ) {
     const [lots, movements, valuation, level] = await Promise.all([
         apiRequest<{ lots: StockLot[] }>(
@@ -89,11 +89,11 @@ export async function loadStockSnapshot(
             {},
             options,
         ),
-        branchId && productVariantId
+        branchId && productUnitId
             ? apiRequest<{ on_hand: string }>(
                     `/api/v1/inventory/stock/levels${queryString({
                         branch_id: branchId,
-                        product_variant_id: productVariantId,
+                        product_unit_id: productUnitId,
                     })}`,
                     {},
                     options,
@@ -108,6 +108,43 @@ export async function loadStockSnapshot(
         totalValue: valuation.data.total_value,
         selectedOnHand: level.data.on_hand,
     };
+}
+
+export async function loadStockLots(
+    options: InventoryRequestOptions,
+    filters: { branch_id?: number | null; product_unit_id?: number | null; expiring_before?: string } = {},
+) {
+    const response = await apiRequest<{ lots: StockLot[] }>(
+        `/api/v1/inventory/stock/lots${queryString(filters)}`,
+        {},
+        options,
+    )
+
+    return response.data.lots
+}
+
+export async function loadStockMovements(
+    options: InventoryRequestOptions,
+    filters: { branch_id?: number | null; product_unit_id?: number | null; per_page?: number } = {},
+) {
+    const response = await apiRequest<{ movements: StockMovement[]; pagination: { total: number } }>(
+        `/api/v1/inventory/stock/movements${queryString(filters)}`,
+        {},
+        options,
+    )
+
+    return {
+        movements: response.data.movements,
+        total: response.data.pagination.total,
+    }
+}
+
+export async function getStockMovement(options: InventoryRequestOptions, movementId: number) {
+    return apiRequest<{ movement: StockMovement }>(
+        `/api/v1/inventory/stock/movements/${movementId}`,
+        {},
+        options,
+    )
 }
 
 export async function createCategory(
@@ -540,7 +577,8 @@ export async function recordReceipt(
     options: InventoryRequestOptions,
     input: {
         branch_id: number;
-        product_variant_id: number;
+        product_unit_id?: number;
+        product_variant_id?: number;
         quantity: number;
         unit_cost: number;
         lot_number?: string;
@@ -559,7 +597,8 @@ export async function recordIssue(
     options: InventoryRequestOptions,
     input: {
         branch_id: number
-        product_variant_id: number
+        product_unit_id?: number
+        product_variant_id?: number
         quantity: number
         notes?: string | null
     },
@@ -575,7 +614,8 @@ export async function recordAdjustment(
     options: InventoryRequestOptions,
     input: {
         branch_id: number
-        product_variant_id: number
+        product_unit_id?: number
+        product_variant_id?: number
         quantity: number
         unit_cost?: number
         notes?: string | null
@@ -593,7 +633,7 @@ export async function recordTransfer(
     input: {
         from_branch_id: number
         to_branch_id: number
-        items: Array<{ product_variant_id: number; quantity: number }>
+        items: Array<{ product_unit_id?: number; product_variant_id?: number; quantity: number }>
         notes?: string | null
     },
 ) {

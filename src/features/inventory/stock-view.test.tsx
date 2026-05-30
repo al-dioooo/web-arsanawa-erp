@@ -1,9 +1,21 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { StockView } from "@/features/inventory/stock-view"
+import {
+    StockAdjustmentView,
+    StockIssueView,
+    StockLotsView,
+    StockMovementDetailView,
+    StockMovementsView,
+    StockOverviewView,
+    StockReceiptView,
+    StockTransferView,
+} from "@/features/inventory/stock-view"
 import { useSession } from "@/features/auth/session-provider"
 import {
-    loadInventory,
+    getStockMovement,
+    listProductUnits,
+    loadStockLots,
+    loadStockMovements,
     loadStockSnapshot,
     recordAdjustment,
     recordIssue,
@@ -16,7 +28,10 @@ vi.mock("@/features/auth/session-provider", () => ({
 }))
 
 vi.mock("@/features/inventory/inventory-api", () => ({
-    loadInventory: vi.fn(),
+    getStockMovement: vi.fn(),
+    listProductUnits: vi.fn(),
+    loadStockLots: vi.fn(),
+    loadStockMovements: vi.fn(),
     loadStockSnapshot: vi.fn(),
     recordReceipt: vi.fn(),
     recordIssue: vi.fn(),
@@ -24,7 +39,31 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     recordTransfer: vi.fn(),
 }))
 
-describe("StockView", () => {
+const productUnit = {
+    id: 8,
+    company_id: 1,
+    product_id: 4,
+    sku: "SKL-NBR-25",
+    barcode: null,
+    name: "Nasi Box Regular 25 Pax",
+    is_active: true,
+    product: {
+        id: 4,
+        company_id: 1,
+        category_id: null,
+        brand_id: null,
+        base_uom_id: 1,
+        name: "Nasi Box Regular",
+        description: null,
+        track_stock: true,
+        attributes: null,
+        status: "active",
+        variants: [],
+    },
+    variants: [],
+}
+
+describe("split stock movement views", () => {
     beforeEach(() => {
         vi.mocked(useSession).mockReturnValue({
             token: "token",
@@ -38,49 +77,92 @@ describe("StockView", () => {
                 ],
             },
         } as ReturnType<typeof useSession>)
-        vi.mocked(loadInventory).mockResolvedValue({
-            categories: [],
-            brands: [],
-            units: [],
-            products: [
-                {
-                    id: 4,
-                    company_id: 1,
-                    category_id: null,
-                    brand_id: null,
-                    base_uom_id: 1,
-                    name: "Rice Crackers",
-                    description: null,
-                    track_stock: true,
-                    attributes: null,
-                    status: "active",
-                    variants: [
-                        {
-                            id: 5,
-                            product_id: 4,
-                            company_id: 1,
-                            sku: "SKU-1",
-                            barcode: null,
-                            name: "Original",
-                            attributes: null,
-                            purchase_uom_id: null,
-                            purchase_conversion_factor: "1.0000",
-                            is_active: true,
-                        },
-                    ],
-                },
-            ],
-            productTotal: 1,
-            priceLists: [],
-            discounts: [],
-            rewards: [],
+        vi.mocked(listProductUnits).mockResolvedValue({
+            data: { product_units: [productUnit], pagination: { total: 1 } },
+            message: "OK",
         })
         vi.mocked(loadStockSnapshot).mockResolvedValue({
             lots: [],
-            movements: [],
-            movementTotal: 0,
-            totalValue: "0.0000",
-            selectedOnHand: "0.0000",
+            movements: [
+                {
+                    id: 12,
+                    company_id: 1,
+                    branch_id: 1,
+                    product_variant_id: 5,
+                    product_unit_id: 8,
+                    product_unit: productUnit,
+                    stock_lot_id: null,
+                    type: "receipt",
+                    quantity: "10.0000",
+                    unit_cost: "1000.0000",
+                    reference_type: null,
+                    reference_id: null,
+                    notes: null,
+                    occurred_at: "2026-05-30T10:00:00+07:00",
+                },
+            ],
+            movementTotal: 1,
+            totalValue: "10000.0000",
+            selectedOnHand: "10.0000",
+        })
+        vi.mocked(loadStockLots).mockResolvedValue([
+            {
+                id: 3,
+                company_id: 1,
+                branch_id: 1,
+                product_variant_id: 5,
+                product_unit_id: 8,
+                product_unit: productUnit,
+                lot_number: "LOT-1",
+                received_quantity: "10.0000",
+                remaining_quantity: "7.0000",
+                unit_cost: "1000.0000",
+                received_at: "2026-05-30",
+                expiry_date: null,
+                status: "active",
+            },
+        ])
+        vi.mocked(loadStockMovements).mockResolvedValue({
+            movements: [
+                {
+                    id: 12,
+                    company_id: 1,
+                    branch_id: 1,
+                    product_variant_id: 5,
+                    product_unit_id: 8,
+                    product_unit: productUnit,
+                    stock_lot_id: 3,
+                    type: "receipt",
+                    quantity: "10.0000",
+                    unit_cost: "1000.0000",
+                    reference_type: null,
+                    reference_id: null,
+                    notes: "Opening",
+                    occurred_at: "2026-05-30T10:00:00+07:00",
+                },
+            ],
+            total: 1,
+        })
+        vi.mocked(getStockMovement).mockResolvedValue({
+            data: {
+                movement: {
+                    id: 12,
+                    company_id: 1,
+                    branch_id: 1,
+                    product_variant_id: 5,
+                    product_unit_id: 8,
+                    product_unit: productUnit,
+                    stock_lot_id: 3,
+                    type: "receipt",
+                    quantity: "10.0000",
+                    unit_cost: "1000.0000",
+                    reference_type: null,
+                    reference_id: null,
+                    notes: "Opening",
+                    occurred_at: "2026-05-30T10:00:00+07:00",
+                },
+            },
+            message: "OK",
         })
         vi.mocked(recordReceipt).mockResolvedValue({})
         vi.mocked(recordIssue).mockResolvedValue({})
@@ -88,33 +170,73 @@ describe("StockView", () => {
         vi.mocked(recordTransfer).mockResolvedValue({})
     })
 
-    it("records receipt, issue, adjustment, and transfer movements", async () => {
-        render(<StockView />)
+    it("renders an overview with links into separated stock movement pages", async () => {
+        render(<StockOverviewView />)
 
+        await waitFor(() => expect(screen.getByText("Stock Overview")).toBeInTheDocument())
+
+        expect(screen.getByRole("link", { name: /Stock Lots/i })).toHaveAttribute("href", "/inventory/stock/lots")
+        expect(screen.getByRole("link", { name: /Movement Ledger/i })).toHaveAttribute("href", "/inventory/stock/movements")
+        expect(screen.getByRole("link", { name: /New Receipt/i })).toHaveAttribute("href", "/inventory/stock/receipts/new")
+    })
+
+    it("renders lots and ledger pages with product unit context", async () => {
+        render(<StockLotsView />)
+        await waitFor(() => expect(screen.getByText("LOT-1")).toBeInTheDocument())
+        expect(screen.getByText("SKL-NBR-25")).toBeInTheDocument()
+
+        render(<StockMovementsView />)
+        await waitFor(() => expect(screen.getByRole("link", { name: /Movement #12/i })).toHaveAttribute("href", "/inventory/stock/movements/12"))
+    })
+
+    it("renders movement detail as immutable audit information", async () => {
+        render(<StockMovementDetailView movementId={12} />)
+
+        await waitFor(() => expect(screen.getByText("Movement #12")).toBeInTheDocument())
+        expect(screen.getByText("SKL-NBR-25")).toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", { name: /edit/i })).not.toBeInTheDocument()
+    })
+
+    it("records receipt issue adjustment and transfer with product units", async () => {
+        render(<StockReceiptView />)
+        await waitFor(() => expect(screen.getByLabelText("Quantity")).toBeInTheDocument())
+        fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } })
+        fireEvent.change(screen.getByLabelText("Unit Cost (IDR)"), { target: { value: "1000" } })
+        fireEvent.click(screen.getByRole("button", { name: "Record Receipt" }))
+        await waitFor(() => expect(recordReceipt).toHaveBeenCalledWith(
+            { token: "token", companyId: 1 },
+            expect.objectContaining({ product_unit_id: 8, branch_id: 1, quantity: 10, unit_cost: 1000 }),
+        ))
+
+        render(<StockIssueView />)
         await waitFor(() => expect(screen.getByLabelText("Issue quantity")).toBeInTheDocument())
-
         fireEvent.change(screen.getByLabelText("Issue quantity"), { target: { value: "2" } })
-        fireEvent.click(screen.getByRole("button", { name: "Record issue" }))
+        fireEvent.click(screen.getByRole("button", { name: "Record Issue" }))
         await waitFor(() => expect(recordIssue).toHaveBeenCalledWith(
             { token: "token", companyId: 1 },
-            expect.objectContaining({ branch_id: 1, product_variant_id: 5, quantity: 2 }),
+            expect.objectContaining({ product_unit_id: 8, branch_id: 1, quantity: 2 }),
         ))
 
+        render(<StockAdjustmentView />)
+        await waitFor(() => expect(screen.getByLabelText("Adjustment quantity")).toBeInTheDocument())
         fireEvent.change(screen.getByLabelText("Adjustment quantity"), { target: { value: "-1" } })
-        fireEvent.click(screen.getByRole("button", { name: "Record adjustment" }))
+        fireEvent.click(screen.getByRole("button", { name: "Record Adjustment" }))
         await waitFor(() => expect(recordAdjustment).toHaveBeenCalledWith(
             { token: "token", companyId: 1 },
-            expect.objectContaining({ branch_id: 1, product_variant_id: 5, quantity: -1 }),
+            expect.objectContaining({ product_unit_id: 8, branch_id: 1, quantity: -1 }),
         ))
 
+        render(<StockTransferView />)
+        await waitFor(() => expect(screen.getByLabelText("Transfer quantity")).toBeInTheDocument())
         fireEvent.change(screen.getByLabelText("Transfer quantity"), { target: { value: "1" } })
-        fireEvent.click(screen.getByRole("button", { name: "Record transfer" }))
+        fireEvent.click(screen.getByRole("button", { name: "Record Transfer" }))
         await waitFor(() => expect(recordTransfer).toHaveBeenCalledWith(
             { token: "token", companyId: 1 },
             expect.objectContaining({
                 from_branch_id: 1,
                 to_branch_id: 2,
-                items: [{ product_variant_id: 5, quantity: 1 }],
+                items: [{ product_unit_id: 8, quantity: 1 }],
             }),
         ))
     })

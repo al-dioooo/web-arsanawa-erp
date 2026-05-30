@@ -38,7 +38,7 @@ export const moduleRegistry: ModuleEntry[] = [
     {
         key: "inventory",
         label: "Inventory",
-        icon: "inventory_products",
+        icon: "inventory_2",
         accentColor: "#f47b50",
         route: "/inventory/master/products",
         entitlementKey: "inventory",
@@ -65,9 +65,21 @@ export const moduleRegistry: ModuleEntry[] = [
             },
             {
                 kind: "group",
+                label: "Stock Movement",
+                items: [
+                    { href: "/inventory/stock", label: "Stock Overview", icon: "inventory_stock" },
+                    { href: "/inventory/stock/lots", label: "Stock Lots", icon: "inventory_stock_lots" },
+                    { href: "/inventory/stock/movements", label: "Movement Ledger", icon: "inventory_movements" },
+                    { href: "/inventory/stock/receipts/new", label: "New Receipt", icon: "inventory_receipt" },
+                    { href: "/inventory/stock/issues/new", label: "New Issue", icon: "inventory_issue" },
+                    { href: "/inventory/stock/adjustments/new", label: "New Adjustment", icon: "inventory_adjustment" },
+                    { href: "/inventory/stock/transfers/new", label: "New Transfer", icon: "inventory_transfer" },
+                ],
+            },
+            {
+                kind: "group",
                 label: "Operations",
                 items: [
-                    { href: "/inventory/stock", label: "Stock", icon: "inventory_stock" },
                     { href: "/inventory/pricing", label: "Pricing", icon: "inventory_pricing" },
                     { href: "/inventory/promotions", label: "Promotions", icon: "inventory_promotions" },
                 ],

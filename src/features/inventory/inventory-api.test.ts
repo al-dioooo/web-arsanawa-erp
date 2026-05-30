@@ -11,6 +11,7 @@ import {
     deleteVariant,
     deleteVariantGroup,
     deleteVariantMaster,
+    getStockMovement,
     getProductUnit,
     getVariantGroup,
     getVariantMaster,
@@ -18,7 +19,11 @@ import {
     moveCategory,
     recordAdjustment,
     recordIssue,
+    recordReceipt,
     recordTransfer,
+    loadStockLots,
+    loadStockMovements,
+    loadStockSnapshot,
     resolveVariantPrice,
     setVariantAvailability,
     syncProductTags,
@@ -49,7 +54,16 @@ describe("inventory API route coverage", () => {
                 status: 200,
                 json: async () => ({
                     message: "OK",
-                    data: { product: { id: 4 }, price: "10000.0000" },
+                    data: {
+                        product: { id: 4 },
+                        price: "10000.0000",
+                        lots: [],
+                        movements: [],
+                        pagination: { total: 0 },
+                        total_value: "0.0000",
+                        on_hand: "0.0000",
+                        movement: { id: 12 },
+                    },
                 }),
             }),
         )
@@ -105,15 +119,26 @@ describe("inventory API route coverage", () => {
     })
 
     it("covers stock movement, price resolve, and promotion delete routes", async () => {
+        await loadStockSnapshot(requestOptions, 1, 8)
+        await loadStockLots(requestOptions, { branch_id: 1, product_unit_id: 8 })
+        await loadStockMovements(requestOptions, { branch_id: 1, product_unit_id: 8 })
+        await getStockMovement(requestOptions, 12)
+        await recordReceipt(requestOptions, {
+            branch_id: 1,
+            product_unit_id: 8,
+            quantity: 10,
+            unit_cost: 1000,
+            received_at: "2026-05-30",
+        })
         await recordIssue(requestOptions, {
             branch_id: 1,
-            product_variant_id: 2,
+            product_unit_id: 8,
             quantity: 3,
             notes: "sample",
         })
         await recordAdjustment(requestOptions, {
             branch_id: 1,
-            product_variant_id: 2,
+            product_unit_id: 8,
             quantity: -1,
             unit_cost: 1000,
             notes: "count",
@@ -121,7 +146,7 @@ describe("inventory API route coverage", () => {
         await recordTransfer(requestOptions, {
             from_branch_id: 1,
             to_branch_id: 2,
-            items: [{ product_variant_id: 2, quantity: 1 }],
+            items: [{ product_unit_id: 8, quantity: 1 }],
             notes: "move",
         })
         await resolveVariantPrice(requestOptions, 4, 5, { branch_id: 1, quantity: 2 })
@@ -134,6 +159,14 @@ describe("inventory API route coverage", () => {
         ])
 
         expect(calls).toEqual([
+            [expect.stringContaining("/api/v1/inventory/stock/lots?branch_id=1"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/movements?branch_id=1"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/valuation?branch_id=1"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/levels?branch_id=1&product_unit_id=8"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/lots?branch_id=1&product_unit_id=8"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/movements?branch_id=1&product_unit_id=8"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/movements/12"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/stock/receipts"), "POST"],
             [expect.stringContaining("/api/v1/inventory/stock/issues"), "POST"],
             [expect.stringContaining("/api/v1/inventory/stock/adjustments"), "POST"],
             [expect.stringContaining("/api/v1/inventory/stock/transfers"), "POST"],

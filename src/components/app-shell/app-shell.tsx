@@ -39,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const {
         user,
+        profile,
         companies,
         activeCompanyId,
         activeBranchId,
@@ -89,6 +90,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const activeBranch = organizationContext?.branches.find((b) => b.id === activeBranchId)
     const activeModule = getModuleByPath(pathname)
     const inModule = Boolean(activeModule)
+    const accountDisplayName = profile?.profile.display_name?.trim() || user?.name || ""
+    const accountInitial = accountDisplayName.charAt(0).toUpperCase()
 
     const handleSignOut = async () => {
         setUserOpen(false)
@@ -232,14 +235,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 className="flex items-center justify-center h-9 w-9 rounded-xl bg-teal-100 text-teal-700 font-bold border border-teal-200 hover:scale-102 active:scale-98 transition-all outline-none cursor-pointer"
                                 aria-label={t("shell.accountMenu")}
                             >
-                                {user?.name.charAt(0).toUpperCase()}
+                                {accountInitial}
                             </button>
 
                             {userOpen && (
                                 <div className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
                                     <div className="px-4 py-2 border-b border-navy-50 mb-1.5">
                                         <p className="truncate text-xs font-bold text-navy-950 leading-tight">
-                                            {user?.name}
+                                            {accountDisplayName}
                                         </p>
                                         <p className="truncate text-[10px] text-navy-450 font-semibold mt-0.5">
                                             {user?.email}

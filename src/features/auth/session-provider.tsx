@@ -89,6 +89,7 @@ type SessionContextValue = SessionState & {
     createBranch: (companyId: number, input: CreateBranchInput) => Promise<void>
     addMembership: (companyId: number, input: AddMembershipInput) => Promise<void>
     updateEntitlements: (companyId: number, input: UpdateEntitlementsInput) => Promise<void>
+    updateCurrentProfile: (profile: Profile) => void
     clearError: () => void
 }
 
@@ -485,6 +486,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         [refreshWorkspace, state.token]
     )
 
+    const updateCurrentProfile = useCallback((profile: Profile) => {
+        setState((current) => ({ ...current, profile }))
+    }, [])
+
     const value = useMemo<SessionContextValue>(
         () => ({
             ...state,
@@ -500,6 +505,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             createBranch,
             addMembership,
             updateEntitlements,
+            updateCurrentProfile,
             clearError,
         }),
         [
@@ -516,6 +522,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             selectBranch,
             state,
             updateEntitlements,
+            updateCurrentProfile,
         ]
     )
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
 import { StatusPill } from "@/components/ui/status-pill"
+import { useSession } from "@/features/auth/session-provider"
 import {
     useIdentityProfile,
     useIdentityUserLookup,
@@ -19,6 +20,7 @@ const timezoneOptions = [
 
 export function ProfileSettings() {
     const { data: profile, isLoading } = useIdentityProfile()
+    const { updateCurrentProfile } = useSession()
     const updateProfile = useUpdateIdentityProfile()
     const userLookup = useIdentityUserLookup()
     const [message, setMessage] = useState<string | null>(null)
@@ -53,13 +55,14 @@ export function ProfileSettings() {
         event.preventDefault()
         setMessage(null)
 
-        await updateProfile.mutateAsync({
+        const updatedProfile = await updateProfile.mutateAsync({
             display_name: form.display_name.trim() || null,
             avatar: form.avatar.trim() || null,
             locale: form.locale || null,
             timezone: form.timezone || null,
         })
 
+        updateCurrentProfile(updatedProfile)
         setMessage("Profile saved.")
     }
 

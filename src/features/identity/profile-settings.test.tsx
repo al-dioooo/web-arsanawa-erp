@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ProfileSettings } from "@/features/identity/profile-settings"
+import { useSession } from "@/features/auth/session-provider"
 import {
     useIdentityProfile,
     useIdentityUserLookup,
@@ -13,13 +14,35 @@ vi.mock("@/features/identity/identity-api", () => ({
     useUpdateIdentityProfile: vi.fn(),
 }))
 
+vi.mock("@/features/auth/session-provider", () => ({
+    useSession: vi.fn(),
+}))
+
 const updateProfile = vi.fn()
 const lookupUser = vi.fn()
+const updateCurrentProfile = vi.fn()
 
 describe("ProfileSettings", () => {
     beforeEach(() => {
         updateProfile.mockReset()
         lookupUser.mockReset()
+        updateCurrentProfile.mockReset()
+        updateProfile.mockResolvedValue({
+            id: 1,
+            name: "Alice Evergarden",
+            username: "aliceevr",
+            email: "alice@example.com",
+            profile: {
+                display_name: "Alice E.",
+                avatar: "https://example.com/a.png",
+                locale: "id",
+                timezone: "Asia/Makassar",
+            },
+            status: { status: "active" },
+        })
+        vi.mocked(useSession).mockReturnValue({
+            updateCurrentProfile,
+        } as unknown as ReturnType<typeof useSession>)
         vi.mocked(useIdentityProfile).mockReturnValue({
             data: {
                 id: 1,
@@ -48,7 +71,7 @@ describe("ProfileSettings", () => {
         } as ReturnType<typeof useIdentityUserLookup>)
     })
 
-    it("surfaces profile settings and authenticated user lookup", () => {
+    it("surfaces profile settings and authenticated user lookup", async () => {
         render(<ProfileSettings />)
 
         fireEvent.change(screen.getByLabelText("Display name"), {
@@ -65,12 +88,21 @@ describe("ProfileSettings", () => {
         })
         fireEvent.click(screen.getByRole("button", { name: "Save profile" }))
 
-        expect(updateProfile).toHaveBeenCalledWith({
+        await waitFor(() => expect(updateProfile).toHaveBeenCalledWith({
             display_name: "Alice E.",
             avatar: "https://example.com/a.png",
             locale: "id",
             timezone: "Asia/Makassar",
-        })
+        }))
+
+        expect(updateCurrentProfile).toHaveBeenCalledWith(expect.objectContaining({
+            profile: expect.objectContaining({
+                display_name: "Alice E.",
+                avatar: "https://example.com/a.png",
+                locale: "id",
+                timezone: "Asia/Makassar",
+            }),
+        }))
 
         fireEvent.change(screen.getByLabelText("User ID"), {
             target: { value: "42" },
