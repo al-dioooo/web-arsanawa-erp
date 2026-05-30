@@ -62,13 +62,32 @@ import {
     Warehouse,
     X,
     Zap,
-    type LucideIcon,
 } from "lucide-react"
-import type { ComponentPropsWithoutRef } from "react"
+import { cloneElement, type ComponentPropsWithoutRef, type ComponentType, type ReactElement } from "react"
+import * as TablerOutlineIcons from "@/components/icons/outline.jsx"
 
 export type IconName = string
 
-const icons: Record<string, LucideIcon> = {
+type IconComponent = ComponentType<ComponentPropsWithoutRef<"svg"> & { size?: number }>
+type GeneratedTablerIcon = (props: { className?: string; strokeWidth?: number }) => ReactElement<ComponentPropsWithoutRef<"svg">>
+const tablerOutlineIcons = TablerOutlineIcons as Record<string, GeneratedTablerIcon>
+
+function tablerIcon(Component: GeneratedTablerIcon): IconComponent {
+    return function TablerIcon({ className, strokeWidth = 1.5, size = 24, ...props }) {
+        const numericStrokeWidth = typeof strokeWidth === "number" ? strokeWidth : Number(strokeWidth) || 1.5
+        const element = <Component className={className} strokeWidth={numericStrokeWidth} />
+
+        return cloneElement(element, {
+            ...props,
+            className,
+            width: size,
+            height: size,
+            strokeWidth: numericStrokeWidth,
+        })
+    }
+}
+
+const icons: Record<string, IconComponent> = {
     account_balance: Landmark,
     account_balance_wallet: Wallet,
     account_tree: LibraryBig,
@@ -143,6 +162,29 @@ const icons: Record<string, LucideIcon> = {
     trending_up: TrendingUp,
     warehouse: Warehouse,
     warning: CircleAlert,
+
+    inventory_adjustment: tablerIcon(tablerOutlineIcons.RefreshIcon),
+    inventory_brands: tablerIcon(tablerOutlineIcons.TagsIcon),
+    inventory_categories: tablerIcon(tablerOutlineIcons.Hierarchy2Icon),
+    inventory_issue: tablerIcon(tablerOutlineIcons.CircleMinusIcon),
+    inventory_movements: tablerIcon(tablerOutlineIcons.HistoryIcon),
+    inventory_pricing: tablerIcon(tablerOutlineIcons.TagIcon),
+    inventory_product_units: tablerIcon(tablerOutlineIcons.QrcodeIcon),
+    inventory_products: tablerIcon(tablerOutlineIcons.PackageIcon),
+    inventory_promotions: tablerIcon(tablerOutlineIcons.PercentageIcon),
+    inventory_receipt: tablerIcon(tablerOutlineIcons.Receipt2Icon),
+    inventory_stock: tablerIcon(tablerOutlineIcons.BuildingWarehouseIcon),
+    inventory_stock_lots: tablerIcon(tablerOutlineIcons.TagIcon),
+    inventory_transfer: tablerIcon(tablerOutlineIcons.ArrowsExchangeIcon),
+    inventory_units: tablerIcon(tablerOutlineIcons.RulerMeasureIcon),
+    inventory_variant_groups: tablerIcon(tablerOutlineIcons.Category2Icon),
+    inventory_variants: tablerIcon(tablerOutlineIcons.AdjustmentsHorizontalIcon),
+
+    qr_code_2: tablerIcon(tablerOutlineIcons.QrcodeIcon),
+    remove_circle: tablerIcon(tablerOutlineIcons.CircleMinusIcon),
+    straighten: tablerIcon(tablerOutlineIcons.RulerMeasureIcon),
+    swap_horiz: tablerIcon(tablerOutlineIcons.ArrowsExchangeIcon),
+    sync_alt: tablerIcon(tablerOutlineIcons.RefreshIcon),
 }
 
 interface IconProps extends ComponentPropsWithoutRef<"svg"> {
