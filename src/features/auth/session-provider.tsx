@@ -149,7 +149,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             const companies = companiesResponse.data.companies
             const activeCompanyId =
                 requestedCompanyId ??
-                companies.find((entry) => entry.membership.status === "active")?.company.id ??
+                companies.find((entry) => entry.membership?.status === "active")?.company.id ??
+                companies[0]?.company.id ??
                 null
 
             sessionStore.setActiveCompanyId(activeCompanyId)

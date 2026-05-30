@@ -11,9 +11,10 @@ organization, and module workspaces used by ERP operators.
 - Company and branch context switching
 - Organization screens for company creation and module entitlements
 - Identity profile settings and user lookup
-- Platform settings for currencies and module configuration
+- Platform settings for read-only currencies and module configuration
 - Partners workspace for customers, suppliers, contacts, and addresses
 - Dashboard and app launcher
+- Indonesian-first operational UI translations with module/app names kept in English
 - Initial Inventory workspace:
   - Catalogue
   - Stock
@@ -174,6 +175,13 @@ provided.
 5. Use `apiRequest()` for API calls so auth headers, context headers, refresh, and
    progress behavior stay consistent.
 6. Cover new UI behavior with Vitest and React Testing Library where practical.
+
+## UI conventions
+
+- Keep application modules before console utilities in launcher-style navigation.
+- Use `src/components/ui/icon.tsx` for icon aliases instead of importing icon packages directly in feature code.
+- Keep module/app names in English, but put operational labels, buttons, statuses, helper copy, and empty states behind the message dictionaries.
+- Treat platform currencies as read-only until the API exposes currency mutation routes.
 
 ## Quality checks
 

@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
-import { canManageEntitlements } from "@/features/auth/access"
 import { moduleRegistry, type ModuleEntry } from "@/lib/modules/registry"
+import { buildConsoleTiles, type ConsoleTile } from "@/lib/console/tiles"
 import { Icon } from "@/components/ui/icon"
 import { StatusPill } from "@/components/ui/status-pill"
 
@@ -21,63 +22,20 @@ import { StatusPill } from "@/components/ui/status-pill"
  */
 export default function ConsolePage() {
     const { user, modules, activeCompanyId, companies, organizationContext } = useSession()
+    const t = useTranslations()
 
     const activeCompany = companies.find((c) => c.company.id === activeCompanyId)?.company
-    const canManageModules = canManageEntitlements(organizationContext?.membership)
+    const consoleTiles = buildConsoleTiles({
+        t,
+        activeCompany,
+        membership: organizationContext?.membership,
+        user,
+        withDescriptions: true,
+    })
+    const canManageModules = consoleTiles.some((tile) => tile.key === "module-manager")
 
     const enabledSet = new Set(modules?.enabled ?? [])
     const availableSet = new Set(modules?.available ?? [])
-
-    const consoleTiles: Tile[] = [
-        {
-            key: "organization",
-            label: "Organization",
-            icon: "corporate_fare",
-            accentColor: "#0b5c6a",
-            route: "/organization/companies",
-            description: "Companies, branches, members, and roles.",
-        },
-        {
-            key: "profile",
-            label: "Profile",
-            icon: "manage_accounts",
-            accentColor: "#137d90",
-            route: "/profile",
-            description: "Identity, locale, timezone, and user lookup.",
-        },
-        ...(activeCompany
-            ? [
-                  {
-                      key: "partners",
-                      label: "Partners",
-                      icon: "groups",
-                      accentColor: "#f47b50",
-                      route: "/partners",
-                      description: "Customers, suppliers, contacts, and addresses.",
-                  } satisfies Tile,
-                  {
-                      key: "platform-settings",
-                      label: "Platform Settings",
-                      icon: "tune",
-                      accentColor: "#6f7d90",
-                      route: "/platform/settings",
-                      description: "Currencies and company module settings.",
-                  } satisfies Tile,
-              ]
-            : []),
-        ...(canManageModules
-            ? [
-                  {
-                      key: "module-manager",
-                      label: "Module Manager",
-                      icon: "settings_suggest",
-                      accentColor: "#137d90",
-                      route: "/organization/modules",
-                      description: "Install or uninstall apps for this company.",
-                  } satisfies Tile,
-              ]
-            : []),
-    ]
 
     const enabledModules = moduleRegistry.filter((m) => enabledSet.has(m.key))
     const installableModules = moduleRegistry.filter(
@@ -88,37 +46,30 @@ export default function ConsolePage() {
         <div className="grid gap-8">
             <section className="relative rounded-2xl border border-navy-100 bg-white p-8 overflow-hidden">
                 <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                    Console
+                    {t("console.eyebrow")}
                 </p>
                 <h1 className="mt-2 text-3xl font-brand font-bold text-navy-900">
-                    Welcome back, {user?.name}
+                    {t("console.welcome", { name: user?.name ?? "" })}
                 </h1>
                 {activeCompany ? (
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500 font-body">
-                        Managing operations for{" "}
-                        <strong className="text-navy-700 font-semibold">{activeCompany.name}</strong>.
-                        Choose an app to begin.
+                        {t("console.managing", { company: activeCompany.name })}
                     </p>
                 ) : (
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500 font-body">
-                        Select an organization to activate your workspace.
+                        {t("console.selectOrganization")}
                     </p>
                 )}
-            </section>
-
-            <section className="grid gap-6">
-                <h2 className="text-lg font-bold text-navy-900 font-display">Console</h2>
-                <TileGrid tiles={consoleTiles} />
             </section>
 
             {activeCompany && (
                 <section className="grid gap-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold text-navy-900 font-display">
-                            Applications
+                            {t("console.applications")}
                         </h2>
                         <StatusPill tone="green">
-                            {enabledModules.length} active
+                            {t("console.activeCount", { count: enabledModules.length })}
                         </StatusPill>
                     </div>
 
@@ -130,7 +81,7 @@ export default function ConsolePage() {
                                 icon: m.icon,
                                 accentColor: m.accentColor,
                                 route: m.route,
-                                description: defaultDescription(m),
+                                description: defaultDescription(m, t),
                             }))}
                         />
                     ) : (
@@ -139,19 +90,19 @@ export default function ConsolePage() {
                                 <Icon name="info" className="text-xl" />
                             </div>
                             <p className="text-sm font-bold text-navy-900 font-display">
-                                No applications installed
+                                {t("console.noApplications")}
                             </p>
                             <p className="mt-1 text-xs text-navy-500 font-body">
                                 {canManageModules
-                                    ? "Open the Module Manager to install apps for this company."
-                                    : "Ask your administrator to install apps for this company."}
+                                    ? t("console.openModuleManagerHint")
+                                    : t("console.askAdminHint")}
                             </p>
                             {canManageModules && (
                                 <Link
                                     href="/organization/modules"
                                     className="mt-4 inline-flex min-h-9 items-center justify-center rounded-xl bg-teal-700 hover:bg-teal-900 px-4 text-xs font-bold text-white transition-colors cursor-pointer"
                                 >
-                                    Open Module Manager
+                                    {t("console.openModuleManager")}
                                 </Link>
                             )}
                         </div>
@@ -160,7 +111,7 @@ export default function ConsolePage() {
                     {canManageModules && installableModules.length > 0 && (
                         <div className="grid gap-3">
                             <p className="text-xs font-bold uppercase tracking-widest text-navy-400 font-display">
-                                Available to install
+                                {t("console.availableToInstall")}
                             </p>
                             <TileGrid
                                 tiles={installableModules.map((m) => ({
@@ -169,7 +120,7 @@ export default function ConsolePage() {
                                     icon: m.icon,
                                     accentColor: m.accentColor,
                                     route: "/organization/modules",
-                                    description: defaultDescription(m),
+                                    description: defaultDescription(m, t),
                                     dimmed: true,
                                 }))}
                             />
@@ -177,21 +128,20 @@ export default function ConsolePage() {
                     )}
                 </section>
             )}
+
+            <section className="grid gap-6">
+                <h2 className="text-lg font-bold text-navy-900 font-display">{t("console.section")}</h2>
+                <TileGrid tiles={consoleTiles} />
+            </section>
         </div>
     )
 }
 
-type Tile = {
-    key: string
-    label: string
-    icon: string
-    accentColor: string
-    route: string
-    description: string
-    dimmed?: boolean
-}
+type Tile = ConsoleTile & { dimmed?: boolean }
 
 function TileGrid({ tiles }: { tiles: Tile[] }) {
+    const t = useTranslations()
+
     return (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {tiles.map((tile) => (
@@ -212,9 +162,11 @@ function TileGrid({ tiles }: { tiles: Tile[] }) {
                         <h3 className="mt-5 text-lg font-bold text-navy-900 leading-tight font-display">
                             {tile.label}
                         </h3>
-                        <p className="mt-2 text-xs leading-relaxed text-navy-500 font-body">
-                            {tile.description}
-                        </p>
+                        {tile.description ? (
+                            <p className="mt-2 text-xs leading-relaxed text-navy-500 font-body">
+                                {tile.description}
+                            </p>
+                        ) : null}
                     </div>
                     <div className="mt-6 pt-5 border-t border-navy-50">
                         <Link
@@ -222,7 +174,7 @@ function TileGrid({ tiles }: { tiles: Tile[] }) {
                             className="inline-flex w-full min-h-10 items-center justify-center rounded-xl text-xs font-bold text-white transition-all cursor-pointer hover:brightness-95"
                             style={{ backgroundColor: tile.accentColor }}
                         >
-                            {tile.dimmed ? "Install" : "Open"}
+                            {tile.dimmed ? t("common.install") : t("common.open")}
                         </Link>
                     </div>
                 </article>
@@ -231,15 +183,15 @@ function TileGrid({ tiles }: { tiles: Tile[] }) {
     )
 }
 
-function defaultDescription(m: ModuleEntry): string {
+function defaultDescription(m: ModuleEntry, t: (key: string, values?: Record<string, string | number>) => string): string {
     switch (m.key) {
         case "inventory":
-            return "Products, stock, pricing, and promotions."
+            return t("console.inventoryDescription")
         case "finance":
-            return "Ledger, AR/AP, payments, and tax."
+            return t("console.financeDescription")
         case "pos":
-            return "Counter sales, catering orders, and shifts."
+            return t("console.posDescription")
         default:
-            return `Workspace for ${m.label.toLowerCase()}.`
+            return t("console.defaultDescription", { module: m.label.toLowerCase() })
     }
 }

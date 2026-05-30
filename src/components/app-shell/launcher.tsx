@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
-import { canManageEntitlements } from "@/features/auth/access"
+import { buildConsoleTiles } from "@/lib/console/tiles"
 import { moduleRegistry } from "@/lib/modules/registry"
 import { Icon } from "@/components/ui/icon"
 
@@ -23,7 +24,8 @@ type LauncherTile = {
  * for admins) and then every enabled module the user has permission for.
  */
 export function ModuleLauncher() {
-    const { modules, organizationContext } = useSession()
+    const { modules, activeCompanyId, companies, organizationContext, user } = useSession()
+    const t = useTranslations()
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const pathname = usePathname()
@@ -50,50 +52,14 @@ export function ModuleLauncher() {
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [isOpen])
 
-    const canManageModules = canManageEntitlements(organizationContext?.membership)
     const enabledSet = new Set(modules?.enabled ?? [])
-
-    const consoleTiles: LauncherTile[] = [
-        {
-            key: "organization",
-            label: "Organization",
-            icon: "corporate_fare",
-            accentColor: "#0b5c6a",
-            route: "/organization/companies",
-        },
-        {
-            key: "profile",
-            label: "Profile",
-            icon: "manage_accounts",
-            accentColor: "#137d90",
-            route: "/profile",
-        },
-        {
-            key: "partners",
-            label: "Partners",
-            icon: "groups",
-            accentColor: "#f47b50",
-            route: "/partners",
-        },
-        {
-            key: "platform-settings",
-            label: "Settings",
-            icon: "tune",
-            accentColor: "#6f7d90",
-            route: "/platform/settings",
-        },
-        ...(canManageModules
-            ? [
-                  {
-                      key: "module-manager",
-                      label: "Module Manager",
-                      icon: "settings_suggest",
-                      accentColor: "#137d90",
-                      route: "/organization/modules",
-                  } satisfies LauncherTile,
-              ]
-            : []),
-    ]
+    const activeCompany = companies.find((entry) => entry.company.id === activeCompanyId)?.company
+    const consoleTiles: LauncherTile[] = buildConsoleTiles({
+        t,
+        activeCompany,
+        membership: organizationContext?.membership,
+        user,
+    })
 
     const moduleTiles: LauncherTile[] = moduleRegistry
         .filter((m) => enabledSet.has(m.key))
@@ -111,20 +77,22 @@ export function ModuleLauncher() {
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-100 hover:text-navy-900 transition-all duration-150 outline-none cursor-pointer"
-                title="App Launcher"
-                aria-label="App Launcher"
+                title={t("launcher.button")}
+                aria-label={t("launcher.button")}
             >
                 <Icon name="apps" className="text-2xl" />
             </button>
 
             {isOpen && (
                 <div className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-navy-100 bg-white p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <LauncherSection title="Console" tiles={consoleTiles} pathname={pathname} />
                     {moduleTiles.length > 0 && (
-                        <div className="mt-4">
-                            <LauncherSection title="Applications" tiles={moduleTiles} pathname={pathname} />
+                        <div>
+                            <LauncherSection title={t("launcher.applications")} tiles={moduleTiles} pathname={pathname} />
                         </div>
                     )}
+                    <div className={moduleTiles.length > 0 ? "mt-4" : ""}>
+                        <LauncherSection title={t("launcher.console")} tiles={consoleTiles} pathname={pathname} />
+                    </div>
                 </div>
             )}
         </div>

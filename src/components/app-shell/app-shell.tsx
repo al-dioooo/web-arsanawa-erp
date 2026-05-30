@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useSession } from "@/features/auth/session-provider"
-import { getModuleByPath, isNavGroup, type ModuleEntry, type NavItem } from "@/lib/modules/registry"
+import { getModuleByPath, isNavGroup, type ModuleEntry, type NavGroup, type NavItem } from "@/lib/modules/registry"
 import { useTranslations, useLocale } from 'next-intl'
 import { setUserLocale } from '@/actions/locale'
 import { ModuleLauncher } from "@/components/app-shell/launcher"
@@ -35,7 +35,7 @@ import LogoCompact from "@/components/brands/logo-compact"
  * is always available; its screens use console-mode layout.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname()
+    const pathname = usePathname() || ""
     const router = useRouter()
     const {
         user,
@@ -49,6 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } = useSession()
 
     const locale = useLocale()
+    const t = useTranslations()
     const { open: openSearch } = useCommandPalette()
 
     const [branchOpen, setBranchOpen] = useState(false)
@@ -133,7 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 type="button"
                                 className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-50 lg:hidden cursor-pointer"
                                 onClick={() => setMobileSidebarOpen(true)}
-                                aria-label="Open module sidebar"
+                                aria-label={t("shell.openSidebar")}
                             >
                                 <Icon name="menu" className="text-2xl" />
                             </button>
@@ -145,7 +146,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full">
+                        {/* Global search trigger — ⌘K */}
+                        <button type="button" onClick={openSearch} className="hidden sm:flex w-full items-center gap-2 rounded-lg border border-navy-100 bg-white px-4 py-2 text-xs font-semibold text-navy-400 hover:text-navy-600 hover:border-navy-200 hover:bg-navy-50 transition-colors outline-none cursor-pointer select-none" aria-label={t("shell.openSearch")}>
+                            <Icon name="search" size={14} className="shrink-0" />
+                            <span className="hidden md:inline text-sm">{t("shell.search")}</span>
+                            <kbd className="font-display font-bold bg-neutral-100 border border-neutral-200 px-2 py-1 rounded text-[10px] text-navy-300 tracking-wide">⌘K</kbd>
+                        </button>
+
                         {/* Branch switcher — only meaningful inside a module */}
                         {inModule && activeCompany && (
                             <div className="relative" ref={branchRef}>
@@ -156,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 >
                                     <Icon name="warehouse" className="text-sm text-orange-500" />
                                     <span className="max-w-[120px] text-sm truncate">
-                                        {activeBranch ? activeBranch.name : "Select Branch"}
+                                        {activeBranch ? activeBranch.name : t("shell.selectBranch")}
                                     </span>
                                     <ChevronDownIcon className="w-4 h-4 text-navy-400" />
                                 </button>
@@ -165,7 +173,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <div className="absolute right-0 mt-2 z-50 w-64 rounded-lg border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
                                         <div className="px-4 py-1.5 border-b border-navy-50 mb-1.5">
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
-                                                Switch Branch
+                                                {t("shell.switchBranch")}
                                             </p>
                                         </div>
                                         <div className="max-h-60 overflow-y-auto px-1.5">
@@ -204,7 +212,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             )}
                                             {(!organizationContext?.branches || organizationContext.branches.length === 0) && (
                                                 <div className="px-4 py-3 text-xs text-navy-400 text-center font-medium">
-                                                    No branches available
+                                                    {t("shell.noBranches")}
                                                 </div>
                                             )}
                                         </div>
@@ -212,18 +220,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 )}
                             </div>
                         )}
-
-                        {/* Global search trigger — ⌘K */}
-                        <button
-                            type="button"
-                            onClick={openSearch}
-                            className="hidden sm:flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-3 py-1.5 text-xs font-semibold text-navy-400 hover:text-navy-600 hover:border-navy-200 hover:bg-navy-50 transition-colors outline-none cursor-pointer select-none"
-                            aria-label="Open global search"
-                        >
-                            <Icon name="search" size={14} className="shrink-0" />
-                            <span className="hidden md:inline">Search…</span>
-                            <kbd className="font-display font-bold text-[10px] text-navy-300 tracking-wide">⌘K</kbd>
-                        </button>
 
                         {/* Waffle app launcher */}
                         <ModuleLauncher />
@@ -234,7 +230,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 type="button"
                                 onClick={() => setUserOpen(!userOpen)}
                                 className="flex items-center justify-center h-9 w-9 rounded-xl bg-teal-100 text-teal-700 font-bold border border-teal-200 hover:scale-102 active:scale-98 transition-all outline-none cursor-pointer"
-                                aria-label="Account menu"
+                                aria-label={t("shell.accountMenu")}
                             >
                                 {user?.name.charAt(0).toUpperCase()}
                             </button>
@@ -255,7 +251,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                         <>
                                             <div className="px-4 pt-1.5 pb-1">
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
-                                                    Switch Organization
+                                                    {t("shell.switchOrganization")}
                                                 </p>
                                             </div>
                                             <div className="max-h-44 overflow-y-auto px-1.5 mb-1.5">
@@ -296,7 +292,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <div className="mb-1">
                                         <div className="px-4 pt-1.5 pb-1">
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
-                                                Language
+                                                {t("shell.language")}
                                             </p>
                                         </div>
                                         <div className="px-2 pb-1.5">
@@ -312,7 +308,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                             await setUserLocale(code)
                                                             router.refresh()
                                                         }}
-                                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${locale === code ? 'bg-white text-teal-700 shadow-sm' : 'text-navy-500 hover:text-navy-700'}`}
+                                                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${locale === code ? 'bg-white text-teal-700 border' : 'text-navy-500 hover:text-navy-700'}`}
                                                     >
                                                         {label}
                                                     </button>
@@ -336,7 +332,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                     className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
                                                     <Icon name="grid_view" className="text-sm" />
-                                                    <span className="text-sm">Go to Console</span>
+                                                    <span className="text-sm">{t("shell.goToConsole")}</span>
                                                 </Link>
                                             </HighlightItem>
 
@@ -347,7 +343,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                     className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/profile" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
                                                     <Icon name="manage_accounts" className="text-sm" />
-                                                    <span className="text-sm">Profile Settings</span>
+                                                    <span className="text-sm">{t("shell.profileSettings")}</span>
                                                 </Link>
                                             </HighlightItem>
 
@@ -358,7 +354,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                     className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/platform/settings" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
                                                     <Icon name="tune" className="text-sm" />
-                                                    <span className="text-sm">Platform Settings</span>
+                                                    <span className="text-sm">{t("shell.platformSettings")}</span>
                                                 </Link>
                                             </HighlightItem>
 
@@ -369,7 +365,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                     className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-rose-600 transition-colors outline-none cursor-pointer rounded-md"
                                                 >
                                                     <Icon name="logout" className="text-sm" />
-                                                    <span className="text-sm">Sign out</span>
+                                                    <span className="text-sm">{t("shell.signOut")}</span>
                                                 </button>
                                             </HighlightItem>
                                         </Highlight>
@@ -407,14 +403,7 @@ function ModuleSidebar({
 }) {
     const t = useTranslations()
 
-    // Flatten all items to compute active state for the highlight container
-    const activeHref = module.nav.reduce<string | null>((found, item) => {
-        if (found) return found;
-        if (isNavGroup(item)) {
-            return item.items.find((subItem) => pathname === subItem.href || pathname.startsWith(`${subItem.href}/`))?.href || null;
-        }
-        return (pathname === item.href || pathname.startsWith(`${item.href}/`)) ? item.href : null;
-    }, null);
+    const activeHref = getActiveNavHref(module.nav, pathname)
 
     return (
         <aside
@@ -428,7 +417,7 @@ function ModuleSidebar({
                 >
                     <LogoCompact className="h-6 w-auto shrink-0" />
                     <span
-                        className="text-sm font-bold tracking-tight font-display group-hover:opacity-80 transition-opacity"
+                        className="text-lg font-semibold tracking-tight font-display group-hover:opacity-80 transition-opacity"
                         style={{ color: module.accentColor }}
                     >
                         {module.label}
@@ -438,7 +427,7 @@ function ModuleSidebar({
                     type="button"
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-50 lg:hidden"
                     onClick={onCloseMobile}
-                    aria-label="Close sidebar"
+                    aria-label={t("shell.closeSidebar")}
                 >
                     <Icon name="close" className="text-xl" />
                 </button>
@@ -466,7 +455,7 @@ function ModuleSidebar({
                                             <SidebarNavItem
                                                 key={subItem.href}
                                                 item={subItem}
-                                                pathname={pathname}
+                                                activeHref={activeHref}
                                                 accentColor={module.accentColor}
                                                 t={t}
                                             />
@@ -479,7 +468,7 @@ function ModuleSidebar({
                             <SidebarNavItem
                                 key={item.href}
                                 item={item}
-                                pathname={pathname}
+                                activeHref={activeHref}
                                 accentColor={module.accentColor}
                                 t={t}
                             />
@@ -493,16 +482,16 @@ function ModuleSidebar({
 
 function SidebarNavItem({
     item,
-    pathname,
+    activeHref,
     accentColor,
     t,
 }: {
     item: NavItem
-    pathname: string
+    activeHref: string | null
     accentColor: string
     t?: (key: string) => string
 }) {
-    const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+    const active = activeHref === item.href
     const label = t && item.label.includes('.') ? t(item.label) : item.label
 
     return (
@@ -530,4 +519,15 @@ function SidebarNavItem({
             )}
         </div>
     )
+}
+
+function getActiveNavHref(nav: Array<NavItem | NavGroup>, pathname: string): string | null {
+    const items = nav.flatMap((item) => (isNavGroup(item) ? item.items : [item]))
+
+    const exact = items.find((item) => pathname === item.href)
+    if (exact) return exact.href
+
+    return items
+        .filter((item) => pathname.startsWith(`${item.href}/`))
+        .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null
 }

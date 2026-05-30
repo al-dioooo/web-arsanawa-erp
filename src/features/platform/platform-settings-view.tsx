@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -13,6 +14,7 @@ import {
 const moduleOptions = ["finance", "inventory", "pos", "organization"]
 
 export function PlatformSettingsView() {
+    const t = useTranslations()
     const [moduleKey, setModuleKey] = useState("finance")
     const { data: currencies = [], isLoading: currenciesLoading } = usePlatformCurrencies()
     const { data: settings = [], isLoading: settingsLoading } = usePlatformSettings(moduleKey)
@@ -61,7 +63,7 @@ export function PlatformSettingsView() {
             },
         ])
 
-        setMessage("Setting saved.")
+        setMessage(t("platform.settingSaved"))
     }
 
     return (
@@ -70,17 +72,17 @@ export function PlatformSettingsView() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Platform
+                            {t("platform.eyebrow")}
                         </p>
                         <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            Company Settings
+                            {t("platform.companySettings")}
                         </h1>
                         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500">
-                            Manage shared currencies and module settings used across Finance, Inventory, and POS.
+                            {t("platform.description")}
                         </p>
                     </div>
                     <StatusPill tone={settingsLoading || currenciesLoading ? "amber" : "green"}>
-                        {settingsLoading || currenciesLoading ? "Syncing" : "Ready"}
+                        {settingsLoading || currenciesLoading ? t("common.syncing") : t("common.ready")}
                     </StatusPill>
                 </div>
             </section>
@@ -89,10 +91,13 @@ export function PlatformSettingsView() {
                 <div className="rounded-2xl border border-navy-100 bg-white p-6">
                     <div className="mb-5 flex items-center justify-between gap-3">
                         <h2 className="text-lg font-bold text-navy-900 font-display">
-                            Active Currencies
+                            {t("platform.activeCurrencies")}
                         </h2>
                         <StatusPill tone="neutral">{activeCurrencies.length}</StatusPill>
                     </div>
+                    <p className="mb-4 text-xs leading-relaxed text-navy-500">
+                        {t("platform.currenciesReadOnly")}
+                    </p>
                     <div className="grid gap-2">
                         {activeCurrencies.map((currency) => (
                             <article
@@ -107,27 +112,27 @@ export function PlatformSettingsView() {
                                         </p>
                                     </div>
                                     <StatusPill tone="green">
-                                        {currency.decimal_places} dp
+                                        {t("platform.decimalPlaces", { count: currency.decimal_places })}
                                     </StatusPill>
                                 </div>
                             </article>
                         ))}
                         {!currenciesLoading && activeCurrencies.length === 0 ? (
                             <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                                No active currencies are configured.
+                                {t("platform.noActiveCurrencies")}
                             </p>
                         ) : null}
                     </div>
                 </div>
 
                 <form className="rounded-2xl border border-navy-100 bg-white p-6" onSubmit={submit}>
-                    <h2 className="text-lg font-bold text-navy-900 font-display">Module Setting</h2>
+                    <h2 className="text-lg font-bold text-navy-900 font-display">{t("platform.moduleSetting")}</h2>
                     <p className="mt-1 text-xs leading-relaxed text-navy-500">
-                        Upsert one setting at a time through the Platform batch endpoint.
+                        {t("platform.moduleSettingDescription")}
                     </p>
                     <div className="mt-5 grid gap-4">
                         <SelectField
-                            label="Module"
+                            label={t("platform.module")}
                             value={moduleKey}
                             onChange={(event) => setModuleKey(event.target.value)}
                         >
@@ -138,7 +143,7 @@ export function PlatformSettingsView() {
                             ))}
                         </SelectField>
                         <Field
-                            label="Setting key"
+                            label={t("platform.settingKey")}
                             value={form.key}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, key: event.target.value }))
@@ -146,7 +151,7 @@ export function PlatformSettingsView() {
                             required
                         />
                         <Field
-                            label="Setting value"
+                            label={t("platform.settingValue")}
                             value={form.value}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, value: event.target.value }))
@@ -154,17 +159,17 @@ export function PlatformSettingsView() {
                             required
                         />
                         <Field
-                            label="Branch ID"
+                            label={t("platform.branchId")}
                             type="number"
                             min={1}
                             value={form.branch_id}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, branch_id: event.target.value }))
                             }
-                            placeholder="Company-wide"
+                            placeholder={t("platform.companyWide")}
                         />
                         <Button type="submit" size="xl" disabled={upsertSettings.isPending}>
-                            Save setting
+                            {t("platform.saveSetting")}
                         </Button>
                         {message ? (
                             <p className="rounded-xl border border-emerald-250 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-850">

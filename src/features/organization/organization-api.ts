@@ -41,9 +41,34 @@ export type BranchAssignment = {
     }
 }
 
+export type ExternalApiKey = {
+    id: number
+    company_id: number
+    name: string
+    token_prefix: string
+    source_channel: string
+    last_used_at: string | null
+    expires_at: string | null
+    revoked_at: string | null
+    revoked: boolean
+    created_at: string | null
+    updated_at: string | null
+}
+
 export type RoleInput = {
     name: string
     permissions: string[]
+}
+
+export type ExternalApiKeyInput = {
+    name: string
+    source_channel: string
+    expires_at?: string | null
+}
+
+export type ExternalApiKeySecret = {
+    api_key: ExternalApiKey
+    plain_text_key: string
 }
 
 export type BranchRoleInput = {
@@ -73,6 +98,44 @@ export async function listOrganizationRoles(companyId: number) {
     )
 
     return response.data.roles
+}
+
+export async function listExternalApiKeys(companyId: number) {
+    const response = await apiRequest<{ api_keys: ExternalApiKey[] }>(
+        `/api/v1/organization/companies/${companyId}/api-keys`,
+    )
+
+    return response.data.api_keys
+}
+
+export async function createExternalApiKey(companyId: number, input: ExternalApiKeyInput) {
+    const response = await apiRequest<ExternalApiKeySecret>(
+        `/api/v1/organization/companies/${companyId}/api-keys`,
+        {
+            method: "POST",
+            body: jsonBody(input),
+        },
+    )
+
+    return response.data
+}
+
+export async function rotateExternalApiKey(companyId: number, apiKeyId: number) {
+    const response = await apiRequest<ExternalApiKeySecret>(
+        `/api/v1/organization/companies/${companyId}/api-keys/${apiKeyId}/rotate`,
+        { method: "POST" },
+    )
+
+    return response.data
+}
+
+export async function revokeExternalApiKey(companyId: number, apiKeyId: number) {
+    const response = await apiRequest<{ api_key: ExternalApiKey }>(
+        `/api/v1/organization/companies/${companyId}/api-keys/${apiKeyId}/revoke`,
+        { method: "POST" },
+    )
+
+    return response.data.api_key
 }
 
 export async function createOrganizationRole(companyId: number, input: RoleInput) {
@@ -161,6 +224,47 @@ export function useOrganizationRoles(companyId: number | null) {
         queryKey: ["organization", "roles", companyId],
         queryFn: () => listOrganizationRoles(companyId as number),
         enabled: Boolean(companyId),
+    })
+}
+
+export function useExternalApiKeys(companyId: number | null) {
+    return useQuery({
+        queryKey: ["organization", "api-keys", companyId],
+        queryFn: () => listExternalApiKeys(companyId as number),
+        enabled: Boolean(companyId),
+    })
+}
+
+export function useCreateExternalApiKey(companyId: number | null) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (input: ExternalApiKeyInput) => createExternalApiKey(companyId as number, input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["organization", "api-keys", companyId] })
+        },
+    })
+}
+
+export function useRotateExternalApiKey(companyId: number | null) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (apiKeyId: number) => rotateExternalApiKey(companyId as number, apiKeyId),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["organization", "api-keys", companyId] })
+        },
+    })
+}
+
+export function useRevokeExternalApiKey(companyId: number | null) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (apiKeyId: number) => revokeExternalApiKey(companyId as number, apiKeyId),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["organization", "api-keys", companyId] })
+        },
     })
 }
 

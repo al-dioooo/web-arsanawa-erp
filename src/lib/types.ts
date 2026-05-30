@@ -14,6 +14,7 @@ export type AuthenticatedUser = {
     username: string | null;
     email: string;
     email_verified_at: string | null;
+    is_developer: boolean;
 };
 
 export type LoginResponse = {
@@ -56,7 +57,7 @@ export type Membership = {
 
 export type CompanyMembership = {
     company: Company;
-    membership: Membership;
+    membership: Membership | null;
 };
 
 export type ModuleEntitlement = {

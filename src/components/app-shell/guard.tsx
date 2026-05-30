@@ -9,14 +9,14 @@ import { Icon } from "@/components/ui/icon"
 
 export function EntitlementGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const { modules, organizationContext } = useSession()
+    const { modules, organizationContext, user } = useSession()
 
     const activeModule = getModuleByPath(pathname)
 
     if (activeModule && activeModule.entitlementKey) {
         const isEnabled = modules?.enabled.includes(activeModule.entitlementKey)
         if (!isEnabled) {
-            const canManageModules = canManageEntitlements(organizationContext?.membership)
+            const canManageModules = canManageEntitlements(organizationContext?.membership, user)
 
             return (
                 <div className="flex flex-col items-center justify-center py-20 px-4 text-center">

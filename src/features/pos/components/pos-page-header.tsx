@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useTranslations } from "next-intl"
 import { StatusPill } from "@/components/ui/status-pill"
 
 type PosPageHeaderProps = {
@@ -22,6 +23,8 @@ export function PosPageHeader({
     error,
     actions,
 }: PosPageHeaderProps) {
+    const t = useTranslations()
+
     return (
         <section className="rounded-2xl border border-navy-100 bg-white p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -39,10 +42,10 @@ export function PosPageHeader({
                 <div className="flex flex-wrap items-center gap-2">
                     {actions}
                     <StatusPill tone={hasCompany ? "green" : "amber"}>
-                        {hasCompany ? "Company scoped" : "No company"}
+                        {hasCompany ? t("common.companyScoped") : t("common.noCompany")}
                     </StatusPill>
                     <StatusPill tone={isLoading ? "amber" : "neutral"}>
-                        {isLoading ? "Syncing" : "Ready"}
+                        {isLoading ? t("common.syncing") : t("common.ready")}
                     </StatusPill>
                 </div>
             </div>

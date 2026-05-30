@@ -15,6 +15,7 @@ export function OrganizationView() {
         activeCompanyId,
         companies,
         organizationContext,
+        user,
         error,
         createBranch,
         addMembership,
@@ -24,7 +25,7 @@ export function OrganizationView() {
     const [branchForm, setBranchForm] = useState({ name: "", code: "" })
     const [membershipForm, setMembershipForm] = useState({ user_id: "", branch_id: "", role: "member" })
     const activeCompany = companies.find((entry) => entry.company.id === activeCompanyId)
-    const canManage = canManageOrganization(organizationContext?.membership)
+    const canManage = canManageOrganization(organizationContext?.membership, user)
 
     async function submitBranch(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -65,11 +66,13 @@ export function OrganizationView() {
                             Manage branches, company memberships, and general organizational structure.
                         </p>
                     </div>
-                    {organizationContext?.membership && (
+                    {user?.is_developer ? (
+                        <StatusPill tone="green">Developer</StatusPill>
+                    ) : organizationContext?.membership ? (
                         <StatusPill tone="green">
                             {organizationContext.membership.role}
                         </StatusPill>
-                    )}
+                    ) : null}
                 </div>
                 {error ? (
                     <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">

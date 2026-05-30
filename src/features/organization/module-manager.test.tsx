@@ -8,6 +8,45 @@ vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: () => (key: string, values?: Record<string, string | number>) => {
+        const labels: Record<string, string> = {
+            "console.eyebrow": "Console",
+            "console.welcome": `Welcome back, ${values?.name ?? ""}`,
+            "console.managing": `Managing operations for ${values?.company ?? ""}. Choose an app to begin.`,
+            "console.selectOrganization": "Select an organization to activate your workspace.",
+            "console.section": "Console",
+            "console.applications": "Applications",
+            "console.activeCount": `${values?.count ?? 0} active`,
+            "console.noApplications": "No applications installed",
+            "console.openModuleManagerHint": "Open the Module Manager to install apps for this company.",
+            "console.askAdminHint": "Ask your administrator to install apps for this company.",
+            "console.openModuleManager": "Open Module Manager",
+            "console.availableToInstall": "Available to install",
+            "console.organizationDescription": "Companies, branches, members, and roles.",
+            "console.profileDescription": "Identity, locale, timezone, and user lookup.",
+            "console.partnersDescription": "Customers, suppliers, contacts, and addresses.",
+            "console.platformSettingsDescription": "Currencies and company module settings.",
+            "console.moduleManagerDescription": "Install or uninstall apps for this company.",
+            "console.apiKeysDescription": "External access keys for landing pages and integrations.",
+            "console.inventoryDescription": "Products, stock, pricing, and promotions.",
+            "console.financeDescription": "Ledger, AR/AP, payments, and tax.",
+            "console.posDescription": "Counter sales, catering orders, and shifts.",
+            "console.defaultDescription": `Workspace for ${values?.module ?? ""}.`,
+            "common.open": "Open",
+            "common.install": "Install",
+            "modules.organization": "Organization",
+            "modules.profile": "Profile",
+            "modules.partners": "Partners",
+            "modules.platformSettings": "Platform Settings",
+            "modules.moduleManager": "Module Manager",
+            "modules.apiKeys": "API Keys",
+        }
+
+        return labels[key] ?? key
+    },
+}))
+
 const updateEntitlements = vi.fn()
 
 function mockSession(overrides: Partial<ReturnType<typeof baseSession>> = {}) {
@@ -27,6 +66,7 @@ function baseSession() {
             username: "aliceevr",
             email: "hello@al.is-a.dev",
             email_verified_at: null,
+            is_developer: false,
         },
         profile: null,
         companies: [
@@ -139,11 +179,28 @@ describe("module manager access", () => {
         render(<ConsolePage />)
 
         expect(screen.getByRole("heading", { name: "Module Manager" })).toBeInTheDocument()
+        expect(screen.getByRole("heading", { name: "API Keys" })).toBeInTheDocument()
         expect(
             screen
                 .getAllByRole("link", { name: /Open/ })
                 .some((link) => link.getAttribute("href") === "/organization/modules"),
         ).toBe(true)
+    })
+
+    it("shows installed applications before console utilities", () => {
+        mockSession({
+            modules: {
+                ...baseSession().modules,
+                enabled: ["inventory"],
+            },
+        })
+
+        render(<ConsolePage />)
+
+        const applicationsHeading = screen.getByRole("heading", { name: "Applications" })
+        const consoleHeading = screen.getByRole("heading", { name: "Console" })
+
+        expect(applicationsHeading.compareDocumentPosition(consoleHeading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     })
 
     it("renders only implemented module apps and preserves state when installing one", () => {

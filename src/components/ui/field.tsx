@@ -11,7 +11,7 @@ export function Field({ label, error, className = "", ...props }: FieldProps) {
             <span>{label}</span>
             <input
                 {...props}
-                className={`min-h-11 rounded-md border border-navy-100 bg-white px-3 text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 ${className}`}
+                className={`rounded-md border border-navy-100 bg-white px-2 py-2 text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 ${className}`}
             />
             {error ? <span className="text-xs font-medium text-destructive">{error}</span> : null}
         </label>
@@ -36,7 +36,7 @@ export function SelectField({
             <span>{label}</span>
             <select
                 {...props}
-                className={`min-h-11 rounded-md border border-navy-100 bg-white px-3 text-sm text-navy-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 ${className}`}
+                className={`rounded-md border border-navy-100 bg-white px-2 py-2 text-sm text-navy-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 ${className}`}
             >
                 {children}
             </select>
