@@ -153,7 +153,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         {/* Global search trigger — ⌘K */}
                         <button type="button" onClick={openSearch} className="hidden sm:flex w-full items-center gap-2 rounded-lg border border-navy-100 bg-white px-4 py-2 text-xs font-semibold text-navy-400 hover:text-navy-600 hover:border-navy-200 hover:bg-navy-50 transition-colors outline-none cursor-pointer select-none" aria-label={t("shell.openSearch")}>
                             <Icon name="search" size={14} className="shrink-0" />
-                            <span className="hidden md:inline text-sm">{t("shell.search")}</span>
+                            <span className="hidden md:inline text-xs">{t("shell.search")}</span>
                             <kbd className="font-display font-bold bg-neutral-100 border border-neutral-200 px-2 py-1 rounded text-[10px] text-navy-300 tracking-wide">⌘K</kbd>
                         </button>
 
@@ -163,7 +163,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <button
                                     type="button"
                                     onClick={() => setBranchOpen(!branchOpen)}
-                                    className="flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-3 py-1.5 text-xs font-bold text-navy-700 hover:bg-navy-50 transition-colors outline-none cursor-pointer"
+                                    className="flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-4 py-2 text-xs font-bold text-navy-700 hover:bg-navy-50 transition-colors outline-none cursor-pointer"
                                 >
                                     <Icon name="warehouse" className="text-sm text-orange-500" />
                                     <span className="max-w-[120px] text-sm truncate">

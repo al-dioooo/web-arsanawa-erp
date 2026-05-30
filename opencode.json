@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "motion": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "https://api.motion.dev/registry.tgz?package=motion-studio-mcp&version=6.1.0"
+      ],
+      "enabled": true,
+      "environment": {}
+    }
+  }
+}
