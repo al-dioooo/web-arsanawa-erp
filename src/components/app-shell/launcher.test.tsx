@@ -101,7 +101,7 @@ describe("ModuleLauncher", () => {
 
         const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)
         expect(headings.indexOf("Applications")).toBeLessThan(headings.indexOf("Console"))
-        expect(screen.getByRole("link", { name: /Inventory/ })).toHaveAttribute("href", "/inventory/catalogue")
+        expect(screen.getByRole("link", { name: /Inventory/ })).toHaveAttribute("href", "/inventory/master/products")
         expect(screen.getByRole("link", { name: /Point of Sale/ })).toHaveAttribute("href", "/pos")
         expect(screen.getByRole("link", { name: /Organization/ })).toHaveAttribute("href", "/organization/companies")
         expect(screen.getByRole("link", { name: /API Keys/ })).toHaveAttribute("href", "/organization/api-keys")

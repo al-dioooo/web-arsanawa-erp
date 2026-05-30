@@ -40,14 +40,38 @@ export const moduleRegistry: ModuleEntry[] = [
         label: "Inventory",
         icon: "inventory_2",
         accentColor: "#f47b50",
-        route: "/inventory/catalogue",
+        route: "/inventory/master/products",
         entitlementKey: "inventory",
         permission: "inventory.view",
         nav: [
-            { href: "/inventory/catalogue", label: "Catalogue", icon: "list_alt", tree: "inventory-categories" },
-            { href: "/inventory/stock", label: "Stock", icon: "warehouse" },
-            { href: "/inventory/pricing", label: "Pricing", icon: "sell" },
-            { href: "/inventory/promotions", label: "Promotions", icon: "percent" },
+            {
+                kind: "group",
+                label: "Product",
+                items: [
+                    { href: "/inventory/master/products", label: "Products", icon: "inventory_2" },
+                    { href: "/inventory/master/categories", label: "Product Categories", icon: "account_tree", tree: "inventory-categories" },
+                    { href: "/inventory/master/brands", label: "Product Brands", icon: "sell" },
+                    { href: "/inventory/master/units-of-measure", label: "Units of Measure", icon: "straighten" },
+                    { href: "/inventory/master/product-units", label: "Product Units", icon: "qr_code_2" },
+                ],
+            },
+            {
+                kind: "group",
+                label: "Variants",
+                items: [
+                    { href: "/inventory/master/variant-groups", label: "Variant Group List", icon: "category" },
+                    { href: "/inventory/master/variants", label: "Variant List", icon: "tune" },
+                ],
+            },
+            {
+                kind: "group",
+                label: "Operations",
+                items: [
+                    { href: "/inventory/stock", label: "Stock", icon: "warehouse" },
+                    { href: "/inventory/pricing", label: "Pricing", icon: "sell" },
+                    { href: "/inventory/promotions", label: "Promotions", icon: "percent" },
+                ],
+            },
         ],
     },
     {

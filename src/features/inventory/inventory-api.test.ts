@@ -5,9 +5,15 @@ import {
     deleteCategory,
     deleteDiscount,
     deleteProduct,
+    deleteProductUnit,
     deleteReward,
     deleteUnit,
     deleteVariant,
+    deleteVariantGroup,
+    deleteVariantMaster,
+    getProductUnit,
+    getVariantGroup,
+    getVariantMaster,
     getProduct,
     moveCategory,
     recordAdjustment,
@@ -19,8 +25,17 @@ import {
     updateBrand,
     updateCategory,
     updateProduct,
+    updateProductUnit,
     updateUnit,
     updateVariant,
+    updateVariantGroup,
+    updateVariantMaster,
+    createVariantGroup,
+    createVariantMaster,
+    createProductUnit,
+    listVariantGroups,
+    listVariantMasters,
+    listProductUnits,
 } from "@/features/inventory/inventory-api"
 
 const requestOptions = { token: "token", companyId: 7 }
@@ -125,6 +140,59 @@ describe("inventory API route coverage", () => {
             [expect.stringContaining("/api/v1/inventory/products/4/variants/5/price"), "GET"],
             [expect.stringContaining("/api/v1/inventory/discounts/6"), "DELETE"],
             [expect.stringContaining("/api/v1/inventory/rewards/7"), "DELETE"],
+        ])
+    })
+
+    it("covers variant group, variant master, and product unit routes", async () => {
+        await listVariantGroups(requestOptions)
+        await createVariantGroup(requestOptions, {
+            name: "Package Size",
+            code: "package-size",
+            unit_of_measure_id: 3,
+        })
+        await getVariantGroup(requestOptions, 1)
+        await updateVariantGroup(requestOptions, 1, { is_active: false })
+        await deleteVariantGroup(requestOptions, 1)
+        await listVariantMasters(requestOptions, { variant_group_id: 1 })
+        await createVariantMaster(requestOptions, {
+            variant_group_id: 1,
+            name: "25 Pax",
+            code: "25-pax",
+        })
+        await getVariantMaster(requestOptions, 2)
+        await updateVariantMaster(requestOptions, 2, { position: 20 })
+        await deleteVariantMaster(requestOptions, 2)
+        await listProductUnits(requestOptions, { product_id: 4 })
+        await createProductUnit(requestOptions, {
+            product_id: 4,
+            sku: "SKL-NB-25",
+            variant_ids: [2],
+        })
+        await getProductUnit(requestOptions, 3)
+        await updateProductUnit(requestOptions, 3, { sku: "SKL-NB-25-A" })
+        await deleteProductUnit(requestOptions, 3)
+
+        const calls = vi.mocked(fetch).mock.calls.map(([url, init]) => [
+            String(url),
+            init?.method ?? "GET",
+        ])
+
+        expect(calls).toEqual([
+            [expect.stringContaining("/api/v1/inventory/variant-groups"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/variant-groups"), "POST"],
+            [expect.stringContaining("/api/v1/inventory/variant-groups/1"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/variant-groups/1"), "PATCH"],
+            [expect.stringContaining("/api/v1/inventory/variant-groups/1"), "DELETE"],
+            [expect.stringContaining("/api/v1/inventory/variants?variant_group_id=1"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/variants"), "POST"],
+            [expect.stringContaining("/api/v1/inventory/variants/2"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/variants/2"), "PATCH"],
+            [expect.stringContaining("/api/v1/inventory/variants/2"), "DELETE"],
+            [expect.stringContaining("/api/v1/inventory/product-units?product_id=4"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/product-units"), "POST"],
+            [expect.stringContaining("/api/v1/inventory/product-units/3"), "GET"],
+            [expect.stringContaining("/api/v1/inventory/product-units/3"), "PATCH"],
+            [expect.stringContaining("/api/v1/inventory/product-units/3"), "DELETE"],
         ])
     })
 })

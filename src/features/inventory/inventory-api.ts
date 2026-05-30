@@ -7,10 +7,13 @@ import type {
     Discount,
     InventoryProduct,
     PriceList,
+    ProductUnit,
     Reward,
     StockLot,
     StockMovement,
     UnitOfMeasure,
+    VariantGroup,
+    VariantMaster,
 } from "@/features/inventory/inventory-types";
 
 type InventoryRequestOptions = {
@@ -107,10 +110,15 @@ export async function loadStockSnapshot(
     };
 }
 
-export async function createCategory(options: InventoryRequestOptions, name: string) {
+export async function createCategory(
+    options: InventoryRequestOptions,
+    input: string | { name: string; parent_id?: number | null; position?: number; is_active?: boolean },
+) {
+    const body = typeof input === "string" ? { name: input } : input
+
     return apiRequest(
         "/api/v1/inventory/categories",
-        { method: "POST", body: jsonBody({ name }) },
+        { method: "POST", body: jsonBody(body) },
         options,
     );
 }
@@ -203,6 +211,198 @@ export async function deleteUnit(options: InventoryRequestOptions, unitId: numbe
     )
 }
 
+export async function listVariantGroups(options: InventoryRequestOptions) {
+    return apiRequest<{ variant_groups: VariantGroup[] }>(
+        "/api/v1/inventory/variant-groups",
+        {},
+        options,
+    )
+}
+
+export async function createVariantGroup(
+    options: InventoryRequestOptions,
+    input: {
+        name: string
+        code: string
+        unit_of_measure_id: number
+        description?: string | null
+        is_active?: boolean
+    },
+) {
+    return apiRequest(
+        "/api/v1/inventory/variant-groups",
+        { method: "POST", body: jsonBody(input) },
+        options,
+    )
+}
+
+export async function getVariantGroup(options: InventoryRequestOptions, groupId: number) {
+    return apiRequest<{ variant_group: VariantGroup }>(
+        `/api/v1/inventory/variant-groups/${groupId}`,
+        {},
+        options,
+    )
+}
+
+export async function updateVariantGroup(
+    options: InventoryRequestOptions,
+    groupId: number,
+    input: {
+        name?: string
+        code?: string
+        unit_of_measure_id?: number
+        description?: string | null
+        is_active?: boolean
+    },
+) {
+    return apiRequest(
+        `/api/v1/inventory/variant-groups/${groupId}`,
+        { method: "PATCH", body: jsonBody(input) },
+        options,
+    )
+}
+
+export async function deleteVariantGroup(options: InventoryRequestOptions, groupId: number) {
+    return apiRequest(
+        `/api/v1/inventory/variant-groups/${groupId}`,
+        { method: "DELETE" },
+        options,
+    )
+}
+
+export async function listVariantMasters(
+    options: InventoryRequestOptions,
+    filters: { variant_group_id?: number } = {},
+) {
+    return apiRequest<{ variants: VariantMaster[] }>(
+        `/api/v1/inventory/variants${queryString(filters)}`,
+        {},
+        options,
+    )
+}
+
+export async function createVariantMaster(
+    options: InventoryRequestOptions,
+    input: {
+        variant_group_id: number
+        name: string
+        code: string
+        position?: number
+        is_active?: boolean
+    },
+) {
+    return apiRequest(
+        "/api/v1/inventory/variants",
+        { method: "POST", body: jsonBody(input) },
+        options,
+    )
+}
+
+export async function getVariantMaster(options: InventoryRequestOptions, variantId: number) {
+    return apiRequest<{ variant: VariantMaster }>(
+        `/api/v1/inventory/variants/${variantId}`,
+        {},
+        options,
+    )
+}
+
+export async function updateVariantMaster(
+    options: InventoryRequestOptions,
+    variantId: number,
+    input: {
+        variant_group_id?: number
+        name?: string
+        code?: string
+        position?: number
+        is_active?: boolean
+    },
+) {
+    return apiRequest(
+        `/api/v1/inventory/variants/${variantId}`,
+        { method: "PATCH", body: jsonBody(input) },
+        options,
+    )
+}
+
+export async function deleteVariantMaster(options: InventoryRequestOptions, variantId: number) {
+    return apiRequest(
+        `/api/v1/inventory/variants/${variantId}`,
+        { method: "DELETE" },
+        options,
+    )
+}
+
+export async function listProductUnits(
+    options: InventoryRequestOptions,
+    filters: {
+        product_id?: number
+        category_id?: number
+        brand_id?: number
+        status?: string
+        search?: string
+        per_page?: number
+    } = {},
+) {
+    return apiRequest<{ product_units: ProductUnit[]; pagination: { total: number } }>(
+        `/api/v1/inventory/product-units${queryString(filters)}`,
+        {},
+        options,
+    )
+}
+
+export async function createProductUnit(
+    options: InventoryRequestOptions,
+    input: {
+        product_id: number
+        sku: string
+        barcode?: string | null
+        name?: string | null
+        variant_ids?: number[]
+        is_active?: boolean
+    },
+) {
+    return apiRequest(
+        "/api/v1/inventory/product-units",
+        { method: "POST", body: jsonBody(input) },
+        options,
+    )
+}
+
+export async function getProductUnit(options: InventoryRequestOptions, productUnitId: number) {
+    return apiRequest<{ product_unit: ProductUnit }>(
+        `/api/v1/inventory/product-units/${productUnitId}`,
+        {},
+        options,
+    )
+}
+
+export async function updateProductUnit(
+    options: InventoryRequestOptions,
+    productUnitId: number,
+    input: {
+        product_id?: number
+        sku?: string
+        barcode?: string | null
+        name?: string | null
+        variant_ids?: number[]
+        is_active?: boolean
+    },
+) {
+    return apiRequest(
+        `/api/v1/inventory/product-units/${productUnitId}`,
+        { method: "PATCH", body: jsonBody(input) },
+        options,
+    )
+}
+
+export async function deleteProductUnit(options: InventoryRequestOptions, productUnitId: number) {
+    return apiRequest(
+        `/api/v1/inventory/product-units/${productUnitId}`,
+        { method: "DELETE" },
+        options,
+    )
+}
+
 export async function createProduct(
     options: InventoryRequestOptions,
     input: {
@@ -210,7 +410,8 @@ export async function createProduct(
         category_id?: number;
         brand_id?: number;
         base_uom_id: number;
-        variants: Array<{ sku: string; name?: string }>;
+        status?: string;
+        variants?: Array<{ sku: string; name?: string }>;
     },
 ) {
     return apiRequest(

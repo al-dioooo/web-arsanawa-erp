@@ -24,6 +24,41 @@ export type UnitOfMeasure = {
     is_active: boolean;
 };
 
+export type VariantGroup = {
+    id: number;
+    company_id: number;
+    unit_of_measure_id: number;
+    name: string;
+    code: string;
+    description: string | null;
+    is_active: boolean;
+    unit?: UnitOfMeasure;
+    variants?: VariantMaster[];
+};
+
+export type VariantMaster = {
+    id: number;
+    company_id: number;
+    variant_group_id: number;
+    name: string;
+    code: string;
+    position: number;
+    is_active: boolean;
+    group?: VariantGroup;
+};
+
+export type ProductUnit = {
+    id: number;
+    company_id: number;
+    product_id: number;
+    sku: string;
+    barcode: string | null;
+    name: string | null;
+    is_active: boolean;
+    product?: InventoryProduct;
+    variants: VariantMaster[];
+};
+
 export type ProductVariant = {
     id: number;
     product_id: number;
@@ -49,6 +84,7 @@ export type InventoryProduct = {
     attributes: Record<string, unknown> | null;
     status: string;
     variants: ProductVariant[];
+    product_units?: ProductUnit[];
     tags?: Array<{ id: number; name: string }>;
 };
 
