@@ -41,6 +41,7 @@ import {
     listVariantGroups,
     listVariantMasters,
     listProductUnits,
+    loadInventoryDashboardSummary,
 } from "@/features/inventory/inventory-api"
 
 const requestOptions = { token: "token", companyId: 7 }
@@ -227,5 +228,13 @@ describe("inventory API route coverage", () => {
             [expect.stringContaining("/api/v1/inventory/product-units/3"), "PATCH"],
             [expect.stringContaining("/api/v1/inventory/product-units/3"), "DELETE"],
         ])
+    })
+
+    it("loads the inventory dashboard summary from the dashboard endpoint", async () => {
+        await loadInventoryDashboardSummary(requestOptions)
+
+        const [url, init] = vi.mocked(fetch).mock.calls[0]
+        expect(String(url)).toContain("/api/v1/inventory/dashboard")
+        expect(init?.method ?? "GET").toBe("GET")
     })
 })

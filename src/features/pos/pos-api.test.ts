@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cancelSale, listSales, loadCustomers, loadProductsForSale } from "@/features/pos/pos-api"
+import { cancelSale, listSales, loadCustomers, loadPosDashboardSummary, loadProductsForSale } from "@/features/pos/pos-api"
 
 describe("POS API", () => {
     beforeEach(() => {
@@ -104,5 +104,13 @@ describe("POS API", () => {
         const [url] = vi.mocked(fetch).mock.calls[0]
         expect(String(url)).toContain("/api/v1/inventory/products?")
         expect(String(url)).toContain("per_page=100")
+    })
+
+    it("loads the POS dashboard summary from the dashboard endpoint", async () => {
+        await loadPosDashboardSummary({ token: "token", companyId: 9 })
+
+        const [url, init] = vi.mocked(fetch).mock.calls[0]
+        expect(String(url)).toContain("/api/v1/pos/dashboard")
+        expect(init?.method ?? "GET").toBe("GET")
     })
 })

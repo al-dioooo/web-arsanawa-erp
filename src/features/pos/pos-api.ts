@@ -8,6 +8,7 @@ import type {
     CreateSaleInput,
     OpenShiftInput,
     Pagination,
+    PosDashboardSummary,
     Register,
     Sale,
     SalesReport,
@@ -19,6 +20,11 @@ import type { Category, InventoryProduct } from "@/features/inventory/inventory-
 export type PosRequestOptions = {
     token: string
     companyId: number
+}
+
+export async function loadPosDashboardSummary(options: PosRequestOptions) {
+    const res = await apiRequest<PosDashboardSummary>("/api/v1/pos/dashboard", {}, options)
+    return res.data
 }
 
 export type Customer = {

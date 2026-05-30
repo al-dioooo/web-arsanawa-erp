@@ -68,13 +68,13 @@ export const searchRegistry: SearchItem[] = [
 
     // ── POS ──────────────────────────────────────────────────────────────────
     {
-        id: "pos-register",
-        label: "POS Register",
-        description: "Ring up counter and catering sales",
+        id: "pos-dashboard",
+        label: "POS Dashboard",
+        description: "POS counters, register selling, and shift setup",
         icon: "point_of_sale",
         href: "/pos",
         group: "Point of Sale",
-        keywords: ["cashier", "checkout", "sell", "payment"],
+        keywords: ["cashier", "checkout", "sell", "payment", "dashboard"],
     },
     {
         id: "pos-sales",
@@ -114,6 +114,15 @@ export const searchRegistry: SearchItem[] = [
     },
 
     // ── Inventory ───────────────────────────────────────────────────────────
+    {
+        id: "inventory-dashboard",
+        label: "Inventory Dashboard",
+        description: "Inventory counters, stock attention, and catalogue quick actions",
+        icon: "inventory_2",
+        href: "/inventory",
+        group: "Inventory",
+        keywords: ["inventory", "dashboard", "stock", "catalogue", "sku"],
+    },
     {
         id: "inventory-products",
         label: "Products",

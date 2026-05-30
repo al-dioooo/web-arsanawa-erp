@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { Field } from "@/components/ui/field"
+import { Icon } from "@/components/ui/icon"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { useSession } from "@/features/auth/session-provider"
 import { CartPanel, type CartItem, type CateringFields } from "@/features/pos/components/cart-panel"
@@ -24,6 +25,7 @@ import {
     getCurrentShift,
     getSale,
     listRegisters,
+    loadPosDashboardSummary,
     loadCustomers,
     loadProductsForSale,
     openShift,
@@ -34,7 +36,8 @@ import {
     type PosRequestOptions,
 } from "@/features/pos/pos-api"
 import type { Category, InventoryProduct, ProductVariant } from "@/features/inventory/inventory-types"
-import type { AddPaymentInput, Register, Sale, SaleType, Shift } from "@/features/pos/pos-types"
+import type { AddPaymentInput, PosDashboardSummary, Register, Sale, SaleType, Shift } from "@/features/pos/pos-types"
+import { formatIDR } from "@/lib/format"
 import { toNumber } from "@/lib/money"
 
 const EMPTY_CATERING: CateringFields = {
@@ -53,6 +56,7 @@ export function RegisterView() {
     const [categories, setCategories] = useState<Category[]>([])
     const [customers, setCustomers] = useState<Customer[]>([])
     const [registers, setRegisters] = useState<Register[]>([])
+    const [dashboardSummary, setDashboardSummary] = useState<PosDashboardSummary | null>(null)
     const [selectedRegisterId, setSelectedRegisterId] = useState<number | null>(null)
     const [shift, setShift] = useState<Shift | null>(null)
     const [priceMap, setPriceMap] = useState<Record<string, string | null>>({})
@@ -87,15 +91,17 @@ export function RegisterView() {
         setIsLoading(true)
         setError(null)
         try {
-            const [catalogue, loadedCustomers, loadedRegisters] = await Promise.all([
+            const [catalogue, loadedCustomers, loadedRegisters, summary] = await Promise.all([
                 loadProductsForSale(requestOptions),
                 loadCustomers(requestOptions).catch(() => [] as Customer[]),
                 listRegisters(requestOptions),
+                loadPosDashboardSummary(requestOptions).catch(() => null),
             ])
             setProducts(catalogue.products)
             setCategories(catalogue.categories)
             setCustomers(loadedCustomers)
             setRegisters(loadedRegisters)
+            setDashboardSummary(summary)
 
             const activeRegisters = loadedRegisters.filter(
                 (register) => register.is_active && (!activeBranchId || register.branch_id === activeBranchId),
@@ -364,13 +370,65 @@ export function RegisterView() {
     return (
         <div className="grid gap-6">
             <PosPageHeader
-                title="Register"
+                title="POS Dashboard"
                 subtitle="Ring up counter and catering sales. Tap a product to add it to the cart, then take payment."
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
                 message={message}
                 error={error}
             />
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                    {
+                        label: "Active Registers",
+                        value: dashboardSummary?.counters.registers.active ?? 0,
+                        detail: `${dashboardSummary?.counters.registers.total ?? 0} total`,
+                        icon: "pos_terminal",
+                        tone: "bg-teal-50 text-teal-700",
+                    },
+                    {
+                        label: "Open Shifts",
+                        value: dashboardSummary?.counters.shifts.open ?? 0,
+                        detail: "Ready drawers",
+                        icon: "shifts",
+                        tone: "bg-emerald-50 text-emerald-700",
+                    },
+                    {
+                        label: "Open Sales",
+                        value: dashboardSummary?.counters.sales.open ?? 0,
+                        detail: "Draft or confirmed",
+                        icon: "receipt_long",
+                        tone: "bg-amber-50 text-amber-600",
+                    },
+                    {
+                        label: "Today Sales",
+                        value: formatIDR(Number(dashboardSummary?.counters.sales.today_total ?? 0)),
+                        detail: `${dashboardSummary?.counters.sales.today_count ?? 0} transactions`,
+                        icon: "payments",
+                        tone: "bg-indigo-50 text-indigo-600",
+                    },
+                ].map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-navy-100 bg-white p-5">
+                        <div className="mb-4 flex items-start justify-between gap-4">
+                            <span className="text-xs font-bold uppercase tracking-wider text-navy-500 font-display">
+                                {item.label}
+                            </span>
+                            <div className={`rounded-xl p-2 ${item.tone}`}>
+                                <Icon name={item.icon} className="text-xl" />
+                            </div>
+                        </div>
+                        {isLoading ? (
+                            <div className="h-8 w-28 animate-pulse rounded-lg bg-navy-100" />
+                        ) : (
+                            <div className="grid gap-1">
+                                <span className="text-2xl font-bold font-display text-navy-900">{item.value}</span>
+                                <span className="text-sm font-medium text-navy-400">{item.detail}</span>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
 
             <ShiftBar
                 shift={shift}

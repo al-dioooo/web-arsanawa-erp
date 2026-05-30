@@ -3,6 +3,7 @@ import {
     deleteAccount,
     deleteTaxRate,
     getAccount,
+    loadFinanceDashboardSummary,
     getTaxRate,
     updateAccount,
     updateTaxRate,
@@ -59,5 +60,13 @@ describe("finance API route coverage", () => {
             [expect.stringContaining("/api/v1/finance/tax-rates/9"), "PATCH"],
             [expect.stringContaining("/api/v1/finance/tax-rates/9"), "DELETE"],
         ])
+    })
+
+    it("loads the finance dashboard summary from the dashboard endpoint", async () => {
+        await loadFinanceDashboardSummary({ token: "token", companyId: 7 })
+
+        const [url, init] = vi.mocked(fetch).mock.calls[0]
+        expect(String(url)).toContain("/api/v1/finance/dashboard")
+        expect(init?.method ?? "GET").toBe("GET")
     })
 })

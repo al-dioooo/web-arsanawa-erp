@@ -7,11 +7,8 @@ import { StatusBadge } from '@/features/finance/components/status-badge'
 import { Icon } from '@/components/ui/icon'
 import Link from 'next/link'
 import { useSession } from '@/features/auth/session-provider'
-import { useCOA, usePeriods } from '@/features/finance/api'
-import { useInvoices } from '@/features/finance/api-invoices'
-import { useBills } from '@/features/finance/api-bills'
+import { useCOA, useFinanceDashboardSummary, usePeriods } from '@/features/finance/api'
 import { useTrialBalance } from '@/features/finance/api-journals'
-import { useApprovalRequests } from '@/features/finance/api-approvals'
 import { formatIDR, formatDateID } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -36,11 +33,9 @@ export default function FinanceDashboard() {
     const { data: periods = [] } = usePeriods(activeCompanyId)
     const openPeriod = periods.find(p => p.status === 'open') ?? periods[0] ?? null
     const { data: trialBalanceLines = [] } = useTrialBalance(activeCompanyId, openPeriod?.id ?? null)
-    const { data: invoices = [], isLoading: loadingInvoices } = useInvoices(activeCompanyId)
-    const { data: bills = [], isLoading: loadingBills } = useBills(activeCompanyId)
-    const { data: approvalData } = useApprovalRequests(activeCompanyId, { status: 'pending', per_page: 100 })
+    const { data: dashboardSummary, isLoading: loadingSummary } = useFinanceDashboardSummary(activeCompanyId)
 
-    const isLoading = loadingInvoices || loadingBills
+    const isLoading = loadingSummary
 
     const cashPosition = useMemo(() => {
         const assetIds = new Set(
@@ -51,38 +46,14 @@ export default function FinanceDashboard() {
             .reduce((sum, l) => sum + (l.debit - l.credit), 0)
     }, [accounts, trialBalanceLines])
 
-    const arOutstanding = useMemo(() => {
-        return invoices
-            .filter(inv => ['posted', 'partially_paid', 'overdue'].includes(inv.status))
-            .reduce((sum, inv) => sum + (parseFloat(inv.total) - parseFloat(inv.amount_paid)), 0)
-    }, [invoices])
+    const arOutstanding = parseFloat(dashboardSummary?.counters.ar_outstanding ?? "0")
+    const apOutstanding = parseFloat(dashboardSummary?.counters.ap_outstanding ?? "0")
+    const pendingApprovalsCount = dashboardSummary?.counters.pending_approvals ?? 0
 
-    const apOutstanding = useMemo(() => {
-        return bills
-            .filter(b => ['posted', 'partially_paid'].includes(b.status))
-            .reduce((sum, b) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid)), 0)
-    }, [bills])
-
-    const pendingApprovalsCount = approvalData?.approval_requests?.length ?? 0
-
-    const recentActivity = useMemo(() => {
-        type ActivityItem = { id: number; type: 'invoice' | 'bill'; number: string; date: string; total: string; status: string; href: string }
-        const items: ActivityItem[] = [
-            ...invoices.slice(0, 10).map(inv => ({
-                id: inv.id, type: 'invoice' as const,
-                number: inv.invoice_number, date: inv.invoice_date,
-                total: inv.total, status: inv.status,
-                href: `/finance/invoices/${inv.id}`
-            })),
-            ...bills.slice(0, 10).map(b => ({
-                id: b.id, type: 'bill' as const,
-                number: b.bill_number, date: b.bill_date,
-                total: b.total, status: b.status,
-                href: `/finance/bills/${b.id}`
-            })),
-        ]
-        return items.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8)
-    }, [invoices, bills])
+    const recentActivity = (dashboardSummary?.recent_activity ?? []).map((item) => ({
+        ...item,
+        href: item.type === "invoice" ? `/finance/invoices/${item.id}` : `/finance/bills/${item.id}`,
+    }))
 
     const kpis = [
         {
@@ -100,7 +71,7 @@ export default function FinanceDashboard() {
             icon: "attach_money",
             color: "text-amber-600",
             bg: "bg-amber-50",
-            loading: loadingInvoices,
+            loading: loadingSummary,
             href: "/finance/ar",
         },
         {
@@ -109,7 +80,7 @@ export default function FinanceDashboard() {
             icon: "money_off",
             color: "text-rose-600",
             bg: "bg-rose-50",
-            loading: loadingBills,
+            loading: loadingSummary,
             href: "/finance/ap",
         },
         {
@@ -234,7 +205,7 @@ export default function FinanceDashboard() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-semibold text-navy-900 text-sm truncate">{item.number}</div>
-                                        <div className="text-xs text-navy-400 font-medium">{formatDateID(item.date)}</div>
+                                        <div className="text-xs text-navy-400 font-medium">{item.date ? formatDateID(item.date) : "-"}</div>
                                     </div>
                                     <div className="flex items-center gap-3 flex-shrink-0">
                                         <span className="font-semibold text-navy-900 text-sm">{formatIDR(parseFloat(item.total))}</span>

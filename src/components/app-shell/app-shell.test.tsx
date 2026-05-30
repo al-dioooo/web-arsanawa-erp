@@ -27,6 +27,8 @@ vi.mock("next-intl", () => ({
     useLocale: () => "id",
     useTranslations: () => (key: string) => {
         const labels: Record<string, string> = {
+            "finance.nav.bills": "Bills",
+            "finance.nav.transactions": "Transactions",
             "pos.nav.register": "Kasir",
             "pos.nav.shifts": "Shift",
             "pos.nav.sales": "Penjualan",
@@ -181,7 +183,7 @@ describe("AppShell module sidebar", () => {
         )
 
         expect(screen.getByRole("link", { name: /Laporan/ })).toHaveStyle({ color: "#a37565" })
-        expect(screen.getByRole("link", { name: /Kasir/ })).not.toHaveStyle({ color: "#a37565" })
+        expect(screen.getByRole("link", { name: /Dashboard/ })).not.toHaveStyle({ color: "#a37565" })
     })
 
     it("uses the current session profile display name in the account menu", () => {
@@ -208,6 +210,48 @@ describe("AppShell module sidebar", () => {
 
         expect(navLinks[0]).toHaveTextContent("Dashboard")
         expect(navLinks[0]).toHaveAttribute("href", "/pos")
+    })
+
+    it("activates the dashboard link on the inventory module root", () => {
+        navigationState.pathname = "/inventory"
+
+        render(
+            <AppShell>
+                <div>Inventory dashboard</div>
+            </AppShell>,
+        )
+
+        expect(screen.getByRole("link", { name: /Dashboard/ })).toHaveStyle({ color: "#f47b50" })
+    })
+
+    it("activates the dashboard link on the finance module root", () => {
+        navigationState.pathname = "/finance"
+
+        render(
+            <AppShell>
+                <div>Finance dashboard</div>
+            </AppShell>,
+        )
+
+        expect(screen.getByRole("link", { name: /Dashboard/ })).toHaveStyle({ color: "#fbbe57" })
+    })
+
+    it("does not duplicate the POS root route as register navigation", () => {
+        navigationState.pathname = "/pos"
+
+        render(
+            <AppShell>
+                <div>POS dashboard</div>
+            </AppShell>,
+        )
+
+        const rootLinks = screen
+            .getAllByRole("link")
+            .filter((link) => link.closest("[data-module-sidebar-nav]") && link.getAttribute("href") === "/pos")
+
+        expect(rootLinks).toHaveLength(1)
+        expect(rootLinks[0]).toHaveTextContent("Dashboard")
+        expect(screen.queryByRole("link", { name: /Kasir/ })).not.toBeInTheDocument()
     })
 
     it("shows a topbar API status dot with hoverable status labels", () => {

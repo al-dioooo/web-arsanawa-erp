@@ -159,3 +159,26 @@ export type Reward = {
     effective_to: string | null;
     is_active: boolean;
 };
+
+export type InventoryDashboardSummary = {
+    counters: {
+        products: {
+            total: number;
+            active: number;
+            inactive: number;
+        };
+        product_units: {
+            total: number;
+            active: number;
+        };
+        stock_lots: {
+            active: number;
+            expiring_soon: number;
+        };
+        stock_movements: {
+            total: number;
+            unsettled: number;
+        };
+        stock_value: string;
+    };
+};

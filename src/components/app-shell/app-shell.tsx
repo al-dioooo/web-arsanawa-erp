@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useIsFetching, useIsMutating } from "@tanstack/react-query"
 import { useSession } from "@/features/auth/session-provider"
-import { getModuleByPath, isNavGroup, type ModuleEntry, type NavGroup, type NavItem } from "@/lib/modules/registry"
+import { getModuleByPath, isNavGroup, type ModuleEntry, type NavItem } from "@/lib/modules/registry"
 import { useTranslations, useLocale } from 'next-intl'
 import { setUserLocale } from '@/actions/locale'
 import { ModuleLauncher } from "@/components/app-shell/launcher"
@@ -482,7 +482,7 @@ function ModuleSidebar({
 }) {
     const t = useTranslations()
 
-    const activeHref = getActiveNavHref(module.nav, pathname)
+    const activeHref = getActiveNavHref(module, pathname)
 
     return (
         <aside
@@ -614,8 +614,12 @@ function SidebarNavItem({
     )
 }
 
-function getActiveNavHref(nav: Array<NavItem | NavGroup>, pathname: string): string | null {
-    const items = nav.flatMap((item) => (isNavGroup(item) ? item.items : [item]))
+function getActiveNavHref(module: ModuleEntry, pathname: string): string | null {
+    if (pathname === module.route) {
+        return module.route
+    }
+
+    const items = module.nav.flatMap((item) => (isNavGroup(item) ? item.items : [item]))
 
     const exact = items.find((item) => pathname === item.href)
     if (exact) return exact.href

@@ -126,6 +126,23 @@ export type ShiftReport = {
     cash_variance: string | null
 }
 
+export type PosDashboardSummary = {
+    counters: {
+        registers: {
+            total: number
+            active: number
+        }
+        shifts: {
+            open: number
+        }
+        sales: {
+            open: number
+            today_count: number
+            today_total: string
+        }
+    }
+}
+
 // --- Input payloads -------------------------------------------------------
 
 export type SaleLineInput = {

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiRequest, jsonBody } from "@/lib/api-client"
+import type { ApiRequestOptions } from "@/lib/api-client"
 
 // --- Types ---
 
@@ -42,6 +43,38 @@ export type AccountMapping = {
     company_id: number
     key: string
     account_id: number
+}
+
+export type FinanceDashboardSummary = {
+    counters: {
+        ar_outstanding: string
+        ap_outstanding: string
+        pending_approvals: number
+        draft_invoices: number
+        draft_bills: number
+    }
+    recent_activity: Array<{
+        type: "invoice" | "bill"
+        id: number
+        number: string
+        date: string | null
+        total: string
+        status: string
+    }>
+}
+
+export function loadFinanceDashboardSummary(options: ApiRequestOptions = {}) {
+    return apiRequest<FinanceDashboardSummary>("/api/v1/finance/dashboard", {}, options).then(
+        (res) => res.data,
+    )
+}
+
+export function useFinanceDashboardSummary(companyId: number | null) {
+    return useQuery({
+        queryKey: ["finance", "dashboard", companyId],
+        queryFn: () => loadFinanceDashboardSummary(),
+        enabled: !!companyId,
+    })
 }
 
 // --- Hooks ---

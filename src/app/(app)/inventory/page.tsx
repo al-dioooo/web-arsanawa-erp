@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation"
+import { InventoryDashboardView } from "@/features/inventory/inventory-dashboard-view"
 
-export default function InventoryRedirectPage() {
-    redirect("/inventory/catalogue")
+export default function InventoryPage() {
+    return <InventoryDashboardView />
 }

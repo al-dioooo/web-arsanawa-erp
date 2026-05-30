@@ -6,6 +6,7 @@ import type {
     Category,
     Discount,
     InventoryProduct,
+    InventoryDashboardSummary,
     PriceList,
     ProductUnit,
     Reward,
@@ -16,7 +17,7 @@ import type {
     VariantMaster,
 } from "@/features/inventory/inventory-types";
 
-type InventoryRequestOptions = {
+export type InventoryRequestOptions = {
     token: string;
     companyId: number;
 };
@@ -66,6 +67,16 @@ export async function loadInventory(options: InventoryRequestOptions) {
         discounts: discounts.data.discounts,
         rewards: rewards.data.rewards,
     };
+}
+
+export async function loadInventoryDashboardSummary(options: InventoryRequestOptions) {
+    const response = await apiRequest<InventoryDashboardSummary>(
+        "/api/v1/inventory/dashboard",
+        {},
+        options,
+    )
+
+    return response.data
 }
 
 export async function loadStockSnapshot(
