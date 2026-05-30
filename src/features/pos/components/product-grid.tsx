@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Icon } from "@/components/ui/icon"
+import { Input } from "@/components/ui/input"
+import { SelectDescription } from "@/components/ui/select-description"
 import { formatCurrency } from "@/lib/money"
 import type { Category, InventoryProduct, ProductVariant } from "@/features/inventory/inventory-types"
 
@@ -43,31 +44,25 @@ export function ProductGrid({ products, categories, priceMap, onAdd, disabled }:
     return (
         <div className="flex flex-col gap-4 rounded-2xl border border-navy-100 bg-white p-6">
             <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
-                <div className="relative">
-                    <span className="absolute inset-y-0 left-3 flex items-center text-navy-400">
-                        <Icon name="search" size={18} />
-                    </span>
-                    <input
-                        type="text"
-                        placeholder="Search products or SKU..."
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        className="min-h-11 w-full rounded-md border border-navy-100 bg-white pl-10 text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                    />
-                </div>
-                <select
+                <Input
+                    label="Search products"
+                    type="text"
+                    placeholder="Search products or SKU..."
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                />
+                <SelectDescription
+                    label="Category"
                     value={categoryId}
                     onChange={(event) => setCategoryId(event.target.value)}
-                    className="min-h-11 rounded-md border border-navy-100 bg-white px-3 text-sm text-navy-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                >
-                    <option value="">All categories</option>
-                    {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                            {"- ".repeat(category.depth)}
-                            {category.name}
-                        </option>
-                    ))}
-                </select>
+                    options={[
+                        { value: "", label: "All categories" },
+                        ...categories.map((category) => ({
+                            value: category.id,
+                            label: `${"- ".repeat(category.depth)}${category.name}`,
+                        })),
+                    ]}
+                />
             </div>
 
             <div className="grid max-h-[60vh] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">

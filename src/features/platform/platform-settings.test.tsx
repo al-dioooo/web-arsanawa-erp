@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { PlatformSettingsView } from "@/features/platform/platform-settings-view"
+import { toast } from "sonner"
 import {
     usePlatformCurrencies,
     usePlatformSettings,
@@ -11,6 +12,13 @@ vi.mock("@/features/platform/platform-api", () => ({
     usePlatformCurrencies: vi.fn(),
     usePlatformSettings: vi.fn(),
     useUpsertPlatformSettings: vi.fn(),
+}))
+
+vi.mock("sonner", () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn(),
+    },
 }))
 
 vi.mock("next-intl", () => ({
@@ -45,6 +53,8 @@ const upsertSettings = vi.fn()
 describe("PlatformSettingsView", () => {
     beforeEach(() => {
         upsertSettings.mockReset()
+        vi.mocked(toast.success).mockReset()
+        vi.mocked(toast.error).mockReset()
         vi.mocked(usePlatformCurrencies).mockReturnValue({
             data: [
                 {
@@ -99,5 +109,10 @@ describe("PlatformSettingsView", () => {
                 branch_id: null,
             },
         ])
+
+        await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Setting saved."))
+        expect(screen.queryByText("Setting saved.")).not.toBeInTheDocument()
+        expect(screen.queryByText("Ready")).not.toBeInTheDocument()
+        expect(screen.queryByText("Syncing")).not.toBeInTheDocument()
     })
 })

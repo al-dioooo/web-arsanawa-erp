@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import type { Dispatch, FormEvent, SetStateAction } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
@@ -125,7 +127,6 @@ export function InventoryMasterDataView({
     const [form, setForm] = useState<FormState>(emptyForm)
     const [query, setQuery] = useState("")
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
 
     const config = configs[kind]
     const itemId = id ? Number(id) : null
@@ -138,7 +139,6 @@ export function InventoryMasterDataView({
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
 
         try {
             const [inventory, groups, masters, unitsResponse] = await Promise.all([
@@ -156,7 +156,7 @@ export function InventoryMasterDataView({
             setVariants(masters.data.variants)
             setProductUnits(unitsResponse.data.product_units)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load inventory master data.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load inventory master data.")
         } finally {
             setIsLoading(false)
         }
@@ -203,7 +203,6 @@ export function InventoryMasterDataView({
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
 
         try {
             if (mode === "create") {
@@ -213,9 +212,10 @@ export function InventoryMasterDataView({
             }
 
             await refreshData()
+            toast.success(`${config.singular} saved.`)
             router.push(config.base)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to save master data.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to save master data.")
         } finally {
             setIsLoading(false)
         }
@@ -226,14 +226,14 @@ export function InventoryMasterDataView({
         if (!confirm(`Delete this ${config.singular.toLowerCase()}?`)) return
 
         setIsLoading(true)
-        setError(null)
 
         try {
             await deleteEntity(kind, requestOptions, itemId)
             await refreshData()
+            toast.success(`${config.singular} deleted.`)
             router.push(config.base)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to delete master data.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to delete master data.")
         } finally {
             setIsLoading(false)
         }
@@ -271,25 +271,17 @@ export function InventoryMasterDataView({
                 </div>
             </header>
 
-            {error && (
-                <div className="rounded-lg border border-rose-250 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-850">
-                    {error}
-                </div>
-            )}
-
             {mode === "list" && (
                 <section className="grid gap-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="relative w-full md:max-w-sm">
-                            <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" />
-                            <input
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder={`Search ${config.title.toLowerCase()}`}
-                                className="min-h-11 w-full rounded-lg border border-navy-100 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                            />
-                        </div>
-                        <StatusPill tone={isLoading ? "amber" : "neutral"}>{isLoading ? "Syncing" : `${rows.length} records`}</StatusPill>
+                        <Input
+                            label={`Search ${config.title}`}
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder={`Search ${config.title.toLowerCase()}`}
+                            className="w-full md:min-w-80"
+                        />
+                        <StatusPill tone="neutral">{`${rows.length} records`}</StatusPill>
                     </div>
                     <MasterTable base={config.base} rows={rows} />
                 </section>

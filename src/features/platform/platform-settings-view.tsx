@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Field, SelectField } from "@/components/ui/field"
+import { Field } from "@/components/ui/field"
+import { SelectDescription } from "@/components/ui/select-description"
 import { StatusPill } from "@/components/ui/status-pill"
 import {
     usePlatformCurrencies,
@@ -11,20 +13,40 @@ import {
     useUpsertPlatformSettings,
 } from "@/features/platform/platform-api"
 
-const moduleOptions = ["finance", "inventory", "pos", "organization"]
+const moduleOptions = [
+    {
+        value: "finance",
+        label: "finance",
+        description: "Finance defaults for invoices, journals, payments, and tax workflows.",
+    },
+    {
+        value: "inventory",
+        label: "inventory",
+        description: "Inventory defaults for catalogue, stock, pricing, and promotion workflows.",
+    },
+    {
+        value: "pos",
+        label: "pos",
+        description: "Point of Sale defaults for registers, shifts, sales, and receipts.",
+    },
+    {
+        value: "organization",
+        label: "organization",
+        description: "Organization defaults for company, branch, membership, and entitlement workflows.",
+    },
+]
 
 export function PlatformSettingsView() {
     const t = useTranslations()
     const [moduleKey, setModuleKey] = useState("finance")
     const { data: currencies = [], isLoading: currenciesLoading } = usePlatformCurrencies()
-    const { data: settings = [], isLoading: settingsLoading } = usePlatformSettings(moduleKey)
+    const { data: settings = [] } = usePlatformSettings(moduleKey)
     const upsertSettings = useUpsertPlatformSettings()
     const [form, setForm] = useState({
         key: "default_cash_account_id",
         value: "",
         branch_id: "",
     })
-    const [message, setMessage] = useState<string | null>(null)
 
     const activeCurrencies = useMemo(
         () => currencies.filter((currency) => currency.is_active),
@@ -52,7 +74,6 @@ export function PlatformSettingsView() {
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        setMessage(null)
 
         await upsertSettings.mutateAsync([
             {
@@ -63,7 +84,7 @@ export function PlatformSettingsView() {
             },
         ])
 
-        setMessage(t("platform.settingSaved"))
+        toast.success(t("platform.settingSaved"))
     }
 
     return (
@@ -81,9 +102,6 @@ export function PlatformSettingsView() {
                             {t("platform.description")}
                         </p>
                     </div>
-                    <StatusPill tone={settingsLoading || currenciesLoading ? "amber" : "green"}>
-                        {settingsLoading || currenciesLoading ? t("common.syncing") : t("common.ready")}
-                    </StatusPill>
                 </div>
             </section>
 
@@ -131,17 +149,12 @@ export function PlatformSettingsView() {
                         {t("platform.moduleSettingDescription")}
                     </p>
                     <div className="mt-5 grid gap-4">
-                        <SelectField
+                        <SelectDescription
                             label={t("platform.module")}
                             value={moduleKey}
                             onChange={(event) => setModuleKey(event.target.value)}
-                        >
-                            {moduleOptions.map((module) => (
-                                <option key={module} value={module}>
-                                    {module}
-                                </option>
-                            ))}
-                        </SelectField>
+                            options={moduleOptions}
+                        />
                         <Field
                             label={t("platform.settingKey")}
                             value={form.key}
@@ -171,11 +184,6 @@ export function PlatformSettingsView() {
                         <Button type="submit" size="xl" disabled={upsertSettings.isPending}>
                             {t("platform.saveSetting")}
                         </Button>
-                        {message ? (
-                            <p className="rounded-xl border border-emerald-250 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-850">
-                                {message}
-                            </p>
-                        ) : null}
                     </div>
                 </form>
             </section>

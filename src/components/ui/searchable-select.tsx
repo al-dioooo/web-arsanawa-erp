@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react"
 import { Icon } from "@/components/ui/icon"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
+import { cn } from "@/lib/utils"
+import {
+    fieldControlClassName,
+    fieldErrorClassName,
+    fieldLabelClassName,
+} from "@/components/ui/form-control"
 
 export type Option = {
     value: string | number
@@ -56,17 +62,18 @@ export function SearchableSelect({
     }, [])
 
     return (
-        <div ref={containerRef} className={`grid gap-1.5 text-sm font-medium text-navy-700 relative ${className}`}>
-            {label && <span>{label}</span>}
+        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-navy-700", className)}>
+            {label && <span className={fieldLabelClassName}>{label}</span>}
             <div className="relative">
                 <input
                     type="text"
+                    aria-label={label}
                     required={required && !value}
                     value={isOpen ? searchQuery : displayValue}
                     placeholder={isOpen ? "Type to search..." : placeholder}
                     onFocus={() => setIsOpen(true)}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="min-h-11 w-full rounded-md border border-navy-100 bg-white pl-3 pr-10 text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 cursor-pointer"
+                    className={cn(fieldControlClassName, "w-full pr-10 cursor-pointer")}
                 />
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-navy-500">
                     <Icon name="arrow_drop_down" size={20} />
@@ -113,7 +120,7 @@ export function SearchableSelect({
                     </ul>
                 )}
             </div>
-            {error && <span className="text-xs font-medium text-destructive">{error}</span>}
+            {error && <span className={fieldErrorClassName}>{error}</span>}
         </div>
     )
 }

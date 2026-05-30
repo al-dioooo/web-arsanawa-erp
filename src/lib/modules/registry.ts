@@ -40,7 +40,7 @@ export const moduleRegistry: ModuleEntry[] = [
         label: "Inventory",
         icon: "inventory_2",
         accentColor: "#f47b50",
-        route: "/inventory/master/products",
+        route: "/inventory",
         entitlementKey: "inventory",
         permission: "inventory.view",
         nav: [

@@ -144,9 +144,6 @@ export default function FinanceDashboard() {
                         <StatusPill tone={activeCompanyId ? "green" : "amber"}>
                             {activeCompanyId ? "Company scoped" : "No company"}
                         </StatusPill>
-                        <StatusPill tone={isLoading ? "amber" : "neutral"}>
-                            {isLoading ? "Loading" : "Ready"}
-                        </StatusPill>
                         <Button
                             onClick={() => router.push('/finance/invoices/new')}
                             size="xl"

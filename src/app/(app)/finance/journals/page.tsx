@@ -6,6 +6,7 @@ import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
+import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import { useJournalEntries } from "@/features/finance/api-journals"
 import { formatIDR, formatDateID } from "@/lib/format"
@@ -36,16 +37,17 @@ export default function JournalsPage() {
 
             <FilterBar>
                 <div className="flex gap-2">
-                    <select
+                    <SelectDescription
+                        label="Status"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="text-sm border border-navy-200 rounded-lg px-3 py-1.5 bg-white text-navy-700 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow"
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="draft">Draft</option>
-                        <option value="posted">Posted</option>
-                        <option value="void">Void</option>
-                    </select>
+                        options={[
+                            { value: "", label: "All Statuses", description: "Show journals in every posting state." },
+                            { value: "draft", label: "Draft", description: "Entries still open for editing." },
+                            { value: "posted", label: "Posted", description: "Entries locked into the ledger." },
+                            { value: "void", label: "Void", description: "Entries canceled after creation." },
+                        ]}
+                    />
                 </div>
             </FilterBar>
 

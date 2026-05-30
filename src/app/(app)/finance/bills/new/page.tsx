@@ -9,6 +9,9 @@ import { usePartners } from "@/features/finance/api-invoices"
 import { useCOA, useTaxRates, type COAAccount } from "@/features/finance/api"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { InputDate } from "@/components/ui/input-date"
+import { SelectDescription } from "@/components/ui/select-description"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Icon } from "@/components/ui/icon"
 import { formatIDR } from "@/lib/format"
@@ -201,20 +204,16 @@ export default function NewBillPage() {
                         <Icon name="calendar_today" /> Dates
                     </h2>
                     <div className="grid grid-cols-1 gap-4">
-                        <Field label="Bill Date" error={errors.bill_date?.message}>
-                            <input
-                                type="date"
-                                className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                                {...register("bill_date", { required: "Bill date is required" })}
-                            />
-                        </Field>
-                        <Field label="Due Date" error={errors.due_date?.message}>
-                            <input
-                                type="date"
-                                className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                                {...register("due_date", { required: "Due date is required" })}
-                            />
-                        </Field>
+                        <InputDate
+                            label="Bill Date"
+                            error={errors.bill_date?.message}
+                            {...register("bill_date", { required: "Bill date is required" })}
+                        />
+                        <InputDate
+                            label="Due Date"
+                            error={errors.due_date?.message}
+                            {...register("due_date", { required: "Due date is required" })}
+                        />
                     </div>
                 </div>
             </div>
@@ -254,10 +253,11 @@ export default function NewBillPage() {
                             return (
                                 <tr key={field.id} className="border-b border-navy-50 last:border-0 group">
                                     <td className="py-3 pr-2">
-                                        <input
+                                        <Input
+                                            label={`Line ${index + 1} description`}
+                                            hideLabel
                                             type="text"
                                             placeholder="Item description..."
-                                            className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm"
                                             {...register(`lines.${index}.description` as const, { required: true })}
                                         />
                                     </td>
@@ -276,33 +276,41 @@ export default function NewBillPage() {
                                         />
                                     </td>
                                     <td className="py-3 px-2">
-                                        <input
+                                        <Input
+                                            label={`Line ${index + 1} quantity`}
+                                            hideLabel
                                             type="number"
                                             min="0"
                                             step="any"
-                                            className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm text-right"
+                                            className="text-right"
                                             {...register(`lines.${index}.quantity` as const, { valueAsNumber: true, required: true })}
                                         />
                                     </td>
                                     <td className="py-3 px-2">
-                                        <input
+                                        <Input
+                                            label={`Line ${index + 1} unit price`}
+                                            hideLabel
                                             type="number"
                                             min="0"
                                             step="any"
-                                            className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm text-right"
+                                            className="text-right"
                                             {...register(`lines.${index}.unit_price` as const, { valueAsNumber: true, required: true })}
                                         />
                                     </td>
                                     <td className="py-3 px-2">
-                                        <select
-                                            className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm"
+                                        <SelectDescription
+                                            label={`Line ${index + 1} tax rate`}
+                                            hideLabel
+                                            options={[
+                                                { value: "", label: "No Tax", description: "Do not apply tax to this line." },
+                                                ...taxRates.map(t => ({
+                                                    value: t.id,
+                                                    label: `${t.name} (${parseFloat(t.rate)}%)`,
+                                                    description: `${t.type.toUpperCase()} tax rate`,
+                                                })),
+                                            ]}
                                             {...register(`lines.${index}.tax_rate_id` as const)}
-                                        >
-                                            <option value="">No Tax</option>
-                                            {taxRates.map(t => (
-                                                <option key={t.id} value={t.id}>{t.name} ({parseFloat(t.rate)}%) - {t.type.toUpperCase()}</option>
-                                            ))}
-                                        </select>
+                                        />
                                     </td>
                                     <td className="py-3 pl-2 text-right font-medium text-navy-900">
                                         {formatIDR(lineAmt)}

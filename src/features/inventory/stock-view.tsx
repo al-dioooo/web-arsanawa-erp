@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { InputDate } from "@/components/ui/input-date"
 import { MotionLinkItem } from "@/components/ui/motion-link"
 import { StatusPill } from "@/components/ui/status-pill"
 import { useSession } from "@/features/auth/session-provider"
@@ -67,7 +69,11 @@ function useStockOptions() {
                 const response = await listProductUnits(requestOptions, { per_page: 100 })
                 if (active) setProductUnits(response.data.product_units)
             } catch (caught) {
-                if (active) setError(caught instanceof Error ? caught.message : "Unable to load product units.")
+                if (active) {
+                    const message = caught instanceof Error ? caught.message : "Unable to load product units."
+                    setError(message)
+                    toast.error(message)
+                }
             }
         })
 
@@ -149,11 +155,10 @@ function StockSelectors({
 }
 
 export function StockOverviewView() {
-    const { requestOptions, branches, productUnits, defaultBranchId, defaultProductUnitId, error: optionsError } = useStockOptions()
+    const { requestOptions, branches, productUnits, defaultBranchId, defaultProductUnitId } = useStockOptions()
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
     const [snapshot, setSnapshot] = useState({ totalValue: "0.0000", selectedOnHand: "0.0000", lots: [] as StockLot[], movements: [] as StockMovement[], movementTotal: 0 })
-    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         let active = true
@@ -175,7 +180,10 @@ export function StockOverviewView() {
                 const loaded = await loadStockSnapshot(requestOptions, branchId, productUnitId)
                 if (active) setSnapshot(loaded)
             } catch (caught) {
-                if (active) setError(caught instanceof Error ? caught.message : "Unable to load stock overview.")
+                if (active) {
+                    const message = caught instanceof Error ? caught.message : "Unable to load stock overview."
+                    toast.error(message)
+                }
             }
         })
         return () => {
@@ -186,7 +194,6 @@ export function StockOverviewView() {
     return (
         <div className="grid gap-6">
             <PageHeader title="Stock Overview" description="Review valuation, on-hand levels, active lots, and recent immutable stock movements." status={requestOptions ? "Company scoped" : "No company"} />
-            {(optionsError || error) && <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800">{optionsError ?? error}</p>}
             <section className="rounded-lg border border-navy-100 bg-white p-5">
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             </section>
@@ -447,7 +454,6 @@ export function StockReceiptView() {
     const [unitCost, setUnitCost] = useState("")
     const [lotNumber, setLotNumber] = useState("")
     const [receivedAt, setReceivedAt] = useState(today())
-    const [message, setMessage] = useState<string | null>(null)
 
     const submit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -460,13 +466,12 @@ export function StockReceiptView() {
             lot_number: lotNumber || undefined,
             received_at: receivedAt,
         })
-        setMessage("Stock receipt recorded successfully.")
+        toast.success("Stock receipt recorded successfully.")
     }, [branchId, lotNumber, productUnitId, quantity, receivedAt, requestOptions, unitCost])
 
     return (
         <div className="grid gap-6">
             <PageHeader title="New Receipt" description="Receive stock into a branch using a Product Unit sellable SKU." />
-            {message && <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">{message}</p>}
             <form className="grid gap-4 rounded-lg border border-navy-100 bg-white p-5" onSubmit={submit}>
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
                 <div className="grid gap-3 md:grid-cols-2">
@@ -475,7 +480,7 @@ export function StockReceiptView() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                     <Field label="Lot Number" value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} />
-                    <Field label="Received At" type="date" value={receivedAt} onChange={(event) => setReceivedAt(event.target.value)} required />
+                    <InputDate label="Received At" value={receivedAt} onChange={(event) => setReceivedAt(event.target.value)} required />
                 </div>
                 <Button type="submit" size="xl">Record Receipt</Button>
             </form>

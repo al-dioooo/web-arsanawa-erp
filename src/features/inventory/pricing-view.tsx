@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
@@ -28,8 +29,6 @@ export function PricingView() {
     const [selectedPriceListId, setSelectedPriceListId] = useState<number | null>(null)
     
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     // Forms
     const [priceListForm, setPriceListForm] = useState({
@@ -57,7 +56,6 @@ export function PricingView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
 
         try {
             const loaded = await loadInventory(requestOptions)
@@ -76,7 +74,7 @@ export function PricingView() {
                 setSelectedPriceListId(loaded.priceLists[0].id)
             }
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load pricing data.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load pricing data.")
         } finally {
             setIsLoading(false)
         }
@@ -99,8 +97,6 @@ export function PricingView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
 
         try {
             await createPriceList(requestOptions, {
@@ -108,11 +104,11 @@ export function PricingView() {
                 branch_id: priceListForm.branch_id ? Number(priceListForm.branch_id) : null,
                 is_default: priceListForm.is_default,
             })
-            setMessage("Price list created successfully.")
+            toast.success("Price list created successfully.")
             setPriceListForm({ name: "", branch_id: "", is_default: false })
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Failed to create price list.")
+            toast.error(caught instanceof Error ? caught.message : "Failed to create price list.")
         } finally {
             setIsLoading(false)
         }
@@ -123,8 +119,6 @@ export function PricingView() {
         if (!requestOptions || !selectedPriceListId) return
 
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
 
         try {
             await setPrice(requestOptions, selectedPriceListId, {
@@ -132,11 +126,11 @@ export function PricingView() {
                 price: Number(priceForm.price),
                 effective_from: priceForm.effective_from,
             })
-            setMessage("Variant price set successfully.")
+            toast.success("Variant price set successfully.")
             setPriceForm((current) => ({ ...current, price: "" }))
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Failed to set price.")
+            toast.error(caught instanceof Error ? caught.message : "Failed to set price.")
         } finally {
             setIsLoading(false)
         }
@@ -166,22 +160,8 @@ export function PricingView() {
                         <StatusPill tone={activeCompanyId ? "green" : "amber"}>
                             {activeCompanyId ? "Company scoped" : "No company"}
                         </StatusPill>
-                        <StatusPill tone={isLoading ? "amber" : "neutral"}>
-                            {isLoading ? "Syncing" : "Ready"}
-                        </StatusPill>
                     </div>
                 </div>
-
-                {message && (
-                    <div className="mt-4 rounded-xl border border-emerald-250 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-850">
-                        {message}
-                    </div>
-                )}
-                {error && (
-                    <div className="mt-4 rounded-xl border border-rose-250 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-850">
-                        {error}
-                    </div>
-                )}
             </section>
 
             {/* Main Layout Grid */}

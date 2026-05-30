@@ -5,6 +5,7 @@ import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
+import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import { useBills } from "@/features/finance/api-bills"
 import { formatIDR, formatDateID } from "@/lib/format"
@@ -27,12 +28,16 @@ export default function BillsPage() {
 
             <FilterBar>
                 <div className="flex gap-2">
-                    <select className="text-sm border-navy-200 rounded-lg px-3 py-1.5 bg-white text-navy-700 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow">
-                        <option value="">All Statuses</option>
-                        <option value="draft">Draft</option>
-                        <option value="posted">Posted</option>
-                        <option value="paid">Paid</option>
-                    </select>
+                    <SelectDescription
+                        label="Status"
+                        defaultValue=""
+                        options={[
+                            { value: "", label: "All Statuses", description: "Show bills in every posting state." },
+                            { value: "draft", label: "Draft", description: "Bills that are still being prepared." },
+                            { value: "posted", label: "Posted", description: "Bills posted and waiting for settlement." },
+                            { value: "paid", label: "Paid", description: "Bills fully settled by outgoing payments." },
+                        ]}
+                    />
                 </div>
             </FilterBar>
 

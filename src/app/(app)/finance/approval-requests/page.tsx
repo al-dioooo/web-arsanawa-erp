@@ -10,6 +10,7 @@ import { useApprovalRequests, useActOnApproval, useApprovalMatrices, useCompanyM
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { SelectDescription } from "@/components/ui/select-description"
 import { toast } from "sonner"
 import { formatIDR, formatDateID } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -31,16 +32,17 @@ export default function ApprovalRequestsPage() {
 
             <FilterBar>
                 <div className="flex gap-2">
-                    <select
+                    <SelectDescription
+                        label="Status"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="text-sm border border-navy-200 rounded-lg px-3 py-1.5 bg-white text-navy-700 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow cursor-pointer"
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+                        options={[
+                            { value: "", label: "All Statuses", description: "Show every approval request state." },
+                            { value: "pending", label: "Pending", description: "Requests waiting for the next approver." },
+                            { value: "approved", label: "Approved", description: "Requests that passed all approvals." },
+                            { value: "rejected", label: "Rejected", description: "Requests declined by an approver." },
+                        ]}
+                    />
                 </div>
             </FilterBar>
 

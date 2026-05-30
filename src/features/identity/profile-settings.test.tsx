@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ProfileSettings } from "@/features/identity/profile-settings"
 import { useSession } from "@/features/auth/session-provider"
+import { toast } from "sonner"
 import {
     useIdentityProfile,
     useIdentityUserLookup,
@@ -18,6 +19,13 @@ vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))
 
+vi.mock("sonner", () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn(),
+    },
+}))
+
 const updateProfile = vi.fn()
 const lookupUser = vi.fn()
 const updateCurrentProfile = vi.fn()
@@ -27,6 +35,8 @@ describe("ProfileSettings", () => {
         updateProfile.mockReset()
         lookupUser.mockReset()
         updateCurrentProfile.mockReset()
+        vi.mocked(toast.success).mockReset()
+        vi.mocked(toast.error).mockReset()
         updateProfile.mockResolvedValue({
             id: 1,
             name: "Alice Evergarden",
@@ -103,6 +113,8 @@ describe("ProfileSettings", () => {
                 timezone: "Asia/Makassar",
             }),
         }))
+        expect(toast.success).toHaveBeenCalledWith("Profile saved.")
+        expect(screen.queryByText("Profile saved.")).not.toBeInTheDocument()
 
         fireEvent.change(screen.getByLabelText("User ID"), {
             target: { value: "42" },
@@ -110,5 +122,19 @@ describe("ProfileSettings", () => {
         fireEvent.click(screen.getByRole("button", { name: "Look up user" }))
 
         expect(lookupUser).toHaveBeenCalledWith(42)
+    })
+
+    it("shows user lookup errors through a toast instead of an inline banner", async () => {
+        vi.mocked(useIdentityUserLookup).mockReturnValue({
+            mutateAsync: lookupUser,
+            data: null,
+            error: new Error("Forbidden"),
+            isPending: false,
+        } as ReturnType<typeof useIdentityUserLookup>)
+
+        render(<ProfileSettings />)
+
+        expect(toast.error).toHaveBeenCalledWith("Forbidden")
+        expect(screen.queryByText("Forbidden")).not.toBeInTheDocument()
     })
 })

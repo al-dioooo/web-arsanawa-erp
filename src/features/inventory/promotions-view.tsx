@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
@@ -36,8 +37,6 @@ export function PromotionsView() {
     const [formTab, setFormTab] = useState<"discount" | "reward">("discount")
 
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     // Form states
     const [discountForm, setDiscountForm] = useState({
@@ -73,14 +72,13 @@ export function PromotionsView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
 
         try {
             const loaded = await loadInventory(requestOptions)
             setDiscounts(loaded.discounts)
             setRewards(loaded.rewards)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load promotions.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load promotions.")
         } finally {
             setIsLoading(false)
         }
@@ -103,8 +101,6 @@ export function PromotionsView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
 
         try {
             await createDiscount(requestOptions, {
@@ -117,7 +113,7 @@ export function PromotionsView() {
                 effective_to: discountForm.effective_to || null,
                 is_active: true,
             })
-            setMessage("Discount campaign created successfully.")
+            toast.success("Discount campaign created successfully.")
             setDiscountForm({
                 name: "",
                 calculation_type: "percentage",
@@ -129,7 +125,7 @@ export function PromotionsView() {
             })
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Failed to create discount.")
+            toast.error(caught instanceof Error ? caught.message : "Failed to create discount.")
         } finally {
             setIsLoading(false)
         }
@@ -140,8 +136,6 @@ export function PromotionsView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
 
         try {
             await createReward(requestOptions, {
@@ -154,7 +148,7 @@ export function PromotionsView() {
                 effective_to: rewardForm.effective_to || null,
                 is_active: true,
             })
-            setMessage("Loyalty reward created successfully.")
+            toast.success("Loyalty reward created successfully.")
             setRewardForm({
                 name: "",
                 calculation_type: "percentage",
@@ -166,7 +160,7 @@ export function PromotionsView() {
             })
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Failed to create reward.")
+            toast.error(caught instanceof Error ? caught.message : "Failed to create reward.")
         } finally {
             setIsLoading(false)
         }
@@ -192,22 +186,8 @@ export function PromotionsView() {
                         <StatusPill tone={activeCompanyId ? "green" : "amber"}>
                             {activeCompanyId ? "Company scoped" : "No company"}
                         </StatusPill>
-                        <StatusPill tone={isLoading ? "amber" : "neutral"}>
-                            {isLoading ? "Syncing" : "Ready"}
-                        </StatusPill>
                     </div>
                 </div>
-
-                {message && (
-                    <div className="mt-4 rounded-xl border border-emerald-250 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-850">
-                        {message}
-                    </div>
-                )}
-                {error && (
-                    <div className="mt-4 rounded-xl border border-rose-250 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-850">
-                        {error}
-                    </div>
-                )}
             </section>
 
             {/* Main Grid Layout */}

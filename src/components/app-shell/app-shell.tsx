@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useIsFetching, useIsMutating } from "@tanstack/react-query"
 import { useSession } from "@/features/auth/session-provider"
 import { getModuleByPath, isNavGroup, type ModuleEntry, type NavGroup, type NavItem } from "@/lib/modules/registry"
 import { useTranslations, useLocale } from 'next-intl'
@@ -47,6 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         selectCompany,
         selectBranch,
         logout,
+        isLoading,
     } = useSession()
 
     const locale = useLocale()
@@ -55,6 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     const [branchOpen, setBranchOpen] = useState(false)
     const [userOpen, setUserOpen] = useState(false)
+    const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null)
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
     const branchRef = useRef<HTMLDivElement>(null)
@@ -92,6 +95,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const inModule = Boolean(activeModule)
     const accountDisplayName = profile?.profile.display_name?.trim() || user?.name || ""
     const accountInitial = accountDisplayName.charAt(0).toUpperCase()
+    const avatarUrl = profile?.profile.avatar?.trim()
+    const showAvatar = Boolean(avatarUrl && failedAvatarUrl !== avatarUrl)
 
     const handleSignOut = async () => {
         setUserOpen(false)
@@ -131,6 +136,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className={`flex flex-col min-h-screen ${inModule ? "lg:pl-[290px]" : ""}`}>
                 {/* Topbar */}
                 <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-navy-100/50 bg-white/80 px-6 backdrop-blur-md">
+                    <ApiConnectionStatusDot
+                        isSessionLoading={isLoading}
+                        isAuthenticated={Boolean(user)}
+                        hasActiveCompany={Boolean(activeCompanyId)}
+                    />
                     <div className="flex items-center gap-4">
                         {inModule && (
                             <button
@@ -149,7 +159,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3 w-full">
+                    <div className="flex items-center gap-3 w-full pr-3">
                         {/* Global search trigger — ⌘K */}
                         <button type="button" onClick={openSearch} className="hidden sm:flex w-full items-center gap-2 rounded-lg border border-navy-100 bg-white px-4 py-2 text-xs font-semibold text-navy-400 hover:text-navy-600 hover:border-navy-200 hover:bg-navy-50 transition-colors outline-none cursor-pointer select-none" aria-label={t("shell.openSearch")}>
                             <Icon name="search" size={14} className="shrink-0" />
@@ -232,10 +242,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             <button
                                 type="button"
                                 onClick={() => setUserOpen(!userOpen)}
-                                className="flex items-center justify-center h-9 w-9 rounded-xl bg-teal-100 text-teal-700 font-bold border border-teal-200 hover:scale-102 active:scale-98 transition-all outline-none cursor-pointer"
+                                className="flex items-center justify-center h-9 w-9 overflow-hidden rounded-xl bg-teal-100 text-teal-700 font-bold border border-teal-200 hover:scale-102 active:scale-98 transition-all outline-none cursor-pointer"
                                 aria-label={t("shell.accountMenu")}
                             >
-                                {accountInitial}
+                                {showAvatar ? (
+                                    <img
+                                        src={avatarUrl}
+                                        alt={accountDisplayName}
+                                        className="h-full w-full object-cover"
+                                        onError={() => setFailedAvatarUrl(avatarUrl ?? null)}
+                                    />
+                                ) : (
+                                    accountInitial
+                                )}
                             </button>
 
                             {userOpen && (
@@ -388,6 +407,63 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     )
 }
 
+type ApiConnectionStatus = "loading" | "inactive" | "offline" | "active"
+
+const apiStatusLabels: Record<ApiConnectionStatus, string> = {
+    loading: "Loading",
+    inactive: "Inactive",
+    offline: "Offline",
+    active: "Active and ready",
+}
+
+const apiStatusClasses: Record<ApiConnectionStatus, string> = {
+    loading: "border-amber-200 bg-amber-50 text-amber-500",
+    inactive: "border-stone-200 bg-stone-100 text-stone-500",
+    offline: "border-rose-200 bg-rose-50 text-rose-500",
+    active: "border-emerald-200 bg-emerald-50 text-emerald-600",
+}
+
+function ApiConnectionStatusDot({
+    isSessionLoading,
+    isAuthenticated,
+    hasActiveCompany,
+}: {
+    isSessionLoading: boolean
+    isAuthenticated: boolean
+    hasActiveCompany: boolean
+}) {
+    const isFetching = useIsFetching()
+    const isMutating = useIsMutating()
+    const isOnline = typeof navigator === "undefined" ? true : navigator.onLine
+
+    let status: ApiConnectionStatus = "active"
+
+    if (!isOnline) {
+        status = "offline"
+    } else if (isSessionLoading || isFetching > 0 || isMutating > 0) {
+        status = "loading"
+    } else if (!isAuthenticated || !hasActiveCompany) {
+        status = "inactive"
+    }
+
+    const label = apiStatusLabels[status]
+
+    return (
+        <div className="group absolute right-2 top-2 z-40">
+            <button
+                type="button"
+                className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border ${apiStatusClasses[status]} outline-none ring-offset-2 transition focus:ring-2 focus:ring-teal-700/20`}
+                aria-label={`API connection status: ${label}`}
+            >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            </button>
+            <span className="pointer-events-none absolute right-0 top-5 min-w-max rounded-md border border-navy-100 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100">
+                {label}
+            </span>
+        </div>
+    )
+}
+
 /**
  * Per-module sidebar — Arsanawa compact logo + module name (linked to the
  * module dashboard) at the top, then the module's own nav. No active-context
@@ -444,6 +520,18 @@ function ModuleSidebar({
                     style={{ backgroundColor: `${module.accentColor}15` }}
                     hover={true}
                 >
+                    <div data-module-sidebar-nav>
+                        <SidebarNavItem
+                            item={{
+                                href: module.route,
+                                label: "Dashboard",
+                                icon: "grid_view",
+                            }}
+                            activeHref={activeHref}
+                            accentColor={module.accentColor}
+                            t={t}
+                        />
+                    </div>
                     {module.nav.map((item, idx) => {
                         if (isNavGroup(item)) {
                             return (
@@ -455,26 +543,28 @@ function ModuleSidebar({
                                     </div>
                                     <div className="grid gap-1">
                                         {item.items.map((subItem) => (
-                                            <SidebarNavItem
-                                                key={subItem.href}
-                                                item={subItem}
-                                                activeHref={activeHref}
-                                                accentColor={module.accentColor}
-                                                t={t}
-                                            />
+                                            <div key={subItem.href} data-module-sidebar-nav>
+                                                <SidebarNavItem
+                                                    item={subItem}
+                                                    activeHref={activeHref}
+                                                    accentColor={module.accentColor}
+                                                    t={t}
+                                                />
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
                             )
                         }
                         return (
-                            <SidebarNavItem
-                                key={item.href}
-                                item={item}
-                                activeHref={activeHref}
-                                accentColor={module.accentColor}
-                                t={t}
-                            />
+                            <div key={item.href} data-module-sidebar-nav>
+                                <SidebarNavItem
+                                    item={item}
+                                    activeHref={activeHref}
+                                    accentColor={module.accentColor}
+                                    t={t}
+                                />
+                            </div>
                         )
                     })}
                 </Highlight>

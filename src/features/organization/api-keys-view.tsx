@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
@@ -35,11 +36,9 @@ export function ApiKeysView() {
         expires_at: "",
     })
     const [secret, setSecret] = useState<SecretState | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        setError(null)
 
         try {
             const result = await createKey.mutateAsync({
@@ -50,32 +49,31 @@ export function ApiKeysView() {
 
             setSecret({ label: result.api_key.name, value: result.plain_text_key })
             setForm({ name: "", source_channel: "Landing Page", expires_at: "" })
+            toast.success("API key created.")
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to create API key.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to create API key.")
         }
     }
 
     async function rotate(apiKey: ExternalApiKey) {
-        setError(null)
-
         try {
             const result = await rotateKey.mutateAsync(apiKey.id)
             setSecret({ label: result.api_key.name, value: result.plain_text_key })
+            toast.success("API key rotated.")
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to rotate API key.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to rotate API key.")
         }
     }
 
     async function revoke(apiKey: ExternalApiKey) {
-        setError(null)
-
         try {
             await revokeKey.mutateAsync(apiKey.id)
             if (secret?.label === apiKey.name) {
                 setSecret(null)
             }
+            toast.success("API key revoked.")
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to revoke API key.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to revoke API key.")
         }
     }
 
@@ -118,11 +116,6 @@ export function ApiKeysView() {
                     </div>
                     <StatusPill tone="green">{organizationContext.company.name}</StatusPill>
                 </div>
-                {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
-                        {error}
-                    </div>
-                ) : null}
             </section>
 
             {secret ? (

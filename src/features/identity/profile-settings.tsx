@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Field, SelectField } from "@/components/ui/field"
-import { StatusPill } from "@/components/ui/status-pill"
+import { Field } from "@/components/ui/field"
+import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import {
     useIdentityProfile,
@@ -18,12 +19,33 @@ const timezoneOptions = [
     "UTC",
 ]
 
+const localeOptions = [
+    {
+        value: "en",
+        label: "English",
+        description: "Use English labels and formatting in the web console.",
+    },
+    {
+        value: "id",
+        label: "Indonesia",
+        description: "Use Indonesian labels and local formatting in the web console.",
+    },
+]
+
+const timezoneSelectOptions = timezoneOptions.map((timezone) => ({
+    value: timezone,
+    label: timezone,
+    description:
+        timezone === "UTC"
+            ? "Universal time for cross-region audit and integration work."
+            : `Use ${timezone} as the user's working timezone.`,
+}))
+
 export function ProfileSettings() {
     const { data: profile, isLoading } = useIdentityProfile()
     const { updateCurrentProfile } = useSession()
     const updateProfile = useUpdateIdentityProfile()
     const userLookup = useIdentityUserLookup()
-    const [message, setMessage] = useState<string | null>(null)
     const [form, setForm] = useState({
         display_name: "",
         avatar: "",
@@ -31,6 +53,12 @@ export function ProfileSettings() {
         timezone: "Asia/Jakarta",
     })
     const [lookupId, setLookupId] = useState("")
+
+    useEffect(() => {
+        if (userLookup.error) {
+            toast.error(userLookup.error.message)
+        }
+    }, [userLookup.error])
 
     useEffect(() => {
         if (!profile) return
@@ -53,7 +81,6 @@ export function ProfileSettings() {
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        setMessage(null)
 
         const updatedProfile = await updateProfile.mutateAsync({
             display_name: form.display_name.trim() || null,
@@ -63,7 +90,7 @@ export function ProfileSettings() {
         })
 
         updateCurrentProfile(updatedProfile)
-        setMessage("Profile saved.")
+        toast.success("Profile saved.")
     }
 
     async function lookup(event: React.FormEvent<HTMLFormElement>) {
@@ -89,9 +116,6 @@ export function ProfileSettings() {
                             Keep your workspace identity, locale, and timezone aligned with the API profile record.
                         </p>
                     </div>
-                    <StatusPill tone={profile?.status.status === "active" ? "green" : "neutral"}>
-                        {profile?.status.status ?? "loading"}
-                    </StatusPill>
                 </div>
             </section>
 
@@ -117,40 +141,28 @@ export function ProfileSettings() {
                             disabled={isLoading}
                         />
                         <div className="grid gap-4 sm:grid-cols-2">
-                            <SelectField
+                            <SelectDescription
                                 label="Locale"
                                 value={form.locale}
                                 onChange={(event) =>
                                     setForm((current) => ({ ...current, locale: event.target.value }))
                                 }
                                 disabled={isLoading}
-                            >
-                                <option value="en">English</option>
-                                <option value="id">Indonesia</option>
-                            </SelectField>
-                            <SelectField
+                                options={localeOptions}
+                            />
+                            <SelectDescription
                                 label="Timezone"
                                 value={form.timezone}
                                 onChange={(event) =>
                                     setForm((current) => ({ ...current, timezone: event.target.value }))
                                 }
                                 disabled={isLoading}
-                            >
-                                {timezoneOptions.map((timezone) => (
-                                    <option key={timezone} value={timezone}>
-                                        {timezone}
-                                    </option>
-                                ))}
-                            </SelectField>
+                                options={timezoneSelectOptions}
+                            />
                         </div>
                         <Button type="submit" size="xl" disabled={updateProfile.isPending || isLoading}>
                             Save profile
                         </Button>
-                        {message ? (
-                            <p className="rounded-xl border border-emerald-250 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-850">
-                                {message}
-                            </p>
-                        ) : null}
                     </div>
                 </form>
 
@@ -175,11 +187,6 @@ export function ProfileSettings() {
                                 <p className="text-sm font-bold text-navy-900">{userLookup.data.name}</p>
                                 <p className="mt-1 text-xs font-medium text-navy-500">{userLookup.data.email}</p>
                             </div>
-                        ) : null}
-                        {userLookup.error ? (
-                            <p className="rounded-xl border border-rose-250 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-850">
-                                {userLookup.error.message}
-                            </p>
                         ) : null}
                     </div>
                 </form>

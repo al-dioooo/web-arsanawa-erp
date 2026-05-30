@@ -9,6 +9,9 @@ import { useCreatePayment } from "@/features/finance/api-payments"
 import { usePartners, useInvoices } from "@/features/finance/api-invoices" 
 import { useCOA, type COAAccount } from "@/features/finance/api"
 import { Field } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { InputDate } from "@/components/ui/input-date"
+import { SelectDescription } from "@/components/ui/select-description"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Icon } from "@/components/ui/icon"
 import { formatIDR, formatDateID } from "@/lib/format"
@@ -170,46 +173,38 @@ export default function NewReceiptPage() {
                         </Field>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label="Receipt Date" error={errors.payment_date?.message}>
-                                <input
-                                    type="date"
-                                    className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                                    {...register("payment_date", { required: "Date is required" })}
-                                />
-                            </Field>
-                            <Field label="Payment Method">
-                                <select
-                                    className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                                    {...register("payment_method")}
-                                >
-                                    <option value="bank_transfer">Bank Transfer</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="check">Check / Giro</option>
-                                </select>
-                            </Field>
+                            <InputDate
+                                label="Receipt Date"
+                                error={errors.payment_date?.message}
+                                {...register("payment_date", { required: "Date is required" })}
+                            />
+                            <SelectDescription
+                                label="Payment Method"
+                                options={[
+                                    { value: "bank_transfer", label: "Bank Transfer", description: "Record settlement through a bank account." },
+                                    { value: "cash", label: "Cash", description: "Record direct cash settlement." },
+                                    { value: "check", label: "Check / Giro", description: "Record check or giro settlement." },
+                                ]}
+                                {...register("payment_method")}
+                            />
                         </div>
 
-                        <Field label="Amount Received" error={errors.amount?.message}>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-500 font-semibold">Rp</span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    className="w-full h-10 pl-10 pr-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-lg font-bold text-teal-700"
-                                    {...register("amount", { valueAsNumber: true, required: "Amount is required" })}
-                                />
-                            </div>
-                        </Field>
+                        <Input
+                            label="Amount Received"
+                            error={errors.amount?.message}
+                            type="number"
+                            min="0"
+                            step="any"
+                            className="text-lg font-bold text-teal-700"
+                            {...register("amount", { valueAsNumber: true, required: "Amount is required" })}
+                        />
 
-                        <Field label="Reference No. (Optional)">
-                            <input
-                                type="text"
-                                placeholder="e.g. TRF-12345"
-                                className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                                {...register("reference_number")}
-                            />
-                        </Field>
+                        <Input
+                            label="Reference No. (Optional)"
+                            type="text"
+                            placeholder="e.g. TRF-12345"
+                            {...register("reference_number")}
+                        />
                     </div>
                 </div>
 
@@ -279,19 +274,18 @@ export default function NewReceiptPage() {
                                             <td className="py-3 text-navy-700 text-right">{formatIDR(total)}</td>
                                             <td className="py-3 text-teal-600 font-semibold text-right">{formatIDR(due)}</td>
                                             <td className="py-3 pl-4">
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 text-xs font-semibold">Rp</span>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max={due}
-                                                        step="any"
-                                                        value={alloc}
-                                                        onChange={e => handleAllocate(inv.id, e.target.value)}
-                                                        className="w-full h-9 pl-8 pr-2 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm text-right font-medium text-navy-900"
-                                                        placeholder="0"
-                                                    />
-                                                </div>
+                                                <Input
+                                                    label={`Allocation for ${inv.invoice_number}`}
+                                                    hideLabel
+                                                    type="number"
+                                                    min="0"
+                                                    max={due}
+                                                    step="any"
+                                                    value={alloc}
+                                                    onChange={e => handleAllocate(inv.id, e.target.value)}
+                                                    className="min-h-9 text-right font-medium"
+                                                    placeholder="0"
+                                                />
                                             </td>
                                         </tr>
                                     )

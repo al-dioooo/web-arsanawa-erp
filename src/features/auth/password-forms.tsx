@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { toast } from "sonner"
 import { ApiError } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -10,20 +11,16 @@ import { useSession } from "@/features/auth/session-provider"
 export function ForgotPasswordForm() {
     const { forgotPassword } = useSession()
     const [email, setEmail] = useState("")
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
     const [pending, setPending] = useState(false)
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         setPending(true)
-        setError(null)
-        setMessage(null)
 
         try {
-            setMessage(await forgotPassword(email))
+            toast.success(await forgotPassword(email))
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Password reset failed.")
+            toast.error(caught instanceof Error ? caught.message : "Password reset failed.")
         } finally {
             setPending(false)
         }
@@ -31,17 +28,6 @@ export function ForgotPasswordForm() {
 
     return (
         <form onSubmit={submit} className="grid gap-5">
-            {message ? (
-                <div className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900">
-                    {message}
-                </div>
-            ) : null}
-            {error ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
-                    {error}
-                </div>
-            ) : null}
-
             <Field
                 label="Email address"
                 type="email"
@@ -70,24 +56,20 @@ export function ResetPasswordForm() {
         password_confirmation: "",
     })
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
     const [pending, setPending] = useState(false)
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         setPending(true)
-        setError(null)
-        setMessage(null)
         setFieldErrors(null)
 
         try {
-            setMessage(await resetPassword(form))
+            toast.success(await resetPassword(form))
         } catch (caught) {
             if (caught instanceof ApiError) {
                 setFieldErrors(caught.errors ?? null)
             }
-            setError(caught instanceof Error ? caught.message : "Password reset failed.")
+            toast.error(caught instanceof Error ? caught.message : "Password reset failed.")
         } finally {
             setPending(false)
         }
@@ -95,17 +77,6 @@ export function ResetPasswordForm() {
 
     return (
         <form onSubmit={submit} className="grid gap-5">
-            {message ? (
-                <div className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900">
-                    {message}
-                </div>
-            ) : null}
-            {error ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
-                    {error}
-                </div>
-            ) : null}
-
             <Field
                 label="Email address"
                 type="email"

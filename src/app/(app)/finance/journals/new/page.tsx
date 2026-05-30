@@ -8,6 +8,8 @@ import { useCreateJournalEntry } from "@/features/finance/api-journals"
 import { useCOA, usePeriods, type COAAccount } from "@/features/finance/api"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { InputDate } from "@/components/ui/input-date"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Icon } from "@/components/ui/icon"
 import { formatIDR } from "@/lib/format"
@@ -174,13 +176,11 @@ export default function NewJournalPage() {
                         <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
                             <Icon name="calendar_today" /> Date & Period
                         </h2>
-                        <Field label="Entry Date" error={errors.entry_date?.message}>
-                            <input
-                                type="date"
-                                className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                                {...register("entry_date", { required: "Date is required" })}
-                            />
-                        </Field>
+                        <InputDate
+                            label="Entry Date"
+                            error={errors.entry_date?.message}
+                            {...register("entry_date", { required: "Date is required" })}
+                        />
                     </div>
 
                     <div className="mt-3 p-3 rounded-xl bg-navy-50/50 border border-navy-100 text-xs flex items-center gap-2">
@@ -228,28 +228,33 @@ export default function NewJournalPage() {
                                     />
                                 </td>
                                 <td className="py-3 px-2">
-                                    <input
+                                    <Input
+                                        label={`Line ${index + 1} description`}
+                                        hideLabel
                                         type="text"
                                         placeholder="Line description (optional)..."
-                                        className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm"
                                         {...register(`lines.${index}.description` as const)}
                                     />
                                 </td>
                                 <td className="py-3 px-2">
-                                    <input
+                                    <Input
+                                        label={`Line ${index + 1} debit`}
+                                        hideLabel
                                         type="number"
                                         min="0"
                                         step="any"
-                                        className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm text-right"
+                                        className="text-right"
                                         {...register(`lines.${index}.debit` as const, { valueAsNumber: true })}
                                     />
                                 </td>
                                 <td className="py-3 px-2">
-                                    <input
+                                    <Input
+                                        label={`Line ${index + 1} credit`}
+                                        hideLabel
                                         type="number"
                                         min="0"
                                         step="any"
-                                        className="w-full h-10 px-3 rounded-lg border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white text-sm text-right"
+                                        className="text-right"
                                         {...register(`lines.${index}.credit` as const, { valueAsNumber: true })}
                                     />
                                 </td>

@@ -7,6 +7,7 @@ import { useSession } from "@/features/auth/session-provider"
 import { usePeriods } from "@/features/finance/api"
 import { useTrialBalance, type TrialBalanceItem } from "@/features/finance/api-journals"
 import { Icon } from "@/components/ui/icon"
+import { SelectDescription } from "@/components/ui/select-description"
 import { formatIDR } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -87,16 +88,19 @@ export default function ProfitLossPage() {
                         <Icon name="calendar_month" className="text-navy-400 text-base" />
                         <label className="text-sm font-semibold text-navy-600">Accounting Period:</label>
                     </div>
-                    <select
+                    <SelectDescription
+                        label="Accounting Period"
                         value={periodId ?? ''}
                         onChange={e => setSelectedPeriodId(Number(e.target.value) || null)}
-                        className="h-9 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 text-sm bg-white"
-                    >
-                        <option value="">Select a period…</option>
-                        {periods.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} ({p.status})</option>
-                        ))}
-                    </select>
+                        options={[
+                            { value: "", label: "Select a period", description: "Choose the accounting period for this report." },
+                            ...periods.map(p => ({
+                                value: p.id,
+                                label: p.name,
+                                description: `Status: ${p.status}`,
+                            })),
+                        ]}
+                    />
                     {selectedPeriod && (
                         <span className="text-sm text-navy-400">
                             {selectedPeriod.start_date} – {selectedPeriod.end_date}

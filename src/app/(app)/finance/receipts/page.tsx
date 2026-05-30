@@ -5,6 +5,7 @@ import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
+import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import { usePayments } from "@/features/finance/api-payments"
 import { formatIDR, formatDateID } from "@/lib/format"
@@ -28,12 +29,16 @@ export default function ReceiptsPage() {
 
             <FilterBar>
                 <div className="flex gap-2">
-                    <select className="text-sm border-navy-200 rounded-lg px-3 py-1.5 bg-white text-navy-700 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow">
-                        <option value="">All Statuses</option>
-                        <option value="draft">Draft</option>
-                        <option value="posted">Posted</option>
-                        <option value="void">Void</option>
-                    </select>
+                    <SelectDescription
+                        label="Status"
+                        defaultValue=""
+                        options={[
+                            { value: "", label: "All Statuses", description: "Show receipts in every posting state." },
+                            { value: "draft", label: "Draft", description: "Receipts that are still being prepared." },
+                            { value: "posted", label: "Posted", description: "Receipts posted to the ledger." },
+                            { value: "void", label: "Void", description: "Receipts canceled after creation." },
+                        ]}
+                    />
                 </div>
             </FilterBar>
 

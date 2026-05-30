@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { SelectDescription } from "@/components/ui/select-description"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
@@ -32,8 +35,6 @@ export function CatalogueView() {
     const [productTotal, setProductTotal] = useState(0)
 
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     // Filters & Search
     const [searchQuery, setSearchQuery] = useState("")
@@ -77,7 +78,6 @@ export function CatalogueView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
 
         try {
             const loaded = await loadInventory(requestOptions)
@@ -87,7 +87,7 @@ export function CatalogueView() {
             setProducts(loaded.products)
             setProductTotal(loaded.productTotal)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load catalogue.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load catalogue.")
         } finally {
             setIsLoading(false)
         }
@@ -109,15 +109,13 @@ export function CatalogueView() {
         if (!requestOptions) return
 
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
 
         try {
             await callback()
-            setMessage(successMessage)
+            toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : "The request failed.")
         } finally {
             setIsLoading(false)
         }
@@ -161,22 +159,8 @@ export function CatalogueView() {
                         <StatusPill tone={activeCompanyId ? "green" : "amber"}>
                             {activeCompanyId ? "Company scoped" : "No company"}
                         </StatusPill>
-                        <StatusPill tone={isLoading ? "amber" : "neutral"}>
-                            {isLoading ? "Syncing" : "Ready"}
-                        </StatusPill>
                     </div>
                 </div>
-
-                {message && (
-                    <div className="mt-4 rounded-xl border border-emerald-250 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-850">
-                        {message}
-                    </div>
-                )}
-                {error && (
-                    <div className="mt-4 rounded-xl border border-rose-250 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-850">
-                        {error}
-                    </div>
-                )}
             </section>
 
             {/* Filter and Content section */}
@@ -192,55 +176,47 @@ export function CatalogueView() {
 
                     {/* Search and Filters */}
                     <div className="grid gap-3 sm:grid-cols-4">
-                        <div className="relative">
-                            <span className="absolute inset-y-0 left-3 flex items-center text-navy-400">
-                                <Icon name="search" size={18} />
-                            </span>
-                            <input
-                                type="text"
-                                placeholder="Search SKU or name..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full min-h-11 pl-10 rounded-md border border-navy-100 bg-white text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                            />
-                        </div>
+                        <Input
+                            label="Search products"
+                            type="text"
+                            placeholder="Search SKU or name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
 
-                        <select
+                        <SelectDescription
+                            label="Category"
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="min-h-11 rounded-md border border-navy-100 bg-white px-3 text-sm text-navy-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                        >
-                            <option value="">All Categories</option>
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {"- ".repeat(category.depth)}
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
+                            options={[
+                                { value: "", label: "All Categories" },
+                                ...categories.map((category) => ({
+                                    value: category.id,
+                                    label: `${"- ".repeat(category.depth)}${category.name}`,
+                                })),
+                            ]}
+                        />
 
-                        <select
+                        <SelectDescription
+                            label="Brand"
                             value={selectedBrand}
                             onChange={(e) => setSelectedBrand(e.target.value)}
-                            className="min-h-11 rounded-md border border-navy-100 bg-white px-3 text-sm text-navy-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                        >
-                            <option value="">All Brands</option>
-                            {brands.map((brand) => (
-                                <option key={brand.id} value={brand.id}>
-                                    {brand.name}
-                                </option>
-                            ))}
-                        </select>
+                            options={[
+                                { value: "", label: "All Brands" },
+                                ...brands.map((brand) => ({ value: brand.id, label: brand.name })),
+                            ]}
+                        />
 
-                        <select
+                        <SelectDescription
+                            label="Status"
                             value={selectedStatus}
                             onChange={(e) => setSelectedStatus(e.target.value)}
-                            className="min-h-11 rounded-md border border-navy-100 bg-white px-3 text-sm text-navy-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15"
-                        >
-                            <option value="">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
+                            options={[
+                                { value: "", label: "All Statuses", description: "Show active and inactive products." },
+                                { value: "active", label: "Active", description: "Only products available for normal workflows." },
+                                { value: "inactive", label: "Inactive", description: "Only products held out of normal workflows." },
+                            ]}
+                        />
                     </div>
 
                     {/* Table */}

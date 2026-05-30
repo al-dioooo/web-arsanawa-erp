@@ -9,6 +9,7 @@ import { useTrialBalance } from "@/features/finance/api-journals"
 import { usePeriods } from "@/features/finance/api"
 import { formatIDR, formatDateID } from "@/lib/format"
 import { Icon } from "@/components/ui/icon"
+import { SelectDescription } from "@/components/ui/select-description"
 import Link from "next/link"
 
 export default function TrialBalancePage() {
@@ -36,20 +37,19 @@ export default function TrialBalancePage() {
             />
 
             <FilterBar>
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-navy-500">Accounting Period:</span>
-                    <select
-                        value={selectedPeriodId || ""}
-                        onChange={(e) => setPeriodIdState(Number(e.target.value) || null)}
-                        className="text-sm border border-navy-200 rounded-lg px-3 py-1.5 bg-white text-navy-700 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow"
-                    >
-                        {periods.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name} ({formatDateID(p.start_date)} - {formatDateID(p.end_date)})
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                <SelectDescription
+                    label="Accounting Period"
+                    value={selectedPeriodId || ""}
+                    onChange={(e) => setPeriodIdState(Number(e.target.value) || null)}
+                    options={[
+                        { value: "", label: "Select a period", description: "Choose the period used for this trial balance." },
+                        ...periods.map((p) => ({
+                            value: p.id,
+                            label: p.name,
+                            description: `${formatDateID(p.start_date)} - ${formatDateID(p.end_date)}`,
+                        })),
+                    ]}
+                />
             </FilterBar>
 
             {/* Verification Banner */}

@@ -10,7 +10,8 @@ import { useSession } from "@/features/auth/session-provider"
 import { useTaxReturns, useGenerateTaxReturn, type TaxReturn } from "@/features/finance/api-tax-returns"
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
+import { InputDate } from "@/components/ui/input-date"
+import { SelectDescription } from "@/components/ui/select-description"
 import { formatIDR, formatDateID } from "@/lib/format"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -175,13 +176,14 @@ function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; com
     const firstDay = new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 1).toISOString().split('T')[0]
     const lastDay = new Date(thisMonth.getFullYear(), thisMonth.getMonth() + 1, 0).toISOString().split('T')[0]
 
-    const { register, handleSubmit, formState: { errors } } = useForm<GenerateForm>({
+    const { register, handleSubmit, watch, formState: { errors } } = useForm<GenerateForm>({
         defaultValues: {
             tax_type: 'ppn',
             period_start: firstDay,
             period_end: lastDay,
         },
     })
+    const taxType = watch("tax_type")
 
     const onSubmit = (data: GenerateForm) => {
         if (!companyId) return
@@ -213,15 +215,16 @@ function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; com
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-                    <Field label="Tax Type" error={errors.tax_type?.message}>
-                        <select
-                            {...register("tax_type", { required: "Tax type is required" })}
-                            className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30"
-                        >
-                            <option value="ppn">PPN (Value Added Tax)</option>
-                            <option value="pph23">PPh 23 (Withholding Tax)</option>
-                        </select>
-                    </Field>
+                    <SelectDescription
+                        label="Tax Type"
+                        error={errors.tax_type?.message}
+                        value={taxType}
+                        options={[
+                            { value: "ppn", label: "PPN", description: "Value Added Tax return for taxable sales and purchases." },
+                            { value: "pph23", label: "PPh 23", description: "Withholding Tax return for applicable vendor payments." },
+                        ]}
+                        {...register("tax_type", { required: "Tax type is required" })}
+                    />
 
                     <div className="bg-navy-50/60 rounded-xl p-4 border border-navy-100">
                         <p className="text-sm font-semibold text-navy-700 mb-3 flex items-center gap-2">
@@ -229,20 +232,16 @@ function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; com
                             Reporting Period
                         </p>
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label="Period Start" error={errors.period_start?.message}>
-                                <input
-                                    type="date"
-                                    {...register("period_start", { required: "Start date is required" })}
-                                    className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white"
-                                />
-                            </Field>
-                            <Field label="Period End" error={errors.period_end?.message}>
-                                <input
-                                    type="date"
-                                    {...register("period_end", { required: "End date is required" })}
-                                    className="w-full h-10 px-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-white"
-                                />
-                            </Field>
+                            <InputDate
+                                label="Period Start"
+                                error={errors.period_start?.message}
+                                {...register("period_start", { required: "Start date is required" })}
+                            />
+                            <InputDate
+                                label="Period End"
+                                error={errors.period_end?.message}
+                                {...register("period_end", { required: "End date is required" })}
+                            />
                         </div>
                     </div>
 

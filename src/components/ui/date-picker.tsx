@@ -4,6 +4,11 @@ import * as React from "react"
 import { Icon } from "@/components/ui/icon"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
 import { cn } from "@/lib/utils"
+import {
+    fieldControlClassName,
+    fieldErrorClassName,
+    fieldLabelClassName,
+} from "@/components/ui/form-control"
 
 type DatePickerProps = {
     label?: string
@@ -159,17 +164,18 @@ export function DatePicker({
     }
 
     return (
-        <div ref={containerRef} className={`grid gap-1.5 text-sm font-medium text-navy-700 relative ${className}`}>
-            {label && <span>{label}</span>}
+        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-navy-700", className)}>
+            {label && <span className={fieldLabelClassName}>{label}</span>}
             <div className="relative">
                 <input
                     type="text"
+                    aria-label={label}
                     readOnly
                     required={required && !value}
                     value={displayValue}
                     placeholder={placeholder}
                     onClick={handleToggleOpen}
-                    className="min-h-11 w-full rounded-md border border-navy-100 bg-white pl-3 pr-10 text-sm text-navy-900 outline-none transition placeholder:text-navy-300 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/15 cursor-pointer"
+                    className={cn(fieldControlClassName, "w-full pr-10 cursor-pointer")}
                 />
                 <button
                     type="button"
@@ -250,7 +256,7 @@ export function DatePicker({
                     </div>
                 )}
             </div>
-            {error && <span className="text-xs font-medium text-destructive">{error}</span>}
+            {error && <span className={fieldErrorClassName}>{error}</span>}
         </div>
     )
 }

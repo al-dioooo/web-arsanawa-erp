@@ -27,7 +27,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 <CommandPaletteProvider>
                     {children}
                     <CommandPalette />
-                    <Toaster position="top-right" richColors />
+                    <Toaster
+                        position="bottom-left"
+                        richColors
+                        toastOptions={{
+                            classNames: {
+                                toast: "border border-navy-100 bg-white text-navy-900 shadow-lg",
+                                title: "font-display text-sm font-bold",
+                                description: "font-body text-xs text-navy-500",
+                                actionButton: "bg-teal-700 text-white",
+                                cancelButton: "bg-navy-100 text-navy-700",
+                            },
+                        }}
+                    />
                 </CommandPaletteProvider>
             </SessionProvider>
         </QueryClientProvider>

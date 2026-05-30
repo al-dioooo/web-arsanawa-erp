@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import { useGoodsReceipts, type StockReceipt } from "@/features/finance/api-goods-receipt"
 import { formatDateID } from "@/lib/format"
@@ -28,11 +29,15 @@ export default function GoodsReceiptsPage() {
 
             <FilterBar>
                 <div className="flex gap-2">
-                    <select className="text-sm border-navy-200 rounded-lg px-3 py-1.5 bg-white text-navy-700 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow">
-                        <option value="">All Statuses</option>
-                        <option value="received">Received</option>
-                        <option value="processed">Processed</option>
-                    </select>
+                    <SelectDescription
+                        label="Status"
+                        defaultValue=""
+                        options={[
+                            { value: "", label: "All Statuses", description: "Show receipts regardless of processing state." },
+                            { value: "received", label: "Received", description: "Stock receipt is captured from inventory." },
+                            { value: "processed", label: "Processed", description: "Receipt has moved into downstream finance handling." },
+                        ]}
+                    />
                 </div>
             </FilterBar>
 
