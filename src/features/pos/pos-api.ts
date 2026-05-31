@@ -237,6 +237,16 @@ export async function previewPosImport(
     return response.data
 }
 
+export async function previewConfiguredPosImport(options: PosRequestOptions): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        "/api/v1/pos/sales/imports/configured/preview",
+        { method: "POST", body: jsonBody({}) },
+        options,
+    )
+
+    return response.data
+}
+
 export async function commitPosImport(
     options: PosRequestOptions,
     importId: number,

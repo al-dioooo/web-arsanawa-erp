@@ -51,8 +51,13 @@ export type Sale = {
     partner_id: number | null
     customer_name: string | null
     status: SaleStatus
+    source: string | null
+    source_channel: string | null
+    external_reference: string | null
+    external_api_key_id: number | null
     order_date: string | null
     fulfilment_date: string | null
+    fulfilment_time_window: string | null
     delivery_address: string | null
     currency_id: number | null
     exchange_rate: string | null
@@ -165,6 +170,7 @@ export type CreateSaleInput = {
     customer_name?: string | null
     order_date?: string
     fulfilment_date?: string | null
+    fulfilment_time_window?: string | null
     delivery_address?: string | null
     notes?: string | null
     lines: SaleLineInput[]

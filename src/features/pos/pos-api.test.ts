@@ -9,6 +9,7 @@ import {
     loadCustomers,
     loadPosDashboardSummary,
     loadProductsForSale,
+    previewConfiguredPosImport,
     previewPosImport,
 } from "@/features/pos/pos-api"
 
@@ -143,6 +144,7 @@ describe("POS API", () => {
         const options = { token: "token", companyId: 9 }
         await downloadPosImportTemplate(options, "xlsx")
         await inspectPosImport(options, { file: new File(["order_reference"], "orders.csv") })
+        await previewConfiguredPosImport(options)
         await previewPosImport(options, 31, "orders.csv")
         await commitPosImport(options, 31)
         await getPosImport(options, 31)
@@ -156,6 +158,7 @@ describe("POS API", () => {
         expect(calls).toEqual([
             [expect.stringContaining("/api/v1/pos/sales/imports/template.xlsx"), "GET", false],
             [expect.stringContaining("/api/v1/pos/sales/imports/inspect"), "POST", true],
+            [expect.stringContaining("/api/v1/pos/sales/imports/configured/preview"), "POST", false],
             [expect.stringContaining("/api/v1/pos/sales/imports/31/preview"), "POST", false],
             [expect.stringContaining("/api/v1/pos/sales/imports/31/commit"), "POST", false],
             [expect.stringContaining("/api/v1/pos/sales/imports/31"), "GET", false],

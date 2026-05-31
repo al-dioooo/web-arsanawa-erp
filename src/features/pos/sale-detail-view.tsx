@@ -246,6 +246,7 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
                                 {sale.type === "catering" && (
                                     <>
                                         <SummaryRow label="Fulfilment" value={sale.fulfilment_date ?? "-"} />
+                                        <SummaryRow label="Batch" value={sale.fulfilment_time_window ?? "-"} />
                                         <SummaryRow label="Delivery" value={sale.delivery_address ?? "-"} />
                                     </>
                                 )}
