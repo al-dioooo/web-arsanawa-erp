@@ -20,12 +20,12 @@ describe("normalizeGoogleSheetsCsvUrl", () => {
         ).toBe("https://docs.google.com/spreadsheets/d/sekalori/export?format=csv&gid=9")
     })
 
-    it("defaults to the first sheet when no gid is present", () => {
+    it("does not invent a gid when no gid is present", () => {
         expect(
             normalizeGoogleSheetsCsvUrl(
                 "https://docs.google.com/spreadsheets/d/sekalori/edit?usp=sharing",
             ),
-        ).toBe("https://docs.google.com/spreadsheets/d/sekalori/export?format=csv&gid=0")
+        ).toBe("https://docs.google.com/spreadsheets/d/sekalori/export?format=csv")
     })
 
     it("rejects non-Google-Sheets URLs", () => {

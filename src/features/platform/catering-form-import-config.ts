@@ -36,10 +36,12 @@ export function normalizeGoogleSheetsCsvUrl(input: string): string {
     const spreadsheetId = match[1]
     const gid = parsed.hash.match(/(?:^#?|&)gid=([^&]+)/)?.[1]
         ?? parsed.searchParams.get("gid")
-        ?? "0"
     const params = new URLSearchParams()
     params.set("format", "csv")
-    params.set("gid", gid || "0")
+
+    if (gid) {
+        params.set("gid", gid)
+    }
 
     const resourceKey = parsed.searchParams.get("resourcekey")
     if (resourceKey) {
