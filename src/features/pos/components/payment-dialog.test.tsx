@@ -84,4 +84,59 @@ describe("PaymentDialog", () => {
         expect(onAddPayment).not.toHaveBeenCalled()
         expect(screen.getByText("Non-cash payments cannot exceed the balance due.")).toBeInTheDocument()
     })
+
+    it("allows confirmed catering orders to complete with a balance due", () => {
+        const onComplete = vi.fn()
+        render(
+            <PaymentDialog
+                open
+                onClose={vi.fn()}
+                sale={sale({
+                    type: "catering",
+                    status: "confirmed",
+                    amount_paid: "0.0000",
+                })}
+                isLoading={false}
+                onAddPayment={vi.fn()}
+                onRemovePayment={vi.fn()}
+                onComplete={onComplete}
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "Complete sale" }))
+
+        expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+
+    it("can hide payment editing while still allowing completion", () => {
+        render(
+            <PaymentDialog
+                open
+                onClose={vi.fn()}
+                sale={sale({
+                    type: "catering",
+                    status: "confirmed",
+                    amount_paid: "100.0000",
+                    payments: [
+                        {
+                            id: 10,
+                            sale_id: 1,
+                            method: "transfer",
+                            amount: "100.0000",
+                            reference: "proof",
+                            paid_at: "2026-05-28",
+                        },
+                    ],
+                })}
+                isLoading={false}
+                onAddPayment={vi.fn()}
+                onRemovePayment={vi.fn()}
+                onComplete={vi.fn()}
+                allowPaymentEditing={false}
+            />,
+        )
+
+        expect(screen.queryByRole("button", { name: "Add payment" })).not.toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Complete sale" })).toBeEnabled()
+    })
 })

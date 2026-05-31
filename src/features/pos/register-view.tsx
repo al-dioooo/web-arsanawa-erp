@@ -497,17 +497,16 @@ export function RegisterView() {
                 />
             </div>
 
-            {!cateringOnly ? (
-                <PaymentDialog
-                    open={paymentOpen}
-                    onClose={() => setPaymentOpen(false)}
-                    sale={draftSale}
-                    isLoading={isLoading}
-                    onAddPayment={handleAddPayment}
-                    onRemovePayment={handleRemovePayment}
-                    onComplete={handleComplete}
-                />
-            ) : null}
+            <PaymentDialog
+                open={paymentOpen}
+                onClose={() => setPaymentOpen(false)}
+                sale={draftSale}
+                isLoading={isLoading}
+                onAddPayment={handleAddPayment}
+                onRemovePayment={handleRemovePayment}
+                onComplete={handleComplete}
+                allowPaymentEditing={!cateringOnly}
+            />
 
             {/* Inline open-shift dialog so a cashier can start selling without leaving the register. */}
             {!cateringOnly ? <Dialog

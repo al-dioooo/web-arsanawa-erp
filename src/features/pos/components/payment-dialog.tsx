@@ -24,6 +24,7 @@ type PaymentDialogProps = {
     onAddPayment: (input: AddPaymentInput) => void
     onRemovePayment: (paymentId: number) => void
     onComplete: () => void
+    allowPaymentEditing?: boolean
 }
 
 export function PaymentDialog({
@@ -34,6 +35,7 @@ export function PaymentDialog({
     onAddPayment,
     onRemovePayment,
     onComplete,
+    allowPaymentEditing = true,
 }: PaymentDialogProps) {
     const [method, setMethod] = useState<PaymentMethod>("cash")
     const [amount, setAmount] = useState("")
@@ -46,6 +48,7 @@ export function PaymentDialog({
     const tendered = toNumber(amount)
     const change = method === "cash" && tendered > balanceDue ? tendered - balanceDue : 0
     const fullyPaid = balanceDue <= 0
+    const canComplete = sale?.type === "catering" ? sale.status === "confirmed" : fullyPaid
 
     return (
         <Dialog
@@ -61,7 +64,7 @@ export function PaymentDialog({
                     <Button
                         type="button"
                         size="xl"
-                        disabled={isLoading || !fullyPaid}
+                        disabled={isLoading || !canComplete}
                         onClick={onComplete}
                         className="bg-teal-700 hover:bg-teal-800 text-white"
                     >
@@ -84,85 +87,89 @@ export function PaymentDialog({
                                     <span className="font-semibold uppercase text-navy-700">{payment.method}</span>
                                     <span className="flex items-center gap-3">
                                         <span className="font-bold text-navy-900">{formatCurrency(payment.amount)}</span>
-                                        <button
-                                            type="button"
-                                            disabled={isLoading}
-                                            onClick={() => onRemovePayment(payment.id)}
-                                            className="flex h-7 w-7 items-center justify-center rounded-md text-navy-300 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 cursor-pointer outline-none"
-                                        >
-                                            <Icon name="delete" size={16} />
-                                        </button>
+                                        {allowPaymentEditing ? (
+                                            <button
+                                                type="button"
+                                                disabled={isLoading}
+                                                onClick={() => onRemovePayment(payment.id)}
+                                                className="flex h-7 w-7 items-center justify-center rounded-md text-navy-300 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 cursor-pointer outline-none"
+                                            >
+                                                <Icon name="delete" size={16} />
+                                            </button>
+                                        ) : null}
                                     </span>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    <form
-                        className="grid gap-3 border-t border-navy-50 pt-4"
-                        onSubmit={(event) => {
-                            event.preventDefault()
-                            setPaymentError(null)
-                            if (method !== "cash" && tendered > balanceDue) {
-                                setPaymentError("Non-cash payments cannot exceed the balance due.")
-                                return
-                            }
-                            onAddPayment({
-                                method,
-                                amount: method === "cash" ? Math.min(tendered, balanceDue) : tendered,
-                                reference: reference || undefined,
-                            })
-                            setAmount("")
-                            setReference("")
-                        }}
-                    >
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <SelectField
-                                label="Method"
-                                value={method}
-                                onChange={(event) => setMethod(event.target.value as PaymentMethod)}
-                            >
-                                {METHODS.map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </SelectField>
-                            <Field
-                                label="Amount"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={amount}
-                                onChange={(event) => setAmount(event.target.value)}
-                                placeholder={String(Math.max(balanceDue, 0))}
-                                required
-                            />
-                        </div>
-                        <Field
-                            label="Reference (optional)"
-                            value={reference}
-                            onChange={(event) => setReference(event.target.value)}
-                            placeholder="Card / transfer reference"
-                        />
-                        {change > 0 && (
-                            <p className="text-sm font-semibold text-emerald-700">
-                                Change due: {formatCurrency(change)}
-                            </p>
-                        )}
-                        {paymentError ? (
-                            <p className="text-sm font-semibold text-destructive">{paymentError}</p>
-                        ) : null}
-                        <Button
-                            type="submit"
-                            variant="secondary"
-                            size="xl"
-                            disabled={isLoading || tendered <= 0 || fullyPaid}
-                            className="w-full"
+                    {allowPaymentEditing ? (
+                        <form
+                            className="grid gap-3 border-t border-navy-50 pt-4"
+                            onSubmit={(event) => {
+                                event.preventDefault()
+                                setPaymentError(null)
+                                if (method !== "cash" && tendered > balanceDue) {
+                                    setPaymentError("Non-cash payments cannot exceed the balance due.")
+                                    return
+                                }
+                                onAddPayment({
+                                    method,
+                                    amount: method === "cash" ? Math.min(tendered, balanceDue) : tendered,
+                                    reference: reference || undefined,
+                                })
+                                setAmount("")
+                                setReference("")
+                            }}
                         >
-                            Add payment
-                        </Button>
-                    </form>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <SelectField
+                                    label="Method"
+                                    value={method}
+                                    onChange={(event) => setMethod(event.target.value as PaymentMethod)}
+                                >
+                                    {METHODS.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </SelectField>
+                                <Field
+                                    label="Amount"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={amount}
+                                    onChange={(event) => setAmount(event.target.value)}
+                                    placeholder={String(Math.max(balanceDue, 0))}
+                                    required
+                                />
+                            </div>
+                            <Field
+                                label="Reference (optional)"
+                                value={reference}
+                                onChange={(event) => setReference(event.target.value)}
+                                placeholder="Card / transfer reference"
+                            />
+                            {change > 0 && (
+                                <p className="text-sm font-semibold text-emerald-700">
+                                    Change due: {formatCurrency(change)}
+                                </p>
+                            )}
+                            {paymentError ? (
+                                <p className="text-sm font-semibold text-destructive">{paymentError}</p>
+                            ) : null}
+                            <Button
+                                type="submit"
+                                variant="secondary"
+                                size="xl"
+                                disabled={isLoading || tendered <= 0 || fullyPaid}
+                                className="w-full"
+                            >
+                                Add payment
+                            </Button>
+                        </form>
+                    ) : null}
                 </div>
             )}
         </Dialog>
