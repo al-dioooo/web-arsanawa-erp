@@ -14,6 +14,7 @@ type ImportOperations = {
     downloadTemplate: (format: "csv" | "xlsx") => Promise<Blob>
     inspect: (input: { file?: File; sourceUrl?: string }) => Promise<SpreadsheetImportResult>
     preview: (importId: number, sheetName: string) => Promise<SpreadsheetImportResult>
+    previewConfigured?: () => Promise<SpreadsheetImportResult>
     commit: (importId: number) => Promise<SpreadsheetImportResult>
 }
 
@@ -23,6 +24,7 @@ export function SpreadsheetImportDialog({
     title,
     description,
     operations,
+    configuredImportSettingsHref,
     onCommitted,
 }: {
     open: boolean
@@ -30,6 +32,7 @@ export function SpreadsheetImportDialog({
     title: string
     description: string
     operations: ImportOperations
+    configuredImportSettingsHref?: string
     onCommitted?: () => void
 }) {
     const [sourceMode, setSourceMode] = useState<"url" | "file">("url")
@@ -71,6 +74,11 @@ export function SpreadsheetImportDialog({
         })
     }
 
+    function resetPreview() {
+        setResult(null)
+        setSheetName("")
+    }
+
     return (
         <Dialog
             open={open}
@@ -99,6 +107,43 @@ export function SpreadsheetImportDialog({
             )}
         >
             <div className="grid gap-5">
+                {operations.previewConfigured ? (
+                    <div className="grid gap-3 rounded-xl border border-teal-100 bg-teal-50/30 p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p className="text-sm font-bold text-navy-900">Configured Google Form</p>
+                                <p className="mt-1 text-xs leading-relaxed text-navy-500">
+                                    Preview orders from the saved SEKALORI Google Forms response sheet.
+                                </p>
+                            </div>
+                            {configuredImportSettingsHref ? (
+                                <a
+                                    href={configuredImportSettingsHref}
+                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-navy-100 bg-white px-3 text-sm font-semibold text-navy-700 transition hover:bg-navy-50 hover:text-teal-700"
+                                >
+                                    <Icon name="settings" size={16} />
+                                    Configure sheet URL
+                                </a>
+                            ) : null}
+                        </div>
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                size="xl"
+                                disabled={isLoading}
+                                className="bg-teal-700 text-white hover:bg-teal-800"
+                                onClick={() => void run(async () => {
+                                    resetPreview()
+                                    setResult(await operations.previewConfigured!())
+                                })}
+                            >
+                                <Icon name="sync_alt" size={18} />
+                                Use Configured Google Form
+                            </Button>
+                        </div>
+                    </div>
+                ) : null}
+
                 <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => void download("csv")}>
                         <Icon name="description" size={16} />
@@ -112,10 +157,16 @@ export function SpreadsheetImportDialog({
 
                 <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
                     <div className="flex gap-2">
-                        <Button type="button" variant={sourceMode === "url" ? "default" : "outline"} size="sm" onClick={() => setSourceMode("url")}>
+                        <Button type="button" variant={sourceMode === "url" ? "default" : "outline"} size="sm" onClick={() => {
+                            resetPreview()
+                            setSourceMode("url")
+                        }}>
                             Google Sheets URL
                         </Button>
-                        <Button type="button" variant={sourceMode === "file" ? "default" : "outline"} size="sm" onClick={() => setSourceMode("file")}>
+                        <Button type="button" variant={sourceMode === "file" ? "default" : "outline"} size="sm" onClick={() => {
+                            resetPreview()
+                            setSourceMode("file")
+                        }}>
                             File Upload
                         </Button>
                     </div>

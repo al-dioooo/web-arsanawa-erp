@@ -17,6 +17,7 @@ import {
     downloadPosImportTemplate,
     inspectPosImport,
     listSales,
+    previewConfiguredPosImport,
     previewPosImport,
     voidSale,
     type PosRequestOptions,
@@ -114,13 +115,15 @@ export function SalesView() {
                     open={importOpen}
                     onClose={() => setImportOpen(false)}
                     title="Import Catering Orders"
-                    description="Upload or inspect a public Google Sheets catering order template, preview validation, then queue confirmed orders."
+                    description="Preview the configured Google Form source or upload a catering order template, then queue confirmed orders."
                     operations={{
                         downloadTemplate: (format) => downloadPosImportTemplate(requestOptions, format),
                         inspect: (input) => inspectPosImport(requestOptions, input),
                         preview: (importId, sheetName) => previewPosImport(requestOptions, importId, sheetName),
+                        previewConfigured: () => previewConfiguredPosImport(requestOptions),
                         commit: (importId) => commitPosImport(requestOptions, importId),
                     }}
+                    configuredImportSettingsHref="/platform/settings"
                     onCommitted={() => void refreshData()}
                 />
             ) : null}
