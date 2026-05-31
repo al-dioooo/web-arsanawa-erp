@@ -1,0 +1,230 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Dialog } from "@/components/ui/dialog"
+import { Field } from "@/components/ui/field"
+import { Icon } from "@/components/ui/icon"
+import { SelectDescription } from "@/components/ui/select-description"
+import { StatusPill } from "@/components/ui/status-pill"
+import type { SpreadsheetImportResult, SpreadsheetImportSheet } from "@/features/inventory/inventory-types"
+
+type ImportOperations = {
+    downloadTemplate: (format: "csv" | "xlsx") => Promise<Blob>
+    inspect: (input: { file?: File; sourceUrl?: string }) => Promise<SpreadsheetImportResult>
+    preview: (importId: number, sheetName: string) => Promise<SpreadsheetImportResult>
+    commit: (importId: number) => Promise<SpreadsheetImportResult>
+}
+
+export function SpreadsheetImportDialog({
+    open,
+    onClose,
+    title,
+    description,
+    operations,
+    onCommitted,
+}: {
+    open: boolean
+    onClose: () => void
+    title: string
+    description: string
+    operations: ImportOperations
+    onCommitted?: () => void
+}) {
+    const [sourceMode, setSourceMode] = useState<"url" | "file">("url")
+    const [sourceUrl, setSourceUrl] = useState("")
+    const [file, setFile] = useState<File | null>(null)
+    const [result, setResult] = useState<SpreadsheetImportResult | null>(null)
+    const [sheetName, setSheetName] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+
+    const sheets = result?.sheets ?? result?.import.sheets ?? []
+    const selectedSheet = sheets.find((sheet) => sheet.name === sheetName)
+    const canPreview = Boolean(result?.import.id && selectedSheet?.supported)
+    const canCommit = result?.import.status === "previewed" && (result.import.error_count ?? 0) === 0
+    const rowErrors = useMemo(
+        () => (result?.rows ?? []).filter((row) => Object.keys(row.errors ?? {}).length > 0),
+        [result],
+    )
+
+    async function run(callback: () => Promise<void>) {
+        setIsLoading(true)
+        try {
+            await callback()
+        } catch (caught) {
+            toast.error(caught instanceof Error ? caught.message : "Import request failed.")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    async function download(format: "csv" | "xlsx") {
+        await run(async () => {
+            const blob = await operations.downloadTemplate(format)
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement("a")
+            link.href = url
+            link.download = `${title.toLowerCase().replace(/\s+/g, "-")}-template.${format}`
+            link.click()
+            URL.revokeObjectURL(url)
+        })
+    }
+
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            title={title}
+            description={description}
+            widthClassName="max-w-3xl"
+            footer={(
+                <>
+                    <Button type="button" variant="secondary" size="xl" onClick={onClose}>Close</Button>
+                    <Button
+                        type="button"
+                        size="xl"
+                        disabled={isLoading || !canCommit}
+                        className="bg-teal-700 text-white hover:bg-teal-800"
+                        onClick={() => void run(async () => {
+                            if (!result?.import.id) return
+                            const committed = await operations.commit(result.import.id)
+                            setResult(committed)
+                            onCommitted?.()
+                        })}
+                    >
+                        Queue import
+                    </Button>
+                </>
+            )}
+        >
+            <div className="grid gap-5">
+                <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => void download("csv")}>
+                        <Icon name="description" size={16} />
+                        Download CSV Template
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => void download("xlsx")}>
+                        <Icon name="description" size={16} />
+                        Download XLSX Template
+                    </Button>
+                </div>
+
+                <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
+                    <div className="flex gap-2">
+                        <Button type="button" variant={sourceMode === "url" ? "default" : "outline"} size="sm" onClick={() => setSourceMode("url")}>
+                            Google Sheets URL
+                        </Button>
+                        <Button type="button" variant={sourceMode === "file" ? "default" : "outline"} size="sm" onClick={() => setSourceMode("file")}>
+                            File Upload
+                        </Button>
+                    </div>
+
+                    {sourceMode === "url" ? (
+                        <Field
+                            label="Google Sheets URL"
+                            value={sourceUrl}
+                            onChange={(event) => setSourceUrl(event.target.value)}
+                            placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
+                        />
+                    ) : (
+                        <label className="grid gap-1.5 text-sm font-medium text-navy-700">
+                            <span className="text-sm font-semibold text-navy-700">Spreadsheet file</span>
+                            <input
+                                aria-label="Spreadsheet file"
+                                type="file"
+                                accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                                className="min-h-11 rounded-md border border-navy-100 bg-white px-3 py-2 text-sm text-navy-900"
+                            />
+                        </label>
+                    )}
+
+                    <div className="flex justify-end">
+                        <Button
+                            type="button"
+                            size="xl"
+                            disabled={isLoading || (sourceMode === "url" ? !sourceUrl : !file)}
+                            className="bg-teal-700 text-white hover:bg-teal-800"
+                            onClick={() => void run(async () => {
+                                const inspected = await operations.inspect(sourceMode === "url" ? { sourceUrl } : { file: file ?? undefined })
+                                setResult(inspected)
+                                const supported = (inspected.sheets ?? []).find((sheet) => sheet.supported)
+                                setSheetName(supported?.name ?? "")
+                            })}
+                        >
+                            Inspect source
+                        </Button>
+                    </div>
+                </div>
+
+                {sheets.length > 0 ? (
+                    <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
+                        <SelectDescription
+                            label="Sheet page"
+                            value={sheetName}
+                            onChange={(event) => setSheetName(event.target.value)}
+                            options={[
+                                { value: "", label: "Select sheet" },
+                                ...sheets.map((sheet: SpreadsheetImportSheet) => ({
+                                    value: sheet.name,
+                                    label: sheet.name,
+                                    description: sheet.supported ? `${sheet.row_count} rows` : sheet.reason ?? "Unsupported",
+                                    disabled: !sheet.supported,
+                                })),
+                            ]}
+                        />
+                        <div className="grid gap-2">
+                            {sheets.map((sheet) => (
+                                <div key={sheet.name} className="flex items-center justify-between gap-3 rounded-lg bg-navy-50 px-3 py-2 text-sm">
+                                    <span className="font-semibold text-navy-800">{sheet.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium text-navy-500">{sheet.row_count} rows</span>
+                                        <StatusPill tone={sheet.supported ? "green" : "amber"}>{sheet.supported ? "Supported" : "Unsupported"}</StatusPill>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                size="xl"
+                                disabled={isLoading || !canPreview}
+                                className="bg-teal-700 text-white hover:bg-teal-800"
+                                onClick={() => void run(async () => {
+                                    if (!result?.import.id) return
+                                    setResult(await operations.preview(result.import.id, sheetName))
+                                })}
+                            >
+                                Preview import
+                            </Button>
+                        </div>
+                    </div>
+                ) : null}
+
+                {result?.import.status ? (
+                    <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <StatusPill tone={result.import.error_count ? "amber" : "green"}>{result.import.status}</StatusPill>
+                            <span className="text-sm font-semibold text-navy-600">
+                                {result.import.row_count} rows · {result.import.error_count} errors
+                            </span>
+                        </div>
+                        {rowErrors.length > 0 ? (
+                            <div className="grid gap-2">
+                                {rowErrors.map((row) => (
+                                    <div key={row.id} className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                        <p className="font-bold">Row {row.row_number}</p>
+                                        {Object.entries(row.errors).flatMap(([field, errors]) =>
+                                            errors.map((error) => <p key={`${field}-${error}`}>{error}</p>),
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
+                    </div>
+                ) : null}
+            </div>
+        </Dialog>
+    )
+}

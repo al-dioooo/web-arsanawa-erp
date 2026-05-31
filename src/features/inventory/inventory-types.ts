@@ -57,6 +57,7 @@ export type ProductUnit = {
     is_active: boolean;
     product?: InventoryProduct;
     variants: VariantMaster[];
+    images?: ProductImage[];
 };
 
 export type ProductVariant = {
@@ -85,7 +86,60 @@ export type InventoryProduct = {
     status: string;
     variants: ProductVariant[];
     product_units?: ProductUnit[];
+    images?: ProductImage[];
     tags?: Array<{ id: number; name: string }>;
+};
+
+export type ProductImage = {
+    id: number;
+    url: string;
+    path?: string;
+    original_url?: string | null;
+    alt_text?: string | null;
+    mime_type?: string | null;
+    size_bytes?: number | null;
+    width?: number | null;
+    height?: number | null;
+    is_primary?: boolean;
+    sort_order?: number;
+};
+
+export type SpreadsheetImportSheet = {
+    name: string;
+    supported: boolean;
+    row_count: number;
+    reason: string | null;
+};
+
+export type SpreadsheetImportBatch = {
+    id: number;
+    company_id?: number;
+    kind: string;
+    source?: string;
+    original_name?: string | null;
+    sheets?: SpreadsheetImportSheet[];
+    selected_sheet?: string | null;
+    status: "inspected" | "previewed" | "invalid" | "queued" | "processing" | "completed" | "failed" | string;
+    row_count: number;
+    error_count: number;
+    created_count?: number;
+    updated_count?: number;
+    failure_message?: string | null;
+    committed_at?: string | null;
+};
+
+export type SpreadsheetImportRow = {
+    id: number;
+    row_number: number;
+    raw?: Record<string, unknown>;
+    normalized?: Record<string, unknown>;
+    errors: Record<string, string[]>;
+};
+
+export type SpreadsheetImportResult = {
+    import: SpreadsheetImportBatch;
+    sheets?: SpreadsheetImportSheet[];
+    rows: SpreadsheetImportRow[];
 };
 
 export type StockLot = {

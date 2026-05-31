@@ -42,6 +42,13 @@ import {
     listVariantMasters,
     listProductUnits,
     loadInventoryDashboardSummary,
+    commitProductImport,
+    downloadProductImportTemplate,
+    getProductImport,
+    inspectProductImport,
+    previewProductImport,
+    uploadProductImage,
+    uploadProductUnitImage,
 } from "@/features/inventory/inventory-api"
 
 const requestOptions = { token: "token", companyId: 7 }
@@ -236,5 +243,46 @@ describe("inventory API route coverage", () => {
         const [url, init] = vi.mocked(fetch).mock.calls[0]
         expect(String(url)).toContain("/api/v1/inventory/dashboard")
         expect(init?.method ?? "GET").toBe("GET")
+    })
+
+    it("covers inventory product import, template download, and image routes", async () => {
+        vi.mocked(fetch).mockResolvedValue({
+            ok: true,
+            status: 200,
+            blob: async () => new Blob(["template"]),
+            json: async () => ({
+                message: "OK",
+                data: {
+                    import: { id: 11, kind: "inventory_products", status: "previewed" },
+                    rows: [],
+                    sheets: [],
+                    image: { id: 21, url: "/storage/product.jpg" },
+                },
+            }),
+        } as Response)
+
+        await downloadProductImportTemplate(requestOptions, "csv")
+        await inspectProductImport(requestOptions, { sourceUrl: "https://docs.google.com/sheets/export" })
+        await previewProductImport(requestOptions, 11, "Products")
+        await commitProductImport(requestOptions, 11)
+        await getProductImport(requestOptions, 11)
+        await uploadProductImage(requestOptions, 4, { remoteUrl: "https://images.example.test/product.jpg" })
+        await uploadProductUnitImage(requestOptions, 8, { file: new File(["x"], "unit.jpg", { type: "image/jpeg" }) })
+
+        const calls = vi.mocked(fetch).mock.calls.map(([url, init]) => [
+            String(url),
+            init?.method ?? "GET",
+            init?.body instanceof FormData,
+        ])
+
+        expect(calls).toEqual([
+            [expect.stringContaining("/api/v1/inventory/products/imports/template.csv"), "GET", false],
+            [expect.stringContaining("/api/v1/inventory/products/imports/inspect"), "POST", true],
+            [expect.stringContaining("/api/v1/inventory/products/imports/11/preview"), "POST", false],
+            [expect.stringContaining("/api/v1/inventory/products/imports/11/commit"), "POST", false],
+            [expect.stringContaining("/api/v1/inventory/products/imports/11"), "GET", false],
+            [expect.stringContaining("/api/v1/inventory/products/4/images"), "POST", false],
+            [expect.stringContaining("/api/v1/inventory/product-units/8/images"), "POST", true],
+        ])
     })
 })

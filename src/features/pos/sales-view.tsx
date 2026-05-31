@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { SpreadsheetImportDialog } from "@/components/imports/spreadsheet-import-dialog"
 import { Icon } from "@/components/ui/icon"
 import { StatusPill } from "@/components/ui/status-pill"
 import { useSession } from "@/features/auth/session-provider"
@@ -10,7 +11,16 @@ import { PosFilterBar, type PosSalesFilters } from "@/features/pos/components/po
 import { PosPageHeader } from "@/features/pos/components/pos-page-header"
 import { SaleLifecycleActions } from "@/features/pos/components/sale-lifecycle-actions"
 import { saleStatusTone } from "@/features/pos/components/sale-status"
-import { cancelSale, listSales, voidSale, type PosRequestOptions } from "@/features/pos/pos-api"
+import {
+    cancelSale,
+    commitPosImport,
+    downloadPosImportTemplate,
+    inspectPosImport,
+    listSales,
+    previewPosImport,
+    voidSale,
+    type PosRequestOptions,
+} from "@/features/pos/pos-api"
 import type { Pagination, Sale } from "@/features/pos/pos-types"
 import { formatCurrency } from "@/lib/money"
 
@@ -29,6 +39,7 @@ export function SalesView() {
     })
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [importOpen, setImportOpen] = useState(false)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -90,7 +101,29 @@ export function SalesView() {
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
                 error={error}
+                actions={requestOptions ? (
+                    <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
+                        <Icon name="description" size={18} />
+                        Import Orders
+                    </Button>
+                ) : null}
             />
+
+            {requestOptions ? (
+                <SpreadsheetImportDialog
+                    open={importOpen}
+                    onClose={() => setImportOpen(false)}
+                    title="Import Catering Orders"
+                    description="Upload or inspect a public Google Sheets catering order template, preview validation, then queue confirmed orders."
+                    operations={{
+                        downloadTemplate: (format) => downloadPosImportTemplate(requestOptions, format),
+                        inspect: (input) => inspectPosImport(requestOptions, input),
+                        preview: (importId, sheetName) => previewPosImport(requestOptions, importId, sheetName),
+                        commit: (importId) => commitPosImport(requestOptions, importId),
+                    }}
+                    onCommitted={() => void refreshData()}
+                />
+            ) : null}
 
             <div className="rounded-2xl border border-navy-100 bg-white p-6">
                 <PosFilterBar

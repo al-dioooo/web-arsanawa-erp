@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Tooltip } from "@/components/ui/tooltip"
 import { useForm, Controller } from "react-hook-form"
 import { toast } from "sonner"
 import { formatIDR } from "@/lib/format"
@@ -126,20 +127,26 @@ export default function ApprovalMatricesPage() {
                         </td>
                         <td className="px-6 py-4">
                             <div className="flex gap-2">
-                                <button
-                                    onClick={() => handleEdit(rule)}
-                                    className="p-1.5 text-navy-500 hover:text-teal-600 hover:bg-navy-50 rounded-lg transition-colors cursor-pointer"
-                                    title="Edit Rule"
-                                >
-                                    <Icon name="edit" className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(rule.id)}
-                                    className="p-1.5 text-navy-500 hover:text-rose-600 hover:bg-navy-50 rounded-lg transition-colors cursor-pointer"
-                                    title="Delete Rule"
-                                >
-                                    <Icon name="delete" className="w-4 h-4" />
-                                </button>
+                                <Tooltip content="Edit Rule">
+                                    <button
+                                        type="button"
+                                        aria-label="Edit Rule"
+                                        onClick={() => handleEdit(rule)}
+                                        className="p-1.5 text-navy-500 hover:text-teal-600 hover:bg-navy-50 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                        <Icon name="edit" className="w-4 h-4" />
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content="Delete Rule">
+                                    <button
+                                        type="button"
+                                        aria-label="Delete Rule"
+                                        onClick={() => handleDelete(rule.id)}
+                                        className="p-1.5 text-navy-500 hover:text-rose-600 hover:bg-navy-50 rounded-lg transition-colors cursor-pointer"
+                                    >
+                                        <Icon name="delete" className="w-4 h-4" />
+                                    </button>
+                                </Tooltip>
                             </div>
                         </td>
                     </tr>

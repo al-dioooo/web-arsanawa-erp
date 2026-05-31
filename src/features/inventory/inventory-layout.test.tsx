@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import CataloguePage from "@/app/(app)/inventory/catalogue/page"
 import { InventoryDashboardView } from "@/features/inventory/inventory-dashboard-view"
@@ -15,6 +15,9 @@ import {
     loadInventory,
     loadInventoryDashboardSummary,
     loadStockSnapshot,
+    inspectProductImport,
+    previewProductImport,
+    downloadProductImportTemplate,
 } from "@/features/inventory/inventory-api"
 
 vi.mock("next/navigation", () => ({
@@ -45,6 +48,10 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     deleteVariantGroup: vi.fn(),
     deleteVariantMaster: vi.fn(),
     getStockMovement: vi.fn(),
+    commitProductImport: vi.fn(),
+    downloadProductImportTemplate: vi.fn(),
+    getProductImport: vi.fn(),
+    inspectProductImport: vi.fn(),
     listProductUnits: vi.fn(),
     listVariantGroups: vi.fn(),
     listVariantMasters: vi.fn(),
@@ -53,6 +60,7 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     loadStockLots: vi.fn(),
     loadStockMovements: vi.fn(),
     loadStockSnapshot: vi.fn(),
+    previewProductImport: vi.fn(),
     recordAdjustment: vi.fn(),
     recordIssue: vi.fn(),
     recordReceipt: vi.fn(),
@@ -65,6 +73,8 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     updateUnit: vi.fn(),
     updateVariantGroup: vi.fn(),
     updateVariantMaster: vi.fn(),
+    uploadProductImage: vi.fn(),
+    uploadProductUnitImage: vi.fn(),
 }))
 
 const inventory = {
@@ -228,5 +238,106 @@ describe("inventory layout unification", () => {
 
         expectDashboardHeader("Products")
         expect(screen.getByText("No company")).toBeInTheDocument()
+    })
+
+    it("renders product image previews and icon-only master list actions", async () => {
+        mockSession()
+        mockInventoryApi()
+        vi.mocked(loadInventory).mockResolvedValue({
+            ...inventory,
+            products: [
+                {
+                    id: 4,
+                    company_id: 1,
+                    category_id: null,
+                    brand_id: null,
+                    base_uom_id: 1,
+                    name: "Nasi Box Premium",
+                    description: null,
+                    track_stock: true,
+                    attributes: null,
+                    status: "active",
+                    variants: [],
+                    images: [
+                        {
+                            id: 99,
+                            url: "/storage/nasi-box.jpg",
+                            alt_text: "Nasi Box Premium Image",
+                            is_primary: true,
+                        },
+                    ],
+                },
+            ],
+            productTotal: 1,
+        })
+
+        render(<InventoryMasterDataView kind="products" mode="list" />)
+
+        await waitFor(() => expect(screen.getByText("Nasi Box Premium")).toBeInTheDocument())
+        expect(screen.getByAltText("Nasi Box Premium Image")).toBeInTheDocument()
+        expect(screen.getByLabelText("View Product")).toBeInTheDocument()
+        expect(screen.getByLabelText("Edit Product")).toBeInTheDocument()
+        expect(screen.queryByText("View")).not.toBeInTheDocument()
+        expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+    })
+
+    it("previews remote product image URLs before submitting", async () => {
+        mockSession()
+        mockInventoryApi()
+
+        render(<InventoryMasterDataView kind="products" mode="create" />)
+
+        fireEvent.change(screen.getByLabelText("Remote image URL"), {
+            target: { value: "https://images.example.test/menu.jpg" },
+        })
+
+        expect(screen.getByAltText("Remote product preview")).toHaveAttribute(
+            "src",
+            "https://images.example.test/menu.jpg",
+        )
+    })
+
+    it("drives product spreadsheet import sheet selection and validation preview", async () => {
+        mockSession()
+        mockInventoryApi()
+        vi.mocked(downloadProductImportTemplate).mockResolvedValue(new Blob(["template"]))
+        vi.mocked(inspectProductImport).mockResolvedValue({
+            import: { id: 12, kind: "inventory_products", status: "inspected", error_count: 0, row_count: 0 },
+            sheets: [
+                { name: "Products", supported: true, row_count: 1, reason: null },
+                { name: "Notes", supported: false, row_count: 3, reason: "Missing required template headers." },
+            ],
+            rows: [],
+        })
+        vi.mocked(previewProductImport).mockResolvedValue({
+            import: { id: 12, kind: "inventory_products", status: "invalid", error_count: 1, row_count: 1 },
+            rows: [
+                {
+                    id: 1,
+                    row_number: 2,
+                    normalized: { sku: "BAD-SKU" },
+                    errors: { sku: ["SKU is required."] },
+                },
+            ],
+            sheets: [],
+        })
+
+        render(<InventoryMasterDataView kind="products" mode="list" />)
+        await waitFor(() => expect(screen.getByRole("button", { name: "Import Products" })).toBeInTheDocument())
+
+        fireEvent.click(screen.getByRole("button", { name: "Import Products" }))
+        fireEvent.change(screen.getByLabelText("Google Sheets URL"), {
+            target: { value: "https://docs.google.com/spreadsheets/d/example/export?format=csv" },
+        })
+        fireEvent.click(screen.getByRole("button", { name: "Inspect source" }))
+
+        await waitFor(() => expect(screen.getByRole("option", { name: /Notes/ })).toBeDisabled())
+
+        fireEvent.change(screen.getByLabelText("Sheet page"), { target: { value: "Products" } })
+        fireEvent.click(screen.getByRole("button", { name: "Preview import" }))
+
+        await waitFor(() => expect(screen.getByText("Row 2")).toBeInTheDocument())
+        expect(screen.getByText("SKU is required.")).toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Queue import" })).toBeDisabled()
     })
 })

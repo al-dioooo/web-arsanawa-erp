@@ -1,6 +1,6 @@
 "use client"
 
-import { apiRequest, jsonBody } from "@/lib/api-client"
+import { apiBaseUrl, apiRequest, jsonBody } from "@/lib/api-client"
 import type {
     AddPaymentInput,
     CloseShiftInput,
@@ -16,6 +16,7 @@ import type {
     ShiftReport,
 } from "@/features/pos/pos-types"
 import type { Category, InventoryProduct } from "@/features/inventory/inventory-types"
+import type { SpreadsheetImportResult } from "@/features/inventory/inventory-types"
 
 export type PosRequestOptions = {
     token: string
@@ -174,6 +175,92 @@ export async function removeSalePayment(
         options,
     )
     return res.data.sale
+}
+
+export type PosImportSourceInput = {
+    file?: File
+    sourceUrl?: string
+}
+
+export async function downloadPosImportTemplate(
+    options: PosRequestOptions,
+    format: "csv" | "xlsx",
+): Promise<Blob> {
+    const response = await fetch(`${apiBaseUrl()}/api/v1/pos/sales/imports/template.${format}`, {
+        method: "GET",
+        headers: {
+            Accept: "application/octet-stream",
+            Authorization: `Bearer ${options.token}`,
+            "X-Company-Id": String(options.companyId),
+        },
+    })
+
+    if (!response.ok) {
+        throw new Error("Unable to download template.")
+    }
+
+    return response.blob()
+}
+
+export async function inspectPosImport(
+    options: PosRequestOptions,
+    input: PosImportSourceInput,
+): Promise<SpreadsheetImportResult> {
+    const form = new FormData()
+
+    if (input.file) {
+        form.set("file", input.file)
+    } else if (input.sourceUrl) {
+        form.set("source_url", input.sourceUrl)
+    }
+
+    const response = await apiRequest<SpreadsheetImportResult>(
+        "/api/v1/pos/sales/imports/inspect",
+        { method: "POST", body: form },
+        options,
+    )
+
+    return response.data
+}
+
+export async function previewPosImport(
+    options: PosRequestOptions,
+    importId: number,
+    sheetName: string,
+): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        `/api/v1/pos/sales/imports/${importId}/preview`,
+        { method: "POST", body: jsonBody({ sheet_name: sheetName }) },
+        options,
+    )
+
+    return response.data
+}
+
+export async function commitPosImport(
+    options: PosRequestOptions,
+    importId: number,
+): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        `/api/v1/pos/sales/imports/${importId}/commit`,
+        { method: "POST", body: jsonBody({}) },
+        options,
+    )
+
+    return response.data
+}
+
+export async function getPosImport(
+    options: PosRequestOptions,
+    importId: number,
+): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        `/api/v1/pos/sales/imports/${importId}`,
+        {},
+        options,
+    )
+
+    return response.data
 }
 
 // --- Registers ------------------------------------------------------------

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useIsFetching, useIsMutating } from "@tanstack/react-query"
 import { useSession } from "@/features/auth/session-provider"
-import { getModuleByPath, isNavGroup, type ModuleEntry, type NavItem } from "@/lib/modules/registry"
+import { getModuleByPath, isNavGroup, type ModuleEntry, type NavGroup, type NavItem } from "@/lib/modules/registry"
 import { useTranslations, useLocale } from 'next-intl'
 import { setUserLocale } from '@/actions/locale'
 import { ModuleLauncher } from "@/components/app-shell/launcher"
@@ -13,6 +13,7 @@ import { EntitlementGuard } from "@/components/app-shell/guard"
 import { CategoryTreeNav } from "@/components/app-shell/category-tree-nav"
 import { COATreeNav } from "@/features/finance/components/coa-tree-nav"
 import { Icon } from "@/components/ui/icon"
+import { Tooltip } from "@/components/ui/tooltip"
 import { CheckIcon, ChevronDownIcon } from "@/components/icons/outline"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
 import { useCommandPalette } from "@/lib/search/command-palette-context"
@@ -92,7 +93,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const activeCompany = companies.find((c) => c.company.id === activeCompanyId)?.company
     const activeBranch = organizationContext?.branches.find((b) => b.id === activeBranchId)
     const activeModule = getModuleByPath(pathname)
-    const inModule = Boolean(activeModule)
+    const cateringOnly = activeCompany?.slug === "sekalori"
+    const filteredModule = activeModule ? filterModuleForCompany(activeModule, cateringOnly) : undefined
+    const inModule = Boolean(filteredModule)
     const accountDisplayName = profile?.profile.display_name?.trim() || user?.name || ""
     const accountInitial = accountDisplayName.charAt(0).toUpperCase()
     const avatarUrl = profile?.profile.avatar?.trim()
@@ -123,9 +126,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
 
             {/* ── Module sidebar (only in module mode) ───────────────────── */}
-            {inModule && activeModule && (
+            {inModule && filteredModule && (
                 <ModuleSidebar
-                    module={activeModule}
+                    module={filteredModule}
                     pathname={pathname}
                     mobileOpen={mobileSidebarOpen}
                     onCloseMobile={() => setMobileSidebarOpen(false)}
@@ -449,17 +452,16 @@ function ApiConnectionStatusDot({
     const label = apiStatusLabels[status]
 
     return (
-        <div className="group absolute right-2 top-2 z-40">
-            <button
-                type="button"
-                className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border ${apiStatusClasses[status]} outline-none ring-offset-2 transition focus:ring-2 focus:ring-teal-700/20`}
-                aria-label={`API connection status: ${label}`}
-            >
-                <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            </button>
-            <span className="pointer-events-none absolute right-0 top-5 min-w-max rounded-md border border-navy-100 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100">
-                {label}
-            </span>
+        <div className="absolute right-2 top-2 z-40">
+            <Tooltip label={label} side="bottom">
+                <button
+                    type="button"
+                    className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border ${apiStatusClasses[status]} outline-none ring-offset-2 transition focus:ring-2 focus:ring-teal-700/20`}
+                    aria-label={`API connection status: ${label}`}
+                >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                </button>
+            </Tooltip>
         </div>
     )
 }
@@ -627,4 +629,32 @@ function getActiveNavHref(module: ModuleEntry, pathname: string): string | null 
     return items
         .filter((item) => pathname.startsWith(`${item.href}/`))
         .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null
+}
+
+function filterModuleForCompany(module: ModuleEntry, cateringOnly: boolean): ModuleEntry {
+    if (!cateringOnly) return module
+
+    const restrictedHrefs = new Set([
+        "/pos/shifts",
+        "/pos/registers",
+        "/pos/reports",
+        "/inventory/pricing",
+        "/inventory/promotions",
+        "/inventory/stock/issues/new",
+        "/inventory/stock/transfers/new",
+    ])
+
+    return {
+        ...module,
+        nav: module.nav
+            .map((item) => {
+                if (!isNavGroup(item)) {
+                    return restrictedHrefs.has(item.href) ? null : item
+                }
+
+                const items = item.items.filter((child) => !restrictedHrefs.has(child.href))
+                return items.length > 0 ? { ...item, items } : null
+            })
+            .filter((item): item is NavItem | NavGroup => item !== null),
+    }
 }

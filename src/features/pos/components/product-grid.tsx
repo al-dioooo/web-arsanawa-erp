@@ -79,6 +79,13 @@ export function ProductGrid({ products, categories, priceMap, onAdd, disabled }:
                             }}
                             className="flex flex-col items-start gap-1 rounded-xl border border-navy-100 p-4 text-left transition-colors hover:border-teal-700 hover:bg-teal-50/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer outline-none"
                         >
+                            {product.images?.[0] ? (
+                                <img
+                                    src={product.images[0].url}
+                                    alt={product.images[0].alt_text || product.name}
+                                    className="mb-2 aspect-square w-full rounded-md border border-navy-100 object-cover"
+                                />
+                            ) : null}
                             <span className="line-clamp-2 text-sm font-bold text-navy-900">{product.name}</span>
                             {variant.name ? (
                                 <span className="text-xs text-navy-500">{variant.name}</span>

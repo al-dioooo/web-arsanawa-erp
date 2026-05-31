@@ -44,6 +44,7 @@ type CartPanelProps = {
     onPrimaryAction: () => void
     onOpenPayment: () => void
     onCancel: () => void
+    cateringOnly?: boolean
 }
 
 export function CartPanel({
@@ -63,6 +64,7 @@ export function CartPanel({
     onPrimaryAction,
     onOpenPayment,
     onCancel,
+    cateringOnly = false,
 }: CartPanelProps) {
     // Before a draft sale exists, estimate the total locally for display.
     // Once the API returns a sale, its totals are authoritative.
@@ -76,7 +78,9 @@ export function CartPanel({
 
     return (
         <div className="flex flex-col gap-4 rounded-2xl border border-navy-100 bg-white p-6">
-            <SaleTypeToggle value={saleType} onChange={onSaleTypeChange} disabled={locked} />
+            {!cateringOnly ? (
+                <SaleTypeToggle value={saleType} onChange={onSaleTypeChange} disabled={locked} />
+            ) : null}
 
             {saleType === "catering" ? (
                 <div className="grid gap-3 border-b border-navy-50 pb-4">

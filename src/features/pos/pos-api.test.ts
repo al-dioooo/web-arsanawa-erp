@@ -1,5 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cancelSale, listSales, loadCustomers, loadPosDashboardSummary, loadProductsForSale } from "@/features/pos/pos-api"
+import {
+    cancelSale,
+    commitPosImport,
+    downloadPosImportTemplate,
+    getPosImport,
+    inspectPosImport,
+    listSales,
+    loadCustomers,
+    loadPosDashboardSummary,
+    loadProductsForSale,
+    previewPosImport,
+} from "@/features/pos/pos-api"
 
 describe("POS API", () => {
     beforeEach(() => {
@@ -112,5 +123,42 @@ describe("POS API", () => {
         const [url, init] = vi.mocked(fetch).mock.calls[0]
         expect(String(url)).toContain("/api/v1/pos/dashboard")
         expect(init?.method ?? "GET").toBe("GET")
+    })
+
+    it("covers POS catering spreadsheet import and template routes", async () => {
+        vi.mocked(fetch).mockResolvedValue({
+            ok: true,
+            status: 200,
+            blob: async () => new Blob(["template"]),
+            json: async () => ({
+                message: "OK",
+                data: {
+                    import: { id: 31, kind: "pos_catering_orders", status: "previewed" },
+                    rows: [],
+                    sheets: [],
+                },
+            }),
+        } as Response)
+
+        const options = { token: "token", companyId: 9 }
+        await downloadPosImportTemplate(options, "xlsx")
+        await inspectPosImport(options, { file: new File(["order_reference"], "orders.csv") })
+        await previewPosImport(options, 31, "orders.csv")
+        await commitPosImport(options, 31)
+        await getPosImport(options, 31)
+
+        const calls = vi.mocked(fetch).mock.calls.map(([url, init]) => [
+            String(url),
+            init?.method ?? "GET",
+            init?.body instanceof FormData,
+        ])
+
+        expect(calls).toEqual([
+            [expect.stringContaining("/api/v1/pos/sales/imports/template.xlsx"), "GET", false],
+            [expect.stringContaining("/api/v1/pos/sales/imports/inspect"), "POST", true],
+            [expect.stringContaining("/api/v1/pos/sales/imports/31/preview"), "POST", false],
+            [expect.stringContaining("/api/v1/pos/sales/imports/31/commit"), "POST", false],
+            [expect.stringContaining("/api/v1/pos/sales/imports/31"), "GET", false],
+        ])
     })
 })

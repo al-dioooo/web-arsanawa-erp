@@ -62,6 +62,7 @@ function mockSession(overrides: {
     activeCompanyId?: number | null
     isLoading?: boolean
     isAuthenticated?: boolean
+    companySlug?: string
 } = {}) {
     vi.mocked(useSession).mockReturnValue({
         user: {
@@ -89,7 +90,7 @@ function mockSession(overrides: {
                 company: {
                     id: 1,
                     name: "SEKALORI Catering",
-                    slug: "sekalori",
+                    slug: overrides.companySlug ?? "demo-company",
                     legal_name: null,
                     tax_identifier: null,
                     status: "active",
@@ -262,7 +263,38 @@ describe("AppShell module sidebar", () => {
         )
 
         expect(screen.getByLabelText("API connection status: Active and ready")).toBeInTheDocument()
+        expect(screen.getByRole("tooltip", { name: "Active and ready" })).toBeInTheDocument()
         expect(screen.getByText("Active and ready")).toBeInTheDocument()
+    })
+
+    it("hides restricted POS and Inventory navigation for SEKALORI catering-only mode", () => {
+        mockSession({ companySlug: "sekalori" })
+        navigationState.pathname = "/pos/sales"
+
+        const { unmount } = render(
+            <AppShell>
+                <div>Sales page</div>
+            </AppShell>,
+        )
+
+        expect(screen.queryByRole("link", { name: /Shift/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole("link", { name: /Register/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole("link", { name: /Laporan/ })).not.toBeInTheDocument()
+        expect(screen.getByRole("link", { name: /Penjualan/ })).toBeInTheDocument()
+        unmount()
+
+        navigationState.pathname = "/inventory"
+        render(
+            <AppShell>
+                <div>Inventory page</div>
+            </AppShell>,
+        )
+
+        expect(screen.queryByRole("link", { name: "Pricing" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("link", { name: "Promotions" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("link", { name: "New Issue" })).not.toBeInTheDocument()
+        expect(screen.queryByRole("link", { name: "New Transfer" })).not.toBeInTheDocument()
+        expect(screen.getByRole("link", { name: "Products" })).toBeInTheDocument()
     })
 
     it("marks the API status dot as loading while queries are active", () => {

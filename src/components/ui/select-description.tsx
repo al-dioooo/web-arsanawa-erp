@@ -10,6 +10,7 @@ export type SelectDescriptionOption = {
     value: string | number
     label: string
     description?: string
+    disabled?: boolean
 }
 
 type SelectDescriptionProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "children"> & {
@@ -53,7 +54,7 @@ export const SelectDescription = forwardRef<HTMLSelectElement, SelectDescription
                 className={cn(fieldControlClassName, className)}
             >
                 {options.map((option) => (
-                    <option key={String(option.value)} value={option.value}>
+                    <option key={String(option.value)} value={option.value} disabled={option.disabled}>
                         {option.label}
                     </option>
                 ))}

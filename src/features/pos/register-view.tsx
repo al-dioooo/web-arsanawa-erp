@@ -50,7 +50,7 @@ const EMPTY_CATERING: CateringFields = {
 export function RegisterView() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { token, activeCompanyId, activeBranchId } = useSession()
+    const { token, activeCompanyId, activeBranchId, companies } = useSession()
 
     const [products, setProducts] = useState<InventoryProduct[]>([])
     const [categories, setCategories] = useState<Category[]>([])
@@ -77,6 +77,10 @@ export function RegisterView() {
         return { token, companyId: activeCompanyId }
     }, [token, activeCompanyId])
 
+    const activeCompany = companies.find((entry) => entry.company.id === activeCompanyId)?.company
+    const cateringOnly = activeCompany?.slug === "sekalori"
+    const effectiveSaleType: SaleType = cateringOnly ? "catering" : saleType
+
     const selectedRegister = useMemo(
         () => registers.find((register) => register.id === selectedRegisterId) ?? null,
         [registers, selectedRegisterId],
@@ -84,7 +88,9 @@ export function RegisterView() {
     const selectedRegisterKey =
         activeCompanyId && activeBranchId ? `pos:selected-register:${activeCompanyId}:${activeBranchId}` : null
     const locked = draftSale !== null && (draftSale.status !== "draft" || paymentOpen)
-    const canSell = shift?.status === "open" && !!activeBranchId && !!selectedRegister
+    const canSell = cateringOnly
+        ? !!activeBranchId
+        : shift?.status === "open" && !!activeBranchId && !!selectedRegister
 
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
@@ -94,7 +100,7 @@ export function RegisterView() {
             const [catalogue, loadedCustomers, loadedRegisters, summary] = await Promise.all([
                 loadProductsForSale(requestOptions),
                 loadCustomers(requestOptions).catch(() => [] as Customer[]),
-                listRegisters(requestOptions),
+                cateringOnly ? Promise.resolve([] as Register[]) : listRegisters(requestOptions),
                 loadPosDashboardSummary(requestOptions).catch(() => null),
             ])
             setProducts(catalogue.products)
@@ -143,7 +149,7 @@ export function RegisterView() {
         } finally {
             setIsLoading(false)
         }
-    }, [activeBranchId, requestOptions, selectedRegisterKey])
+    }, [activeBranchId, cateringOnly, requestOptions, selectedRegisterKey])
 
     useEffect(() => {
         let active = true
@@ -156,7 +162,7 @@ export function RegisterView() {
     }, [refreshData])
 
     useEffect(() => {
-        if (!requestOptions || !selectedRegisterId) {
+        if (cateringOnly || !requestOptions || !selectedRegisterId) {
             return
         }
 
@@ -171,7 +177,7 @@ export function RegisterView() {
         return () => {
             active = false
         }
-    }, [requestOptions, selectedRegisterId])
+    }, [cateringOnly, requestOptions, selectedRegisterId])
 
     useEffect(() => {
         const saleId = Number(searchParams.get("sale_id"))
@@ -215,8 +221,8 @@ export function RegisterView() {
         setDraftSale(null)
         setPaymentOpen(false)
         setCatering(EMPTY_CATERING)
-        setSaleType("counter")
-    }, [])
+        setSaleType(cateringOnly ? "catering" : "counter")
+    }, [cateringOnly])
 
     function handleAdd(product: InventoryProduct, variant: ProductVariant) {
         const resolvedPrice = priceMap[`${product.id}:${variant.id}`]
@@ -272,29 +278,30 @@ export function RegisterView() {
     }
 
     async function handlePrimaryAction() {
-        if (!requestOptions || !activeBranchId || !selectedRegister || cart.length === 0) return
-        if (!shift || shift.status !== "open" || shift.register_id !== selectedRegister.id) {
+        if (!requestOptions || !activeBranchId || cart.length === 0) return
+        if (!cateringOnly && !selectedRegister) return
+        if (!cateringOnly && (!shift || shift.status !== "open" || shift.register_id !== selectedRegister?.id)) {
             setError("Open a shift for the selected register before selling.")
             return
         }
 
-        if (saleType === "catering" && (!catering.partnerId || !catering.fulfilmentDate)) {
+        if (effectiveSaleType === "catering" && (!catering.partnerId || !catering.fulfilmentDate)) {
             setError("Catering orders require a customer and a fulfilment date.")
             return
         }
 
         await runMutation(async () => {
             const payload = {
-                type: saleType,
-                branch_id: selectedRegister.branch_id,
-                register_id: selectedRegister.id,
-                cashier_shift_id: shift.id,
-                partner_id: saleType === "catering" ? Number(catering.partnerId) : undefined,
+                type: effectiveSaleType,
+                branch_id: cateringOnly ? activeBranchId : selectedRegister!.branch_id,
+                register_id: cateringOnly ? undefined : selectedRegister!.id,
+                cashier_shift_id: cateringOnly ? undefined : shift!.id,
+                partner_id: effectiveSaleType === "catering" ? Number(catering.partnerId) : undefined,
                 customer_name:
-                    saleType === "counter" ? catering.customerName || undefined : undefined,
-                fulfilment_date: saleType === "catering" ? catering.fulfilmentDate : undefined,
+                    effectiveSaleType === "counter" ? catering.customerName || undefined : undefined,
+                fulfilment_date: effectiveSaleType === "catering" ? catering.fulfilmentDate : undefined,
                 delivery_address:
-                    saleType === "catering" ? catering.deliveryAddress || undefined : undefined,
+                    effectiveSaleType === "catering" ? catering.deliveryAddress || undefined : undefined,
                 lines: cart.map((item) => ({
                     product_variant_id: item.variantId,
                     quantity: item.quantity,
@@ -309,13 +316,18 @@ export function RegisterView() {
 
             sale = await applyPromotions(requestOptions, sale.id)
 
-            if (saleType === "catering") {
+            if (effectiveSaleType === "catering") {
                 sale = await confirmOrder(requestOptions, sale.id)
             }
 
             setDraftSale(sale)
-            setPaymentOpen(true)
-        })
+            if (cateringOnly) {
+                resetSale()
+                await refreshData()
+            } else {
+                setPaymentOpen(true)
+            }
+        }, cateringOnly ? "Catering order confirmed." : undefined)
     }
 
     async function handleAddPayment(input: AddPaymentInput) {
@@ -370,8 +382,8 @@ export function RegisterView() {
     return (
         <div className="grid gap-6">
             <PosPageHeader
-                title="POS Dashboard"
-                subtitle="Ring up counter and catering sales. Tap a product to add it to the cart, then take payment."
+                title={cateringOnly ? "Catering Orders" : "POS Dashboard"}
+                subtitle={cateringOnly ? "Create and confirm catering orders without registers, shifts, or counter payments." : "Ring up counter and catering sales. Tap a product to add it to the cart, then take payment."}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
                 message={message}
@@ -408,7 +420,7 @@ export function RegisterView() {
                         icon: "payments",
                         tone: "bg-indigo-50 text-indigo-600",
                     },
-                ].map((item) => (
+                ].filter((item) => !cateringOnly || !["Active Registers", "Open Shifts"].includes(item.label)).map((item) => (
                     <div key={item.label} className="rounded-2xl border border-navy-100 bg-white p-5">
                         <div className="mb-4 flex items-start justify-between gap-4">
                             <span className="text-xs font-bold uppercase tracking-wider text-navy-500 font-display">
@@ -430,27 +442,31 @@ export function RegisterView() {
                 ))}
             </div>
 
-            <ShiftBar
-                shift={shift}
-                registers={selectedRegister ? [selectedRegister] : registers}
-                onOpenShift={() => setOpenShiftForm({ register_id: "", opening_float: "" })}
-                onCloseShift={() => router.push("/pos/shifts")}
-            />
+            {!cateringOnly ? (
+                <>
+                    <ShiftBar
+                        shift={shift}
+                        registers={selectedRegister ? [selectedRegister] : registers}
+                        onOpenShift={() => setOpenShiftForm({ register_id: "", opening_float: "" })}
+                        onCloseShift={() => router.push("/pos/shifts")}
+                    />
 
-            <div className="grid gap-4 rounded-2xl border border-navy-100 bg-white p-6 lg:grid-cols-[minmax(240px,360px)_1fr]">
-                <RegisterSelector
-                    registers={registers}
-                    branchId={activeBranchId}
-                    value={selectedRegisterId}
-                    onChange={selectRegister}
-                    disabled={locked}
-                />
-                <PosSetupChecklist
-                    hasBranch={!!activeBranchId}
-                    hasRegister={!!selectedRegister}
-                    hasOpenShift={shift?.status === "open" && shift.register_id === selectedRegisterId}
-                />
-            </div>
+                    <div className="grid gap-4 rounded-2xl border border-navy-100 bg-white p-6 lg:grid-cols-[minmax(240px,360px)_1fr]">
+                        <RegisterSelector
+                            registers={registers}
+                            branchId={activeBranchId}
+                            value={selectedRegisterId}
+                            onChange={selectRegister}
+                            disabled={locked}
+                        />
+                        <PosSetupChecklist
+                            hasBranch={!!activeBranchId}
+                            hasRegister={!!selectedRegister}
+                            hasOpenShift={shift?.status === "open" && shift.register_id === selectedRegisterId}
+                        />
+                    </div>
+                </>
+            ) : null}
 
             <div className="grid gap-6 xl:grid-cols-[1fr_400px]">
                 <ProductGrid
@@ -462,7 +478,7 @@ export function RegisterView() {
                 />
                 <CartPanel
                     items={cart}
-                    saleType={saleType}
+                    saleType={effectiveSaleType}
                     onSaleTypeChange={setSaleType}
                     customers={customers}
                     catering={catering}
@@ -477,21 +493,24 @@ export function RegisterView() {
                     onPrimaryAction={handlePrimaryAction}
                     onOpenPayment={() => setPaymentOpen(true)}
                     onCancel={handleCancel}
+                    cateringOnly={cateringOnly}
                 />
             </div>
 
-            <PaymentDialog
-                open={paymentOpen}
-                onClose={() => setPaymentOpen(false)}
-                sale={draftSale}
-                isLoading={isLoading}
-                onAddPayment={handleAddPayment}
-                onRemovePayment={handleRemovePayment}
-                onComplete={handleComplete}
-            />
+            {!cateringOnly ? (
+                <PaymentDialog
+                    open={paymentOpen}
+                    onClose={() => setPaymentOpen(false)}
+                    sale={draftSale}
+                    isLoading={isLoading}
+                    onAddPayment={handleAddPayment}
+                    onRemovePayment={handleRemovePayment}
+                    onComplete={handleComplete}
+                />
+            ) : null}
 
             {/* Inline open-shift dialog so a cashier can start selling without leaving the register. */}
-            <Dialog
+            {!cateringOnly ? <Dialog
                 open={openShiftForm !== null}
                 onClose={() => setOpenShiftForm(null)}
                 title="Open shift"
@@ -557,7 +576,7 @@ export function RegisterView() {
                         />
                     </form>
                 )}
-            </Dialog>
+            </Dialog> : null}
         </div>
     )
 }

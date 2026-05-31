@@ -6,10 +6,13 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { SpreadsheetImportDialog } from "@/components/imports/spreadsheet-import-dialog"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
+import { Tooltip } from "@/components/ui/tooltip"
+import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
 import { InventoryPageHeader, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import {
@@ -27,10 +30,16 @@ import {
     deleteUnit,
     deleteVariantGroup,
     deleteVariantMaster,
+    commitProductImport,
+    downloadProductImportTemplate,
+    inspectProductImport,
     listProductUnits,
     listVariantGroups,
     listVariantMasters,
     loadInventory,
+    previewProductImport,
+    uploadProductImage,
+    uploadProductUnitImage,
     updateBrand,
     updateCategory,
     updateProduct,
@@ -77,6 +86,12 @@ type FormState = {
     variant_ids: string[]
     position: string
     is_active: boolean
+}
+
+type ImageInputState = {
+    remoteUrl: string
+    altText: string
+    file: File | null
 }
 
 const emptyForm: FormState = {
@@ -128,6 +143,8 @@ export function InventoryMasterDataView({
     const [form, setForm] = useState<FormState>(emptyForm)
     const [query, setQuery] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    const [importOpen, setImportOpen] = useState(false)
+    const [imageInput, setImageInput] = useState<ImageInputState>({ remoteUrl: "", altText: "", file: null })
 
     const config = configs[kind]
     const itemId = id ? Number(id) : null
@@ -207,9 +224,11 @@ export function InventoryMasterDataView({
 
         try {
             if (mode === "create") {
-                await createEntity(kind, requestOptions, form)
+                const response = await createEntity(kind, requestOptions, form)
+                await saveImageIfNeeded(kind, requestOptions, entityIdFromResponse(kind, response), imageInput)
             } else if (mode === "edit" && itemId) {
                 await updateEntity(kind, requestOptions, itemId, form)
+                await saveImageIfNeeded(kind, requestOptions, itemId, imageInput)
             }
 
             await refreshData()
@@ -265,9 +284,31 @@ export function InventoryMasterDataView({
                                 <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">Edit</Button>
                             </Link>
                         )}
+                        {mode === "list" && kind === "products" && requestOptions && (
+                            <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
+                                <Icon name="description" size={18} />
+                                Import Products
+                            </Button>
+                        )}
                     </>
                 )}
             />
+
+            {requestOptions && kind === "products" ? (
+                <SpreadsheetImportDialog
+                    open={importOpen}
+                    onClose={() => setImportOpen(false)}
+                    title="Import Products"
+                    description="Upload or inspect a public Google Sheets product template, preview row validation, then queue the import."
+                    operations={{
+                        downloadTemplate: (format) => downloadProductImportTemplate(requestOptions, format),
+                        inspect: (input) => inspectProductImport(requestOptions, input),
+                        preview: (importId, sheetName) => previewProductImport(requestOptions, importId, sheetName),
+                        commit: (importId) => commitProductImport(requestOptions, importId),
+                    }}
+                    onCommitted={() => void refreshData()}
+                />
+            ) : null}
 
             {mode === "list" && (
                 <section className="grid gap-4">
@@ -306,6 +347,9 @@ export function InventoryMasterDataView({
                         variantGroups={variantGroups}
                         variants={variants}
                     />
+                    {["products", "product-units"].includes(kind) ? (
+                        <ProductImageInput value={imageInput} onChange={setImageInput} />
+                    ) : null}
                     <div className="flex justify-end gap-3 border-t border-navy-100 pt-4">
                         <Link href={config.base}>
                             <Button type="button" variant="secondary" size="xl">Cancel</Button>
@@ -355,7 +399,8 @@ function getRows(
 }
 
 function row(id: number, title: string, meta: string, status: boolean, search: string, raw: MasterEntity) {
-    return { id, title, meta, status, search, raw }
+    const image = ("images" in raw ? raw.images?.[0] : undefined) ?? undefined
+    return { id, title, meta, status, search, raw, image }
 }
 
 function MasterTable({
@@ -363,7 +408,7 @@ function MasterTable({
     rows,
 }: {
     base: string
-    rows: Array<{ id: number; title: string; meta: string; status: boolean }>
+    rows: Array<{ id: number; title: string; meta: string; status: boolean; image?: { url: string; alt_text?: string | null } }>
 }) {
     return (
         <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
@@ -379,15 +424,34 @@ function MasterTable({
                 <tbody className="divide-y divide-navy-50">
                     {rows.map((item) => (
                         <tr key={item.id} className="hover:bg-navy-50/40">
-                            <td className="px-5 py-4 font-bold text-navy-950">{item.title}</td>
+                            <td className="px-5 py-4 font-bold text-navy-950">
+                                <div className="flex items-center gap-3">
+                                    {item.image ? (
+                                        <img
+                                            src={item.image.url}
+                                            alt={item.image.alt_text || item.title}
+                                            className="h-10 w-10 rounded-md border border-navy-100 object-cover"
+                                        />
+                                    ) : null}
+                                    <span>{item.title}</span>
+                                </div>
+                            </td>
                             <td className="px-5 py-4 text-navy-500">{item.meta}</td>
                             <td className="px-5 py-4">
                                 <StatusPill tone={item.status ? "green" : "neutral"}>{item.status ? "active" : "inactive"}</StatusPill>
                             </td>
                             <td className="px-5 py-4">
                                 <div className="flex gap-2">
-                                    <Link href={`${base}/${item.id}`} className="rounded-md bg-navy-50 px-3 py-1.5 text-xs font-bold text-navy-700 hover:bg-navy-100">View</Link>
-                                    <Link href={`${base}/${item.id}/edit`} className="rounded-md bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-800 hover:bg-teal-100">Edit</Link>
+                                    <Tooltip label="View Product">
+                                        <Link href={`${base}/${item.id}`} aria-label="View Product" className="flex h-8 w-8 items-center justify-center rounded-md bg-navy-50 text-navy-700 hover:bg-navy-100">
+                                            <Icon name="open_in_new" size={16} />
+                                        </Link>
+                                    </Tooltip>
+                                    <Tooltip label="Edit Product">
+                                        <Link href={`${base}/${item.id}/edit`} aria-label="Edit Product" className="flex h-8 w-8 items-center justify-center rounded-md bg-teal-50 text-teal-800 hover:bg-teal-100">
+                                            <Icon name="edit" size={16} />
+                                        </Link>
+                                    </Tooltip>
                                 </div>
                             </td>
                         </tr>
@@ -417,9 +481,22 @@ function DetailPanel({
     }
 
     const details = detailRows(kind, active)
+    const images = "images" in active ? active.images ?? [] : []
 
     return (
         <section className={cn("grid gap-4 p-5", inventorySurfaceClass)}>
+            {images.length > 0 ? (
+                <div className="flex flex-wrap gap-3 border-b border-navy-50 pb-4">
+                    {images.map((image) => (
+                        <img
+                            key={image.id}
+                            src={image.url}
+                            alt={image.alt_text || "Product image"}
+                            className="h-24 w-24 rounded-md border border-navy-100 object-cover"
+                        />
+                    ))}
+                </div>
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2">
                 {details.map(([label, value]) => (
                     <div key={label} className="border-b border-navy-50 pb-3">
@@ -528,6 +605,54 @@ function FormFields({
     )
 }
 
+function ProductImageInput({
+    value,
+    onChange,
+}: {
+    value: ImageInputState
+    onChange: Dispatch<SetStateAction<ImageInputState>>
+}) {
+    return (
+        <div className="grid gap-4 rounded-xl border border-navy-100 bg-navy-50/30 p-4 md:grid-cols-2">
+            <Field
+                label="Remote image URL"
+                value={value.remoteUrl}
+                onChange={(event) => onChange((current) => ({ ...current, remoteUrl: event.target.value }))}
+                placeholder="https://example.com/menu.jpg"
+            />
+            <Field
+                label="Image alt text"
+                value={value.altText}
+                onChange={(event) => onChange((current) => ({ ...current, altText: event.target.value }))}
+                placeholder="Product image description"
+            />
+            <label className="grid gap-1.5 text-sm font-medium text-navy-700">
+                <span className="text-sm font-semibold text-navy-700">Image file</span>
+                <input
+                    aria-label="Image file"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => onChange((current) => ({ ...current, file: event.target.files?.[0] ?? null }))}
+                    className="min-h-11 rounded-md border border-navy-100 bg-white px-3 py-2 text-sm text-navy-900"
+                />
+            </label>
+            <div className="flex items-end">
+                {value.remoteUrl ? (
+                    <img
+                        src={value.remoteUrl}
+                        alt="Remote product preview"
+                        className="h-24 w-24 rounded-md border border-navy-100 object-cover"
+                    />
+                ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-md border border-dashed border-navy-200 text-xs font-semibold text-navy-400">
+                        Preview
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
 function formFromEntity(kind: InventoryMasterKind, entity: MasterEntity): FormState {
     if (kind === "categories") {
         const category = entity as Category
@@ -585,6 +710,38 @@ async function deleteEntity(kind: InventoryMasterKind, options: { token: string;
     if (kind === "variant-groups") return deleteVariantGroup(options, id)
     if (kind === "variants") return deleteVariantMaster(options, id)
     return deleteProductUnit(options, id)
+}
+
+function entityIdFromResponse(kind: InventoryMasterKind, response: unknown): number | null {
+    if (!response || typeof response !== "object" || !("data" in response)) return null
+    const data = (response as { data?: Record<string, { id?: number }> }).data
+
+    if (kind === "products") return data?.product?.id ?? null
+    if (kind === "product-units") return data?.product_unit?.id ?? null
+
+    return null
+}
+
+async function saveImageIfNeeded(
+    kind: InventoryMasterKind,
+    options: { token: string; companyId: number },
+    id: number | null,
+    image: ImageInputState,
+) {
+    if (!id || (!image.file && !image.remoteUrl)) return
+
+    const payload = {
+        file: image.file ?? undefined,
+        remoteUrl: image.file ? undefined : image.remoteUrl,
+        altText: image.altText || undefined,
+        isPrimary: true,
+    }
+
+    if (kind === "products") {
+        await uploadProductImage(options, id, payload)
+    } else if (kind === "product-units") {
+        await uploadProductUnitImage(options, id, payload)
+    }
 }
 
 function detailRows(kind: InventoryMasterKind, entity: MasterEntity): Array<[string, string]> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { apiRequest, jsonBody } from "@/lib/api-client";
+import { apiBaseUrl, apiRequest, jsonBody } from "@/lib/api-client";
 import type {
     Brand,
     Category,
@@ -9,7 +9,9 @@ import type {
     InventoryDashboardSummary,
     PriceList,
     ProductUnit,
+    ProductImage,
     Reward,
+    SpreadsheetImportResult,
     StockLot,
     StockMovement,
     UnitOfMeasure,
@@ -506,6 +508,107 @@ export async function deleteProduct(options: InventoryRequestOptions, productId:
     )
 }
 
+export type ImportSourceInput = {
+    file?: File
+    sourceUrl?: string
+}
+
+export async function downloadProductImportTemplate(
+    options: InventoryRequestOptions,
+    format: "csv" | "xlsx",
+): Promise<Blob> {
+    return downloadInventoryBlob(`/api/v1/inventory/products/imports/template.${format}`, options)
+}
+
+export async function inspectProductImport(
+    options: InventoryRequestOptions,
+    input: ImportSourceInput,
+): Promise<SpreadsheetImportResult> {
+    const form = new FormData()
+
+    if (input.file) {
+        form.set("file", input.file)
+    } else if (input.sourceUrl) {
+        form.set("source_url", input.sourceUrl)
+    }
+
+    const response = await apiRequest<SpreadsheetImportResult>(
+        "/api/v1/inventory/products/imports/inspect",
+        { method: "POST", body: form },
+        options,
+    )
+
+    return response.data
+}
+
+export async function previewProductImport(
+    options: InventoryRequestOptions,
+    importId: number,
+    sheetName: string,
+): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        `/api/v1/inventory/products/imports/${importId}/preview`,
+        { method: "POST", body: jsonBody({ sheet_name: sheetName }) },
+        options,
+    )
+
+    return response.data
+}
+
+export async function commitProductImport(
+    options: InventoryRequestOptions,
+    importId: number,
+): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        `/api/v1/inventory/products/imports/${importId}/commit`,
+        { method: "POST", body: jsonBody({}) },
+        options,
+    )
+
+    return response.data
+}
+
+export async function getProductImport(
+    options: InventoryRequestOptions,
+    importId: number,
+): Promise<SpreadsheetImportResult> {
+    const response = await apiRequest<SpreadsheetImportResult>(
+        `/api/v1/inventory/products/imports/${importId}`,
+        {},
+        options,
+    )
+
+    return response.data
+}
+
+export async function uploadProductImage(
+    options: InventoryRequestOptions,
+    productId: number,
+    input: { file?: File; remoteUrl?: string; altText?: string; isPrimary?: boolean },
+) {
+    const response = await apiRequest<{ image: ProductImage }>(
+        `/api/v1/inventory/products/${productId}/images`,
+        imageUploadRequest(input),
+        options,
+    )
+
+    return response.data.image
+}
+
+export async function uploadProductUnitImage(
+    options: InventoryRequestOptions,
+    productUnitId: number,
+    input: { file?: File; remoteUrl?: string; altText?: string; isPrimary?: boolean },
+) {
+    const response = await apiRequest<{ image: ProductImage }>(
+        `/api/v1/inventory/product-units/${productUnitId}/images`,
+        imageUploadRequest(input),
+        options,
+    )
+
+    return response.data.image
+}
+
 export async function addVariant(
     options: InventoryRequestOptions,
     productId: number,
@@ -755,4 +858,46 @@ export async function deleteReward(options: InventoryRequestOptions, rewardId: n
         { method: "DELETE" },
         options,
     )
+}
+
+function imageUploadRequest(input: {
+    file?: File
+    remoteUrl?: string
+    altText?: string
+    isPrimary?: boolean
+}): RequestInit {
+    if (input.file) {
+        const form = new FormData()
+        form.set("image", input.file)
+        if (input.altText) form.set("alt_text", input.altText)
+        if (input.isPrimary !== undefined) form.set("is_primary", input.isPrimary ? "1" : "0")
+
+        return { method: "POST", body: form }
+    }
+
+    return {
+        method: "POST",
+        body: jsonBody({
+            remote_url: input.remoteUrl,
+            alt_text: input.altText,
+            is_primary: input.isPrimary,
+        }),
+    }
+}
+
+async function downloadInventoryBlob(path: string, options: InventoryRequestOptions): Promise<Blob> {
+    const response = await fetch(`${apiBaseUrl()}${path}`, {
+        method: "GET",
+        headers: {
+            Accept: "application/octet-stream",
+            Authorization: `Bearer ${options.token}`,
+            "X-Company-Id": String(options.companyId),
+        },
+    })
+
+    if (!response.ok) {
+        throw new Error("Unable to download template.")
+    }
+
+    return response.blob()
 }
