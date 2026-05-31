@@ -127,7 +127,7 @@ export default function ApprovalMatricesPage() {
                         </td>
                         <td className="px-6 py-4">
                             <div className="flex gap-2">
-                                <Tooltip content="Edit Rule">
+                                <Tooltip label="Edit Rule">
                                     <button
                                         type="button"
                                         aria-label="Edit Rule"
@@ -137,7 +137,7 @@ export default function ApprovalMatricesPage() {
                                         <Icon name="edit" className="w-4 h-4" />
                                     </button>
                                 </Tooltip>
-                                <Tooltip content="Delete Rule">
+                                <Tooltip label="Delete Rule">
                                     <button
                                         type="button"
                                         aria-label="Delete Rule"
