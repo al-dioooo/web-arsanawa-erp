@@ -75,7 +75,7 @@ export function PromotionsView() {
         setIsLoading(true)
 
         try {
-            const loaded = await loadInventory(requestOptions)
+            const loaded = await loadInventory(requestOptions, { includePromotions: true })
             setDiscounts(loaded.discounts)
             setRewards(loaded.rewards)
         } catch (caught) {

@@ -41,6 +41,7 @@ import {
     listVariantGroups,
     listVariantMasters,
     listProductUnits,
+    loadInventory,
     loadInventoryDashboardSummary,
     commitProductImport,
     downloadProductImportTemplate,
@@ -243,6 +244,39 @@ describe("inventory API route coverage", () => {
         const [url, init] = vi.mocked(fetch).mock.calls[0]
         expect(String(url)).toContain("/api/v1/inventory/dashboard")
         expect(init?.method ?? "GET").toBe("GET")
+    })
+
+    it("loads catalogue data without restricted pricing and promotion endpoints by default", async () => {
+        vi.mocked(fetch).mockImplementation(async (url) => {
+            const path = String(url)
+
+            if (path.includes("/api/v1/inventory/price-lists") || path.includes("/api/v1/inventory/discounts") || path.includes("/api/v1/inventory/rewards")) {
+                throw new Error(`Restricted endpoint should not be requested: ${path}`)
+            }
+
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    message: "OK",
+                    data: {
+                        categories: [],
+                        brands: [],
+                        units: [],
+                        products: [{ id: 4, name: "Nasi Box" }],
+                        pagination: { total: 1 },
+                    },
+                }),
+            } as Response
+        })
+
+        const loaded = await loadInventory(requestOptions)
+
+        expect(loaded.products).toEqual([{ id: 4, name: "Nasi Box" }])
+        expect(loaded.priceLists).toEqual([])
+        expect(loaded.discounts).toEqual([])
+        expect(loaded.rewards).toEqual([])
+        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(4)
     })
 
     it("covers inventory product import, template download, and image routes", async () => {

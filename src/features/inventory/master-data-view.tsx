@@ -14,6 +14,14 @@ import { StatusPill } from "@/components/ui/status-pill"
 import { Tooltip } from "@/components/ui/tooltip"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
+import { CategoryLeveledSelect } from "@/features/inventory/components/category-leveled-select"
+import {
+    buildCategoryTree,
+    categoriesWithAncestorsForQuery,
+    expandableCategoryIds,
+    flattenCategoryTree,
+    type CategoryTreeNode,
+} from "@/features/inventory/category-tree"
 import { InventoryPageHeader, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import {
     createBrand,
@@ -191,7 +199,9 @@ export function InventoryMasterDataView({
     }, [refreshData])
 
     const rows = useMemo(() => {
-        const source = getRows(kind, { categories, brands, units, products, variantGroups, variants, productUnits })
+        const scopedCategories = kind === "categories" ? categoriesWithAncestorsForQuery(categories, query) : categories
+        const source = getRows(kind, { categories: scopedCategories, brands, units, products, variantGroups, variants, productUnits })
+        if (kind === "categories") return source
         if (!query) return source
         const lowered = query.toLowerCase()
         return source.filter((row) => row.search.toLowerCase().includes(lowered))
@@ -274,6 +284,12 @@ export function InventoryMasterDataView({
                                 <Button variant="secondary" size="xl" type="button">Back to List</Button>
                             </Link>
                         )}
+                        {mode === "list" && kind === "products" && requestOptions && (
+                            <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
+                                <Icon name="description" size={18} />
+                                Import Products
+                            </Button>
+                        )}
                         {mode === "list" && (
                             <Link href={`${config.base}/new`}>
                                 <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">New {config.singular}</Button>
@@ -283,12 +299,6 @@ export function InventoryMasterDataView({
                             <Link href={`${config.base}/${itemId}/edit`}>
                                 <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">Edit</Button>
                             </Link>
-                        )}
-                        {mode === "list" && kind === "products" && requestOptions && (
-                            <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
-                                <Icon name="description" size={18} />
-                                Import Products
-                            </Button>
                         )}
                     </>
                 )}
@@ -322,7 +332,7 @@ export function InventoryMasterDataView({
                         />
                         <StatusPill tone="neutral">{`${rows.length} records`}</StatusPill>
                     </div>
-                    <MasterTable base={config.base} rows={rows} />
+                    <MasterTable kind={kind} base={config.base} rows={rows} query={query} />
                 </section>
             )}
 
@@ -366,6 +376,16 @@ export function InventoryMasterDataView({
 
 type MasterEntity = Category | Brand | UnitOfMeasure | InventoryProduct | ProductUnit | VariantGroup | VariantMaster
 
+type MasterRow = {
+    id: number
+    title: string
+    meta: string
+    status: boolean
+    search: string
+    raw: MasterEntity
+    image?: { url: string; alt_text?: string | null }
+}
+
 function getRows(
     kind: InventoryMasterKind,
     data: {
@@ -378,14 +398,15 @@ function getRows(
         productUnits: ProductUnit[]
     },
 ) {
+    const categoryOptions = flattenCategoryTree(data.categories)
     const rowsByKind = {
-        categories: data.categories.map((item) => ({
-            id: item.id,
-            title: `${"- ".repeat(item.depth)}${item.name}`,
-            meta: item.parent_id ? `Parent #${item.parent_id}` : "Root category",
-            status: item.is_active,
-            search: `${item.name} ${item.path}`,
-            raw: item,
+        categories: categoryOptions.map((option) => ({
+            id: option.category.id,
+            title: option.category.name,
+            meta: option.parentBreadcrumb || "Root category",
+            status: option.category.is_active,
+            search: `${option.category.name} ${option.breadcrumb} ${option.category.path}`,
+            raw: option.category,
         })),
         brands: data.brands.map((item) => row(item.id, item.name, "Brand", item.is_active, item.name, item)),
         units: data.units.map((item) => row(item.id, item.name, item.code, item.is_active, `${item.name} ${item.code}`, item)),
@@ -393,7 +414,7 @@ function getRows(
         "product-units": data.productUnits.map((item) => row(item.id, item.sku, item.name ?? "Sellable SKU", item.is_active, `${item.sku} ${item.name ?? ""}`, item)),
         "variant-groups": data.variantGroups.map((item) => row(item.id, item.name, item.unit?.code ?? item.code, item.is_active, `${item.name} ${item.code}`, item)),
         variants: data.variants.map((item) => row(item.id, item.name, item.group?.name ?? item.code, item.is_active, `${item.name} ${item.code}`, item)),
-    } satisfies Record<InventoryMasterKind, Array<{ id: number; title: string; meta: string; status: boolean; search: string; raw: MasterEntity }>>
+    } satisfies Record<InventoryMasterKind, MasterRow[]>
 
     return rowsByKind[kind]
 }
@@ -404,12 +425,20 @@ function row(id: number, title: string, meta: string, status: boolean, search: s
 }
 
 function MasterTable({
+    kind,
     base,
     rows,
+    query,
 }: {
+    kind: InventoryMasterKind
     base: string
-    rows: Array<{ id: number; title: string; meta: string; status: boolean; image?: { url: string; alt_text?: string | null } }>
+    rows: MasterRow[]
+    query: string
 }) {
+    if (kind === "categories") {
+        return <CategoryTreeTable base={base} rows={rows} query={query} />
+    }
+
     return (
         <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
             <table className="w-full min-w-[620px] text-left text-sm">
@@ -465,6 +494,129 @@ function MasterTable({
             </table>
         </div>
     )
+}
+
+function CategoryTreeTable({
+    base,
+    rows,
+    query,
+}: {
+    base: string
+    rows: MasterRow[]
+    query: string
+}) {
+    const categories = useMemo(() => rows.map((row) => row.raw as Category), [rows])
+    const tree = useMemo(() => buildCategoryTree(categories), [categories])
+    const parentIds = useMemo(() => expandableCategoryIds(categories), [categories])
+    const categoryMeta = useMemo(() => {
+        return new Map(flattenCategoryTree(categories).map((option) => [option.category.id, option.parentBreadcrumb || "Root category"]))
+    }, [categories])
+    const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set())
+    const effectiveExpandedIds = useMemo(() => {
+        if (query.trim()) {
+            return parentIds
+        }
+
+        const expandedIds = new Set(parentIds)
+        collapsedIds.forEach((id) => expandedIds.delete(id))
+
+        return expandedIds
+    }, [collapsedIds, parentIds, query])
+    const visibleRows = visibleCategoryRows(tree, effectiveExpandedIds)
+
+    return (
+        <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
+            <table className="w-full min-w-[620px] text-left text-sm">
+                <thead className="border-b border-navy-100 bg-navy-50/60 text-xs uppercase tracking-wider text-navy-500">
+                    <tr>
+                        <th className="px-5 py-3 font-bold">Name</th>
+                        <th className="px-5 py-3 font-bold">Context</th>
+                        <th className="px-5 py-3 font-bold">Status</th>
+                        <th className="px-5 py-3 font-bold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-navy-50">
+                    {visibleRows.map(({ node, depth }) => {
+                        const hasChildren = node.children.length > 0
+                        const expanded = effectiveExpandedIds.has(node.id)
+
+                        return (
+                            <tr key={node.id} className="hover:bg-navy-50/40">
+                                <td className="px-5 py-4 font-bold text-navy-950">
+                                    <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 22}px` }}>
+                                        {hasChildren ? (
+                                            <button
+                                                type="button"
+                                                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+                                                onClick={() => {
+                                                    setCollapsedIds((current) => {
+                                                        const next = new Set(current)
+                                                        if (expanded) {
+                                                            next.add(node.id)
+                                                        } else {
+                                                            next.delete(node.id)
+                                                        }
+
+                                                        return next
+                                                    })
+                                                }}
+                                                className="flex h-7 w-7 items-center justify-center rounded-md text-navy-400 transition hover:bg-navy-100 hover:text-navy-700"
+                                            >
+                                                <Icon name="chevron_right" size={16} className={cn("transition-transform", expanded ? "rotate-90" : "")} />
+                                            </button>
+                                        ) : (
+                                            <span className="h-7 w-7" aria-hidden="true" />
+                                        )}
+                                        {depth > 0 ? <span className="h-6 w-px bg-navy-100" aria-hidden="true" /> : null}
+                                        <span>{node.name}</span>
+                                    </div>
+                                </td>
+                                <td className="px-5 py-4 text-navy-500">{categoryMeta.get(node.id) ?? "Root category"}</td>
+                                <td className="px-5 py-4">
+                                    <StatusPill tone={node.is_active ? "green" : "neutral"}>{node.is_active ? "active" : "inactive"}</StatusPill>
+                                </td>
+                                <td className="px-5 py-4">
+                                    <div className="flex gap-2">
+                                        <Tooltip label="View Product Category">
+                                            <Link href={`${base}/${node.id}`} aria-label="View Product Category" className="flex h-8 w-8 items-center justify-center rounded-md bg-navy-50 text-navy-700 hover:bg-navy-100">
+                                                <Icon name="open_in_new" size={16} />
+                                            </Link>
+                                        </Tooltip>
+                                        <Tooltip label="Edit Product Category">
+                                            <Link href={`${base}/${node.id}/edit`} aria-label="Edit Product Category" className="flex h-8 w-8 items-center justify-center rounded-md bg-teal-50 text-teal-800 hover:bg-teal-100">
+                                                <Icon name="edit" size={16} />
+                                            </Link>
+                                        </Tooltip>
+                                    </div>
+                                </td>
+                            </tr>
+                        )
+                    })}
+                    {visibleRows.length === 0 && (
+                        <tr>
+                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    )
+}
+
+function visibleCategoryRows(
+    nodes: CategoryTreeNode[],
+    expandedIds: Set<number>,
+    depth = 0,
+): Array<{ node: CategoryTreeNode; depth: number }> {
+    return nodes.flatMap((node) => {
+        const row = { node, depth }
+
+        if (!expandedIds.has(node.id)) {
+            return [row]
+        }
+
+        return [row, ...visibleCategoryRows(node.children, expandedIds, depth + 1)]
+    })
 }
 
 function DetailPanel({
@@ -544,18 +696,20 @@ function FormFields({
                 <Field label="Code" value={form.code} onChange={(event) => set("code", event.target.value)} required />
             )}
             {kind === "categories" && (
-                <SearchableSelect
+                <CategoryLeveledSelect
                     label="Parent Category"
                     value={form.parent_id}
                     onChange={(value) => set("parent_id", String(value))}
-                    options={categories.map((category) => ({ value: category.id, label: `${"- ".repeat(category.depth)}${category.name}` }))}
+                    categories={categories}
+                    mode="all"
+                    emptyLabel="Root category"
                     placeholder="Root category"
                 />
             )}
             {kind === "products" && (
                 <>
                     <SearchableSelect label="Base Unit" value={form.base_uom_id} onChange={(value) => set("base_uom_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
-                    <SearchableSelect label="Category" value={form.category_id} onChange={(value) => set("category_id", String(value))} options={categories.map((category) => ({ value: category.id, label: `${"- ".repeat(category.depth)}${category.name}` }))} />
+                    <CategoryLeveledSelect label="Category" value={form.category_id} onChange={(value) => set("category_id", String(value))} categories={categories} mode="leaf" emptyLabel="No category" placeholder="No category" />
                     <SearchableSelect label="Brand" value={form.brand_id} onChange={(value) => set("brand_id", String(value))} options={brands.map((brand) => ({ value: brand.id, label: brand.name }))} />
                 </>
             )}

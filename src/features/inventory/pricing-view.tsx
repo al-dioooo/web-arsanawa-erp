@@ -59,7 +59,7 @@ export function PricingView() {
         setIsLoading(true)
 
         try {
-            const loaded = await loadInventory(requestOptions)
+            const loaded = await loadInventory(requestOptions, { includePriceLists: true })
             setPriceLists(loaded.priceLists)
             
             const list = loaded.products.flatMap((product) =>

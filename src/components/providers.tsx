@@ -29,10 +29,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <CommandPalette />
                     <Toaster
                         position="bottom-left"
+                        expand
+                        visibleToasts={4}
+                        offset={{ left: 24, bottom: 24 }}
+                        mobileOffset={{ left: 16, bottom: 16 }}
+                        style={{ zIndex: 2147483647 }}
                         richColors
                         toastOptions={{
+                            style: { zIndex: 2147483647 },
                             classNames: {
-                                toast: "border border-navy-100 bg-white text-navy-900 shadow-lg",
+                                toast: "border border-navy-100 bg-white text-navy-900 shadow-2xl",
                                 title: "font-display text-sm font-bold",
                                 description: "font-body text-xs text-navy-500",
                                 actionButton: "bg-teal-700 text-white",

@@ -96,6 +96,49 @@ const inventory = {
     rewards: [],
 }
 
+const categoryTree = [
+    {
+        id: 1,
+        company_id: 1,
+        parent_id: null,
+        name: "Catering",
+        path: "/1/",
+        depth: 0,
+        position: 0,
+        is_active: true,
+    },
+    {
+        id: 2,
+        company_id: 1,
+        parent_id: 1,
+        name: "Nasi Box",
+        path: "/1/2/",
+        depth: 1,
+        position: 0,
+        is_active: true,
+    },
+    {
+        id: 3,
+        company_id: 1,
+        parent_id: 2,
+        name: "Regular",
+        path: "/1/2/3/",
+        depth: 2,
+        position: 0,
+        is_active: true,
+    },
+    {
+        id: 4,
+        company_id: 1,
+        parent_id: null,
+        name: "Beverage",
+        path: "/4/",
+        depth: 0,
+        position: 1,
+        is_active: true,
+    },
+]
+
 const productUnit = {
     id: 8,
     company_id: 1,
@@ -279,6 +322,92 @@ describe("inventory layout unification", () => {
         expect(screen.getByLabelText("Edit Product")).toBeInTheDocument()
         expect(screen.queryByText("View")).not.toBeInTheDocument()
         expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+    })
+
+    it("limits product category selection to leaf categories with real leveled option layout", async () => {
+        mockSession()
+        mockInventoryApi()
+        vi.mocked(loadInventory).mockResolvedValue({
+            ...inventory,
+            categories: categoryTree,
+        })
+
+        render(<InventoryMasterDataView kind="products" mode="create" />)
+
+        await waitFor(() => expect(screen.getByRole("heading", { name: "New Product" })).toBeInTheDocument())
+        fireEvent.focus(screen.getByLabelText("Category"))
+
+        expect(screen.queryByText("- Nasi Box")).not.toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "Catering - parent category" })).toBeDisabled()
+        expect(screen.getByRole("button", { name: "Catering / Nasi Box - parent category" })).toBeDisabled()
+        expect(screen.getByRole("button", { name: "Catering / Nasi Box / Regular" })).not.toBeDisabled()
+    })
+
+    it("allows all categories in the category parent selector", async () => {
+        mockSession()
+        mockInventoryApi()
+        vi.mocked(loadInventory).mockResolvedValue({
+            ...inventory,
+            categories: categoryTree,
+        })
+
+        render(<InventoryMasterDataView kind="categories" mode="create" />)
+
+        await waitFor(() => expect(screen.getByRole("heading", { name: "New Product Category" })).toBeInTheDocument())
+        fireEvent.focus(screen.getByLabelText("Parent Category"))
+
+        expect(screen.getByRole("button", { name: "Root category" })).not.toBeDisabled()
+        expect(screen.getByRole("button", { name: "Catering" })).not.toBeDisabled()
+        expect(screen.getByRole("button", { name: "Catering / Nasi Box" })).not.toBeDisabled()
+    })
+
+    it("uses leaf-only category selection in the catalogue quick product form", async () => {
+        mockSession()
+        mockInventoryApi()
+        vi.mocked(loadInventory).mockResolvedValue({
+            ...inventory,
+            categories: categoryTree,
+        })
+
+        render(<CatalogueView />)
+
+        await waitFor(() => expect(screen.getByRole("heading", { name: "Product Catalogue" })).toBeInTheDocument())
+        const formCategoryInput = screen
+            .getAllByLabelText("Category")
+            .find((element) => element.tagName === "INPUT" && element.getAttribute("placeholder") === "None")
+
+        expect(formCategoryInput).toBeDefined()
+        fireEvent.focus(formCategoryInput!)
+
+        expect(screen.getByRole("button", { name: "Catering - parent category" })).toBeDisabled()
+        expect(screen.getByRole("button", { name: "Catering / Nasi Box / Regular" })).not.toBeDisabled()
+    })
+
+    it("renders product categories as an expandable leveled table", async () => {
+        mockSession()
+        mockInventoryApi()
+        vi.mocked(loadInventory).mockResolvedValue({
+            ...inventory,
+            categories: categoryTree,
+        })
+
+        render(<InventoryMasterDataView kind="categories" mode="list" />)
+
+        await waitFor(() => expect(screen.getByRole("heading", { name: "Product Categories" })).toBeInTheDocument())
+        await waitFor(() => expect(screen.getByText("Nasi Box")).toBeInTheDocument())
+        expect(screen.getByText("Catering / Nasi Box")).toBeInTheDocument()
+        expect(screen.queryByText("Parent #1")).not.toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole("button", { name: "Collapse Catering" }))
+        expect(screen.queryByText("Nasi Box")).not.toBeInTheDocument()
+
+        fireEvent.change(screen.getByLabelText("Search Product Categories"), {
+            target: { value: "Regular" },
+        })
+
+        expect(screen.getAllByText("Catering").length).toBeGreaterThan(0)
+        expect(screen.getByText("Nasi Box")).toBeInTheDocument()
+        expect(screen.getByText("Regular")).toBeInTheDocument()
     })
 
     it("previews remote product image URLs before submitting", async () => {

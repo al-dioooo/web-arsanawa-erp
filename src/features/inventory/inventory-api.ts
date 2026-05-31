@@ -1,6 +1,6 @@
 "use client";
 
-import { apiBaseUrl, apiRequest, jsonBody } from "@/lib/api-client";
+import { ApiError, apiBaseUrl, apiRequest, jsonBody } from "@/lib/api-client";
 import type {
     Brand,
     Category,
@@ -24,6 +24,11 @@ export type InventoryRequestOptions = {
     companyId: number;
 };
 
+type LoadInventoryOptions = {
+    includePriceLists?: boolean;
+    includePromotions?: boolean;
+};
+
 function queryString(params: Record<string, string | number | null | undefined>): string {
     const search = new URLSearchParams();
 
@@ -38,7 +43,7 @@ function queryString(params: Record<string, string | number | null | undefined>)
     return value ? `?${value}` : "";
 }
 
-export async function loadInventory(options: InventoryRequestOptions) {
+export async function loadInventory(options: InventoryRequestOptions, loadOptions: LoadInventoryOptions = {}) {
     const [categories, brands, units, products, priceLists, discounts, rewards] =
         await Promise.all([
             apiRequest<{ categories: Category[] }>("/api/v1/inventory/categories", {}, options),
@@ -49,14 +54,24 @@ export async function loadInventory(options: InventoryRequestOptions) {
                 {},
                 options,
             ),
-            apiRequest<{ price_lists: PriceList[] }>("/api/v1/inventory/price-lists", {}, options),
-            apiRequest<{ discounts: Discount[] }>("/api/v1/inventory/discounts", {}, options).catch(
-                () => ({ data: { discounts: [] }, message: "" }),
-            ),
-            apiRequest<{ rewards: Reward[] }>("/api/v1/inventory/rewards", {}, options).catch(() => ({
-                data: { rewards: [] },
-                message: "",
-            })),
+            loadOptions.includePriceLists
+                ? optionalForbiddenResponse(
+                        apiRequest<{ price_lists: PriceList[] }>("/api/v1/inventory/price-lists", {}, options),
+                        { price_lists: [] },
+                    )
+                : Promise.resolve({ data: { price_lists: [] }, message: "" }),
+            loadOptions.includePromotions
+                ? optionalForbiddenResponse(
+                        apiRequest<{ discounts: Discount[] }>("/api/v1/inventory/discounts", {}, options),
+                        { discounts: [] },
+                    )
+                : Promise.resolve({ data: { discounts: [] }, message: "" }),
+            loadOptions.includePromotions
+                ? optionalForbiddenResponse(
+                        apiRequest<{ rewards: Reward[] }>("/api/v1/inventory/rewards", {}, options),
+                        { rewards: [] },
+                    )
+                : Promise.resolve({ data: { rewards: [] }, message: "" }),
         ]);
 
     return {
@@ -69,6 +84,21 @@ export async function loadInventory(options: InventoryRequestOptions) {
         discounts: discounts.data.discounts,
         rewards: rewards.data.rewards,
     };
+}
+
+async function optionalForbiddenResponse<T>(
+    request: Promise<{ data: T; message: string }>,
+    fallback: T,
+): Promise<{ data: T; message: string }> {
+    try {
+        return await request
+    } catch (caught) {
+        if (caught instanceof ApiError && caught.status === 403) {
+            return { data: fallback, message: "" }
+        }
+
+        throw caught
+    }
 }
 
 export async function loadInventoryDashboardSummary(options: InventoryRequestOptions) {

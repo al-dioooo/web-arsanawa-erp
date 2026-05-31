@@ -48,9 +48,13 @@ export function InventoryPageHeader({
                         {description}
                     </p>
                 </div>
-                <div className="flex flex-wrap items-start gap-2">
-                    {resolvedStatus}
-                    {actions}
+                <div className="flex flex-col justify-between gap-2">
+                    <div className="lg:self-end">
+                        {resolvedStatus}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {actions}
+                    </div>
                 </div>
             </div>
         </section>

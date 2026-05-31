@@ -267,7 +267,7 @@ describe("AppShell module sidebar", () => {
         expect(screen.getByText("Active and ready")).toBeInTheDocument()
     })
 
-    it("hides restricted POS and Inventory navigation for SEKALORI catering-only mode", () => {
+    it("hides operational POS and stock navigation but keeps pricing and promotions for SEKALORI catering-only mode", () => {
         mockSession({ companySlug: "sekalori" })
         navigationState.pathname = "/pos/sales"
 
@@ -290,8 +290,8 @@ describe("AppShell module sidebar", () => {
             </AppShell>,
         )
 
-        expect(screen.queryByRole("link", { name: "Pricing" })).not.toBeInTheDocument()
-        expect(screen.queryByRole("link", { name: "Promotions" })).not.toBeInTheDocument()
+        expect(screen.getByRole("link", { name: "Pricing" })).toBeInTheDocument()
+        expect(screen.getByRole("link", { name: "Promotions" })).toBeInTheDocument()
         expect(screen.queryByRole("link", { name: "New Issue" })).not.toBeInTheDocument()
         expect(screen.queryByRole("link", { name: "New Transfer" })).not.toBeInTheDocument()
         expect(screen.getByRole("link", { name: "Products" })).toBeInTheDocument()

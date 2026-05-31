@@ -12,6 +12,7 @@ import { StatusPill } from "@/components/ui/status-pill"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
 import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
+import { CategoryLeveledSelect } from "@/features/inventory/components/category-leveled-select"
 import {
     createBrand,
     createCategory,
@@ -169,17 +170,14 @@ export function CatalogueView() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
 
-                        <SelectDescription
+                        <CategoryLeveledSelect
                             label="Category"
                             value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            options={[
-                                { value: "", label: "All Categories" },
-                                ...categories.map((category) => ({
-                                    value: category.id,
-                                    label: `${"- ".repeat(category.depth)}${category.name}`,
-                                })),
-                            ]}
+                            onChange={(value) => setSelectedCategory(String(value))}
+                            categories={categories}
+                            mode="all"
+                            emptyLabel="All Categories"
+                            placeholder="All Categories"
                         />
 
                         <SelectDescription
@@ -326,16 +324,15 @@ export function CatalogueView() {
                                 placeholder="Select unit"
                             />
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <SearchableSelect
+                                <CategoryLeveledSelect
                                     label="Category"
                                     value={productForm.category_id}
                                     onChange={(val) =>
                                         setProductForm((current) => ({ ...current, category_id: String(val) }))
                                     }
-                                    options={categories.map((category) => ({
-                                        value: category.id,
-                                        label: `${"- ".repeat(category.depth)}${category.name}`
-                                    }))}
+                                    categories={categories}
+                                    mode="leaf"
+                                    emptyLabel="No category"
                                     placeholder="None"
                                 />
                                 <SearchableSelect

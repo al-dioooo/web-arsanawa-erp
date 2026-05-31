@@ -638,8 +638,6 @@ function filterModuleForCompany(module: ModuleEntry, cateringOnly: boolean): Mod
         "/pos/shifts",
         "/pos/registers",
         "/pos/reports",
-        "/inventory/pricing",
-        "/inventory/promotions",
         "/inventory/stock/issues/new",
         "/inventory/stock/transfers/new",
     ])
