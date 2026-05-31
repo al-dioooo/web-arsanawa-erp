@@ -32,6 +32,18 @@ const previewResult: SpreadsheetImportResult = {
     sheets: [],
 }
 
+const configuredPreviewWithSheetsResult: SpreadsheetImportResult = {
+    ...previewResult,
+    sheets: [
+        {
+            name: "google-sheet.csv",
+            supported: true,
+            row_count: 1,
+            reason: null,
+        },
+    ],
+}
+
 describe("SpreadsheetImportDialog", () => {
     it("previews configured Google Form imports and commits the returned batch", async () => {
         const previewConfigured = vi.fn().mockResolvedValue(previewResult)
@@ -74,5 +86,29 @@ describe("SpreadsheetImportDialog", () => {
 
         await waitFor(() => expect(commit).toHaveBeenCalledWith(88))
         expect(onCommitted).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not show the generic sheet preview action after configured Google Form preview", async () => {
+        render(
+            <SpreadsheetImportDialog
+                open
+                onClose={vi.fn()}
+                title="Import Catering Orders"
+                description="Preview configured orders."
+                operations={{
+                    downloadTemplate: vi.fn(),
+                    inspect: vi.fn(),
+                    preview: vi.fn(),
+                    previewConfigured: vi.fn().mockResolvedValue(configuredPreviewWithSheetsResult),
+                    commit: vi.fn(),
+                }}
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "Use Configured Google Form" }))
+
+        await waitFor(() => expect(screen.getByText("previewed")).toBeInTheDocument())
+        expect(screen.queryByRole("button", { name: "Preview import" })).not.toBeInTheDocument()
+        expect(screen.queryByLabelText("Sheet page")).not.toBeInTheDocument()
     })
 })

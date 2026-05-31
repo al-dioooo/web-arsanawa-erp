@@ -41,8 +41,10 @@ export function SpreadsheetImportDialog({
     const [result, setResult] = useState<SpreadsheetImportResult | null>(null)
     const [sheetName, setSheetName] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    const [isConfiguredPreview, setIsConfiguredPreview] = useState(false)
 
     const sheets = result?.sheets ?? result?.import.sheets ?? []
+    const showSheetSelection = sheets.length > 0 && !isConfiguredPreview
     const selectedSheet = sheets.find((sheet) => sheet.name === sheetName)
     const canPreview = Boolean(result?.import.id && selectedSheet?.supported)
     const canCommit = result?.import.status === "previewed" && (result.import.error_count ?? 0) === 0
@@ -77,6 +79,7 @@ export function SpreadsheetImportDialog({
     function resetPreview() {
         setResult(null)
         setSheetName("")
+        setIsConfiguredPreview(false)
     }
 
     return (
@@ -134,7 +137,9 @@ export function SpreadsheetImportDialog({
                                 className="bg-teal-700 text-white hover:bg-teal-800"
                                 onClick={() => void run(async () => {
                                     resetPreview()
-                                    setResult(await operations.previewConfigured!())
+                                    const configuredResult = await operations.previewConfigured!()
+                                    setIsConfiguredPreview(true)
+                                    setResult(configuredResult)
                                 })}
                             >
                                 <Icon name="sync_alt" size={18} />
@@ -209,7 +214,7 @@ export function SpreadsheetImportDialog({
                     </div>
                 </div>
 
-                {sheets.length > 0 ? (
+                {showSheetSelection ? (
                     <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
                         <SelectDescription
                             label="Sheet page"
