@@ -4,6 +4,7 @@ const API_CONNECT_SOURCES = [
     "http://api-arsanawa-erp.test",
     "https://api-arsanawa-erp.test",
     "https://api-arsanawa-erp-production.up.railway.app",
+    "http://103.93.160.222:8080",
 ]
 
 function normalizePolicy(policy: string): string {

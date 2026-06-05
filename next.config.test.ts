@@ -50,7 +50,7 @@ describe("next security headers", () => {
         expect(policy).toContain("style-src 'self' 'nonce-test-nonce'")
         expect(policy).toContain("img-src 'self' blob: data:")
         expect(policy).toContain("font-src 'self' data:")
-        expect(policy).toContain("connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 http://api-arsanawa-erp.test https://api-arsanawa-erp.test https://api-arsanawa-erp-production.up.railway.app")
+        expect(policy).toContain("connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 http://api-arsanawa-erp.test https://api-arsanawa-erp.test https://api-arsanawa-erp-production.up.railway.app http://103.93.160.222:8080")
         expect(policy).toContain("frame-src 'none'")
         expect(policy).toContain("media-src 'self'")
         expect(policy).toContain("manifest-src 'self'")
