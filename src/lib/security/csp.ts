@@ -3,6 +3,7 @@ const API_CONNECT_SOURCES = [
     "http://localhost:8000",
     "http://api-arsanawa-erp.test",
     "https://api-arsanawa-erp.test",
+    "https://api-arsanawa-erp-production.up.railway.app",
 ]
 
 function normalizePolicy(policy: string): string {
