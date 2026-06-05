@@ -21,6 +21,7 @@ import {
     normalizeGoogleSheetsCsvUrl,
     type CateringFormImportConfig,
 } from "@/features/platform/catering-form-import-config"
+import { WhatsAppSettings } from "@/features/platform/whatsapp-settings"
 
 const moduleOptions = [
     {
@@ -146,6 +147,8 @@ export function PlatformSettingsView() {
                     </div>
                 </div>
             </section>
+
+            <WhatsAppSettings />
 
             <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
                 <div className="rounded-2xl border border-navy-100 bg-white p-6">

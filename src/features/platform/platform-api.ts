@@ -59,6 +59,25 @@ export function upsertPlatformSettings(settings: PlatformSettingInput[]) {
     }).then((response) => response.data.settings)
 }
 
+export type WhatsAppTestInput = {
+    to: string
+    message?: string
+}
+
+export type WhatsAppTestResult = {
+    status: "pending" | "sent" | "failed" | "skipped"
+    provider: string | null
+    provider_message_id: string | null
+    error: string | null
+}
+
+export function sendWhatsAppTest(input: WhatsAppTestInput) {
+    return apiRequest<WhatsAppTestResult>("/api/v1/platform/whatsapp/test", {
+        method: "POST",
+        body: jsonBody(input),
+    }).then((response) => response.data)
+}
+
 export function usePlatformCurrencies() {
     return useQuery({
         queryKey: ["platform", "currencies"],

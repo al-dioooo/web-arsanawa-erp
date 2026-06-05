@@ -131,3 +131,77 @@ export async function apiRequest<T>(
 export function jsonBody(data: unknown): string {
     return JSON.stringify(data)
 }
+
+/**
+ * Fetch a binary file (e.g. an XLSX export) with the same auth/company/branch
+ * headers as apiRequest, then trigger a browser download. Throws ApiError on a
+ * non-OK response so callers can surface a toast.
+ */
+export async function apiDownload(
+    path: string,
+    fallbackFilename: string,
+    options: ApiRequestOptions = {},
+): Promise<void> {
+    progressManager.start()
+    try {
+        const headers = new Headers()
+        headers.set("Accept", "application/octet-stream")
+
+        const token = options.skipAuth ? null : (options.token ?? sessionStore.getToken())
+        const companyId = options.companyId ?? sessionStore.getActiveCompanyId()
+        const branchId = options.branchId ?? sessionStore.getActiveBranchId()
+
+        if (token) headers.set("Authorization", `Bearer ${token}`)
+        if (companyId) headers.set("X-Company-Id", String(companyId))
+        if (branchId) headers.set("X-Branch-Id", String(branchId))
+
+        const response = await fetch(`${apiBaseUrl()}${path}`, { method: "GET", headers })
+
+        if (response.status === 401 && token && !options.isRetry && path !== "/api/v1/auth/refresh") {
+            if (!refreshPromise) {
+                refreshPromise = handleTokenRefresh().finally(() => {
+                    refreshPromise = null
+                })
+            }
+            const newToken = await refreshPromise
+            if (newToken) {
+                return apiDownload(path, fallbackFilename, { ...options, token: newToken, isRetry: true })
+            }
+        }
+
+        if (!response.ok) {
+            const payload = (await response.json().catch(() => ({
+                message: "The export could not be generated.",
+                data: null,
+            }))) as ApiValidationError
+            throw new ApiError(response.status, payload)
+        }
+
+        const blob = await response.blob()
+        const filename =
+            filenameFromDisposition(response.headers.get("Content-Disposition")) ?? fallbackFilename
+        triggerBrowserDownload(blob, filename)
+    } finally {
+        progressManager.done()
+    }
+}
+
+function filenameFromDisposition(disposition: string | null): string | null {
+    if (!disposition) return null
+    const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+    if (utf8?.[1]) return decodeURIComponent(utf8[1])
+    const plain = /filename="?([^";]+)"?/i.exec(disposition)
+    return plain?.[1] ?? null
+}
+
+function triggerBrowserDownload(blob: Blob, filename: string): void {
+    if (typeof window === "undefined") return
+    const url = window.URL.createObjectURL(blob)
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    window.URL.revokeObjectURL(url)
+}

@@ -1,0 +1,203 @@
+"use client"
+
+import { useState } from "react"
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { Field } from "@/components/ui/field"
+import {
+    fieldControlClassName,
+    fieldDescriptionClassName,
+    fieldLabelClassName,
+} from "@/components/ui/form-control"
+import { cn } from "@/lib/utils"
+import { ApiError } from "@/lib/api-client"
+import {
+    sendWhatsAppTest,
+    usePlatformSettings,
+    useUpsertPlatformSettings,
+    type PlatformSetting,
+} from "@/features/platform/platform-api"
+
+const MODULE = "whatsapp"
+
+// Stable empty reference so the render-time sync below doesn't loop while loading.
+const NO_SETTINGS: PlatformSetting[] = []
+
+type Draft = {
+    enabled: boolean
+    token: string
+    sender: string
+    receipt_template: string
+}
+
+const EMPTY: Draft = { enabled: false, token: "", sender: "", receipt_template: "" }
+
+function readValue(settings: PlatformSetting[], key: string): unknown {
+    return settings.find((setting) => setting.key === key && setting.branch_id === null)?.value
+}
+
+function toDraft(settings: PlatformSetting[]): Draft {
+    return {
+        enabled: Boolean(readValue(settings, "enabled")),
+        token: String(readValue(settings, "token") ?? ""),
+        sender: String(readValue(settings, "sender") ?? ""),
+        receipt_template: String(readValue(settings, "receipt_template") ?? ""),
+    }
+}
+
+export function WhatsAppSettings() {
+    const t = useTranslations("platform.whatsapp")
+    const { data } = usePlatformSettings(MODULE)
+    const settings = data ?? NO_SETTINGS
+    const upsert = useUpsertPlatformSettings()
+
+    const [draft, setDraft] = useState<Draft>(EMPTY)
+    const [testPhone, setTestPhone] = useState("")
+    const [testing, setTesting] = useState(false)
+
+    // Seed the form from server settings once they arrive (and whenever they
+    // change), using React's render-time "reset state on prop change" pattern.
+    const [syncedFrom, setSyncedFrom] = useState<PlatformSetting[] | null>(null)
+    if (syncedFrom !== settings) {
+        setSyncedFrom(settings)
+        setDraft(toDraft(settings))
+    }
+
+    function set<K extends keyof Draft>(key: K, value: Draft[K]) {
+        setDraft((current) => ({ ...current, [key]: value }))
+    }
+
+    async function save() {
+        if (draft.enabled && draft.token.trim() === "") {
+            toast.error(t("tokenRequired"))
+            return
+        }
+
+        try {
+            await upsert.mutateAsync([
+                { module: MODULE, key: "enabled", value: draft.enabled },
+                { module: MODULE, key: "token", value: draft.token.trim() },
+                { module: MODULE, key: "sender", value: draft.sender.trim() },
+                { module: MODULE, key: "receipt_template", value: draft.receipt_template },
+            ])
+            toast.success(t("saved"))
+        } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : t("saveError"))
+        }
+    }
+
+    async function runTest() {
+        if (testPhone.trim() === "") {
+            toast.error(t("testPhoneRequired"))
+            return
+        }
+
+        setTesting(true)
+        try {
+            const result = await sendWhatsAppTest({ to: testPhone.trim() })
+            if (result.status === "sent") {
+                toast.success(t("testSent"))
+            } else if (result.status === "skipped") {
+                toast.warning(t("testSkipped"))
+            } else {
+                toast.error(result.error || t("testFailed"))
+            }
+        } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : t("testFailed"))
+        } finally {
+            setTesting(false)
+        }
+    }
+
+    return (
+        <section className="rounded-2xl border border-navy-100 bg-white p-6">
+            <div className="mb-5 flex items-start gap-3">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+                    <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9z" />
+                        <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+                    </svg>
+                </span>
+                <div>
+                    <h2 className="font-brand text-lg font-bold tracking-tight text-navy-900">{t("title")}</h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-navy-500">{t("description")}</p>
+                </div>
+            </div>
+
+            <label className="mb-5 flex cursor-pointer items-center gap-3 rounded-xl border border-navy-100 bg-navy-50/60 p-4">
+                <input
+                    type="checkbox"
+                    checked={draft.enabled}
+                    onChange={(event) => set("enabled", event.target.checked)}
+                    className="size-4 accent-teal-700"
+                />
+                <span>
+                    <span className={fieldLabelClassName}>{t("enabledLabel")}</span>
+                    <span className={cn(fieldDescriptionClassName, "block")}>{t("enabledHint")}</span>
+                </span>
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                    label={t("token")}
+                    type="password"
+                    autoComplete="off"
+                    value={draft.token}
+                    placeholder="••••••••"
+                    onChange={(event) => set("token", event.target.value)}
+                />
+                <Field
+                    label={t("sender")}
+                    value={draft.sender}
+                    placeholder="628xxxxxxxxxx"
+                    onChange={(event) => set("sender", event.target.value)}
+                />
+            </div>
+
+            <div className="mt-4 grid gap-1.5">
+                <span className={fieldLabelClassName}>{t("template")}</span>
+                <textarea
+                    rows={3}
+                    value={draft.receipt_template}
+                    onChange={(event) => set("receipt_template", event.target.value)}
+                    className={cn(fieldControlClassName, "min-h-24 font-mono text-xs leading-relaxed")}
+                    placeholder={t("templatePlaceholder")}
+                />
+                <span className={fieldDescriptionClassName}>{t("templateHint")}</span>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 border-t border-navy-100 pt-5 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="sm:w-56">
+                        <Field
+                            label={t("testPhone")}
+                            value={testPhone}
+                            placeholder="08xxxxxxxxxx"
+                            onChange={(event) => setTestPhone(event.target.value)}
+                        />
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={runTest}
+                        disabled={testing}
+                        className="w-full sm:w-auto"
+                    >
+                        {testing ? t("testing") : t("testSend")}
+                    </Button>
+                </div>
+                <Button
+                    type="button"
+                    onClick={save}
+                    disabled={upsert.isPending}
+                    size="xl"
+                    className="w-full bg-teal-700 text-white shadow-sm hover:bg-teal-800 sm:w-auto"
+                >
+                    {upsert.isPending ? t("saving") : t("save")}
+                </Button>
+            </div>
+        </section>
+    )
+}

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
+import { ExportButtons } from "@/features/finance/components/export-buttons"
 import { useSession } from "@/features/auth/session-provider"
 import { usePeriods } from "@/features/finance/api"
 import { useTrialBalance, type TrialBalanceItem } from "@/features/finance/api-journals"
@@ -106,6 +107,14 @@ export default function ProfitLossPage() {
                             {selectedPeriod.start_date} – {selectedPeriod.end_date}
                         </span>
                     )}
+                    <div className="w-full sm:ml-auto sm:w-auto">
+                        <ExportButtons
+                            range={{
+                                from: selectedPeriod?.start_date ?? null,
+                                to: selectedPeriod?.end_date ?? null,
+                            }}
+                        />
+                    </div>
                 </div>
             </FilterBar>
 

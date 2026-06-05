@@ -105,7 +105,30 @@
         "cateringImportPaymentMap": "Payment methods",
         "cateringImportDefaults": "Defaults",
         "cateringImportSave": "Save catering import settings",
-        "cateringImportSaved": "Catering import settings saved."
+        "cateringImportSaved": "Catering import settings saved.",
+        "whatsapp": {
+            "title": "WhatsApp Receipts",
+            "description": "Send an automatic WhatsApp receipt to each customer after a POS sales import. Powered by Fonnte.",
+            "enabledLabel": "Enable WhatsApp receipts",
+            "enabledHint": "When on, imported sales with a customer phone number trigger a receipt.",
+            "token": "Fonnte token",
+            "sender": "Sender number (optional)",
+            "template": "Receipt message template",
+            "templatePlaceholder": "Halo {customer}, terima kasih telah memesan di {company}...",
+            "templateHint": "Placeholders: {customer} {sale_number} {total} {date} {company}",
+            "testPhone": "Test number",
+            "testSend": "Send test",
+            "testing": "Sending…",
+            "save": "Save settings",
+            "saving": "Saving…",
+            "saved": "WhatsApp settings saved.",
+            "saveError": "Could not save WhatsApp settings.",
+            "tokenRequired": "Enter a Fonnte token before enabling WhatsApp.",
+            "testPhoneRequired": "Enter a phone number to test.",
+            "testSent": "Test message sent.",
+            "testSkipped": "WhatsApp is disabled, so the test was skipped.",
+            "testFailed": "The test message could not be sent."
+        }
     },
     "finance": {
         "nav": {
@@ -143,6 +166,13 @@
         },
         "reports": {
             "title": "Reports"
+        },
+        "exports": {
+            "income": "income",
+            "expense": "expense",
+            "download": "Export {kind}",
+            "success": "Your {kind} export is downloading.",
+            "error": "The export could not be generated. Please try again."
         }
     },
     "pos": {

@@ -105,7 +105,30 @@
         "cateringImportPaymentMap": "Metode pembayaran",
         "cateringImportDefaults": "Default",
         "cateringImportSave": "Simpan pengaturan impor catering",
-        "cateringImportSaved": "Pengaturan impor catering tersimpan."
+        "cateringImportSaved": "Pengaturan impor catering tersimpan.",
+        "whatsapp": {
+            "title": "Struk WhatsApp",
+            "description": "Kirim struk WhatsApp otomatis ke setiap pelanggan setelah impor penjualan POS. Didukung oleh Fonnte.",
+            "enabledLabel": "Aktifkan struk WhatsApp",
+            "enabledHint": "Saat aktif, penjualan impor dengan nomor telepon pelanggan akan mengirim struk.",
+            "token": "Token Fonnte",
+            "sender": "Nomor pengirim (opsional)",
+            "template": "Templat pesan struk",
+            "templatePlaceholder": "Halo {customer}, terima kasih telah memesan di {company}...",
+            "templateHint": "Placeholder: {customer} {sale_number} {total} {date} {company}",
+            "testPhone": "Nomor uji",
+            "testSend": "Kirim uji",
+            "testing": "Mengirim…",
+            "save": "Simpan pengaturan",
+            "saving": "Menyimpan…",
+            "saved": "Pengaturan WhatsApp tersimpan.",
+            "saveError": "Gagal menyimpan pengaturan WhatsApp.",
+            "tokenRequired": "Masukkan token Fonnte sebelum mengaktifkan WhatsApp.",
+            "testPhoneRequired": "Masukkan nomor telepon untuk diuji.",
+            "testSent": "Pesan uji terkirim.",
+            "testSkipped": "WhatsApp nonaktif, jadi uji dilewati.",
+            "testFailed": "Pesan uji gagal dikirim."
+        }
     },
     "finance": {
         "nav": {
@@ -143,6 +166,13 @@
         },
         "reports": {
             "title": "Laporan"
+        },
+        "exports": {
+            "income": "pemasukan",
+            "expense": "pengeluaran",
+            "download": "Ekspor {kind}",
+            "success": "Ekspor {kind} sedang diunduh.",
+            "error": "Ekspor gagal dibuat. Silakan coba lagi."
         }
     },
     "pos": {
