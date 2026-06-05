@@ -5,6 +5,8 @@ const API_CONNECT_SOURCES = [
     "https://api-arsanawa-erp.test",
     "https://api-arsanawa-erp-production.up.railway.app",
     "http://103.93.160.222:8080",
+    "https://api-arsanawa-erp.duckdns.org",
+    "http://api-arsanawa-erp.duckdns.org",
 ]
 
 function normalizePolicy(policy: string): string {
