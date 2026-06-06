@@ -20,7 +20,7 @@ import { toast } from "sonner"
 
 type PaymentForm = {
     partner_id: string
-    account_id: string
+    cash_account_id: string
     payment_date: string
     payment_method: string
     reference_number: string
@@ -41,7 +41,7 @@ export default function NewPaymentPage() {
     const { register, control, handleSubmit, watch, formState: { errors } } = useForm<PaymentForm>({
         defaultValues: {
             partner_id: "",
-            account_id: "",
+            cash_account_id: "",
             payment_date: new Date().toISOString().split('T')[0],
             payment_method: "bank_transfer",
             reference_number: "",
@@ -85,29 +85,25 @@ export default function NewPaymentPage() {
 
     const onSubmit = (data: PaymentForm) => {
         if (!data.partner_id) return toast.error("Vendor is required")
-        if (!data.account_id) return toast.error("Payment account is required")
+        if (!data.cash_account_id) return toast.error("Payment account is required")
         if (data.amount <= 0) return toast.error("Amount must be greater than zero")
         if (unallocated < 0) return toast.error("Allocations cannot exceed the payment amount")
 
         const apiAllocations = Object.entries(allocations)
-            .filter(([_billId, amt]) => amt > 0)
+            .filter((entry) => entry[1] > 0)
             .map(([billId, amt]) => ({
-                allocatable_type: 'bill' as const,
-                allocatable_id: parseInt(billId),
+                bill_id: parseInt(billId),
                 amount: String(amt)
             }))
 
         const payload = {
             partner_id: parseInt(data.partner_id),
-            account_id: parseInt(data.account_id),
-            payment_type: 'outgoing' as const,
+            cash_account_id: parseInt(data.cash_account_id),
+            payment_type: 'outbound' as const,
             payment_date: data.payment_date,
             payment_method: data.payment_method,
-            reference_number: data.reference_number || null,
             amount: String(data.amount),
-            unallocated_amount: String(unallocated),
-            notes: data.notes,
-            status: 'draft' as const,
+            notes: data.notes || data.reference_number || null,
             allocations: apiAllocations
         }
 
@@ -159,9 +155,9 @@ export default function NewPaymentPage() {
                             />
                         </Field>
 
-                        <Field label="Paid From (Kas & Bank)" error={errors.account_id?.message}>
+                        <Field label="Paid From (Kas & Bank)" error={errors.cash_account_id?.message}>
                             <Controller
-                                name="account_id"
+                                name="cash_account_id"
                                 control={control}
                                 rules={{ required: "Bank account is required" }}
                                 render={({ field }) => (

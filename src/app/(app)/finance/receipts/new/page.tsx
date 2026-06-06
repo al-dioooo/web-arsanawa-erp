@@ -19,7 +19,7 @@ import { toast } from "sonner"
 
 type ReceiptForm = {
     partner_id: string
-    account_id: string
+    cash_account_id: string
     payment_date: string
     payment_method: string
     reference_number: string
@@ -39,7 +39,7 @@ export default function NewReceiptPage() {
     const { register, control, handleSubmit, watch, formState: { errors } } = useForm<ReceiptForm>({
         defaultValues: {
             partner_id: "",
-            account_id: "",
+            cash_account_id: "",
             payment_date: new Date().toISOString().split('T')[0],
             payment_method: "bank_transfer",
             reference_number: "",
@@ -82,29 +82,25 @@ export default function NewReceiptPage() {
 
     const onSubmit = (data: ReceiptForm) => {
         if (!data.partner_id) return toast.error("Customer is required")
-        if (!data.account_id) return toast.error("Bank account is required")
+        if (!data.cash_account_id) return toast.error("Bank account is required")
         if (data.amount <= 0) return toast.error("Amount must be greater than zero")
         if (unallocated < 0) return toast.error("Allocations cannot exceed the receipt amount")
 
         const apiAllocations = Object.entries(allocations)
-            .filter(([_invoiceId, amt]) => amt > 0)
+            .filter((entry) => entry[1] > 0)
             .map(([invoiceId, amt]) => ({
-                allocatable_type: 'invoice' as const,
-                allocatable_id: parseInt(invoiceId),
+                invoice_id: parseInt(invoiceId),
                 amount: String(amt)
             }))
 
         const payload = {
             partner_id: parseInt(data.partner_id),
-            account_id: parseInt(data.account_id),
-            payment_type: 'incoming' as const,
+            cash_account_id: parseInt(data.cash_account_id),
+            payment_type: 'inbound' as const,
             payment_date: data.payment_date,
             payment_method: data.payment_method,
-            reference_number: data.reference_number || null,
             amount: String(data.amount),
-            unallocated_amount: String(unallocated),
-            notes: data.notes,
-            status: 'draft' as const,
+            notes: data.notes || data.reference_number || null,
             allocations: apiAllocations
         }
 
@@ -156,9 +152,9 @@ export default function NewReceiptPage() {
                             />
                         </Field>
 
-                        <Field label="Deposited To (Kas & Bank)" error={errors.account_id?.message}>
+                        <Field label="Deposited To (Kas & Bank)" error={errors.cash_account_id?.message}>
                             <Controller
-                                name="account_id"
+                                name="cash_account_id"
                                 control={control}
                                 rules={{ required: "Bank account is required" }}
                                 render={({ field }) => (

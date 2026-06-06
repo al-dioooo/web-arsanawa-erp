@@ -6,16 +6,11 @@ import { apiRequest } from "@/lib/api-client"
 export type PaymentAllocation = {
     id?: number
     payment_id?: number
-    allocatable_type: 'invoice' | 'bill'
-    allocatable_id: number
+    invoice_id?: number | null
+    bill_id?: number | null
     amount: string
-    // Related document for display
-    document?: {
-        id: number
-        number: string // invoice_number or bill_number
-        total: string
-        amount_paid: string
-    }
+    created_at?: string
+    updated_at?: string
 }
 
 export type Payment = {
@@ -24,13 +19,13 @@ export type Payment = {
     branch_id: number | null
     payment_number: string
     partner_id: number
-    account_id: number
-    payment_type: 'incoming' | 'outgoing'
+    payment_type: 'inbound' | 'outbound'
     payment_date: string
     payment_method: string
-    reference_number: string | null
     amount: string
-    unallocated_amount: string
+    currency_id: number
+    exchange_rate: number
+    cash_account_id: number
     status: 'draft' | 'posted' | 'void'
     notes: string | null
     journal_entry_id: number | null
@@ -40,17 +35,12 @@ export type Payment = {
         id: number
         name: string
     }
-    account?: {
-        id: number
-        name: string
-        code: string
-    }
     allocations?: PaymentAllocation[]
 }
 
 // --- Hooks ---
 
-export function usePayments(companyId: number | null, paymentType?: 'incoming' | 'outgoing') {
+export function usePayments(companyId: number | null, paymentType?: 'inbound' | 'outbound') {
     return useQuery({
         queryKey: ['finance', 'payments', companyId, paymentType],
         queryFn: () => {

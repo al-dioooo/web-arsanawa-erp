@@ -75,7 +75,7 @@ export default function ActivityFeedPage() {
     })
 
     payments.forEach(pay => {
-        const isDisbursement = pay.payment_type === "outgoing"
+        const isDisbursement = pay.payment_type === "outbound"
         activities.push({
             id: pay.id,
             type: "payment",
@@ -85,7 +85,7 @@ export default function ActivityFeedPage() {
             description: `${isDisbursement ? "Kepada: " : "Dari: "} ${pay.partner?.name || `Partner #${pay.partner_id}`}`,
             amount: parseFloat(pay.amount),
             status: pay.status,
-            link: isDisbursement ? `/finance/payments/${pay.id}` : `/finance/receipts/${pay.id}`,
+            link: `/finance/payments/${pay.id}`,
             icon: isDisbursement ? "account_balance_wallet" : "savings",
             color: isDisbursement ? "text-indigo-600" : "text-emerald-600",
             bgColor: isDisbursement ? "bg-indigo-50" : "bg-emerald-50"

@@ -36,7 +36,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
         return <div className="p-8 text-center text-rose-500">Payment not found.</div>
     }
 
-    const isOutgoing = payment.payment_type === 'outgoing'
+    const isOutgoing = payment.payment_type === 'outbound'
     const docLabel = isOutgoing ? "Payment" : "Receipt"
     const request = (payment as Payment & { approval_request?: ApprovalRequest }).approval_request
     const isDraft = payment.status === 'draft'
@@ -168,7 +168,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                         <div>
                             <div className="text-xs text-navy-400 font-semibold uppercase tracking-wider mb-1">Bank / Cash</div>
-                            <div className="text-navy-900 font-medium">{payment.account?.name || `Account #${payment.account_id}`}</div>
+                            <div className="text-navy-900 font-medium">{`Account #${payment.cash_account_id}`}</div>
                         </div>
                     </div>
                 </div>
@@ -338,19 +338,20 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                         </thead>
                         <tbody>
                             {payment.allocations?.map((alloc, idx) => {
-                                const isBill = alloc.allocatable_type === 'bill'
+                                const isBill = Boolean(alloc.bill_id)
+                                const documentId = alloc.bill_id ?? alloc.invoice_id
                                 const linkPrefix = isBill ? '/finance/bills' : '/finance/invoices'
-                                const number = alloc.document?.number || `${alloc.allocatable_type} #${alloc.allocatable_id}`
+                                const number = `${isBill ? 'Bill' : 'Invoice'} #${documentId}`
                                 
                                 return (
                                     <tr key={idx} className="border-b border-navy-50 last:border-0 hover:bg-navy-50/30 transition-colors">
                                         <td className="px-6 py-4">
-                                            <Link href={`${linkPrefix}/${alloc.allocatable_id}`} className="font-medium text-teal-600 hover:underline">
+                                            <Link href={`${linkPrefix}/${documentId}`} className="font-medium text-teal-600 hover:underline">
                                                 {number}
                                             </Link>
                                         </td>
                                         <td className="px-6 py-4 text-navy-700 text-right">
-                                            {alloc.document ? formatIDR(parseFloat(alloc.document.total)) : '-'}
+                                            -
                                         </td>
                                         <td className="px-6 py-4 text-navy-900 font-bold text-right text-lg">
                                             {formatIDR(parseFloat(alloc.amount))}
@@ -368,7 +369,15 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                     
                     <div className="p-4 bg-navy-50 border-t border-navy-100 flex justify-between items-center text-sm">
                         <div className="font-semibold text-navy-500 uppercase tracking-wider">Unallocated (Prepayment)</div>
-                        <div className="font-bold text-navy-900 text-xl">{formatIDR(parseFloat(payment.unallocated_amount))}</div>
+                        <div className="font-bold text-navy-900 text-xl">
+                            {formatIDR(
+                                Math.max(
+                                    parseFloat(payment.amount)
+                                        - (payment.allocations?.reduce((sum, alloc) => sum + parseFloat(alloc.amount), 0) ?? 0),
+                                    0,
+                                ),
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -377,7 +386,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <div className="text-xs text-navy-400 mb-1">Reference Number</div>
-                            <div className="font-medium text-navy-900">{payment.reference_number || '-'}</div>
+                            <div className="font-medium text-navy-900">-</div>
                         </div>
                         <div>
                             <div className="text-xs text-navy-400 mb-1">Notes</div>

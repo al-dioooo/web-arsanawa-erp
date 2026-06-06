@@ -15,7 +15,7 @@ export default function ReceiptsPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
     // Fetch only incoming payments for the Penerimaan screen
-    const { data: receipts = [], isLoading } = usePayments(activeCompanyId, 'incoming')
+    const { data: receipts = [], isLoading } = usePayments(activeCompanyId, 'inbound')
 
     return (
         <div className="w-full">
@@ -66,7 +66,7 @@ export default function ReceiptsPage() {
                         </td>
                         <td className="px-6 py-4 text-navy-900">{receipt.partner?.name || `Customer #${receipt.partner_id}`}</td>
                         <td className="px-6 py-4 text-navy-700">{formatDateID(receipt.payment_date)}</td>
-                        <td className="px-6 py-4 text-navy-700">{receipt.account?.name || `Account #${receipt.account_id}`}</td>
+                        <td className="px-6 py-4 text-navy-700">{`Account #${receipt.cash_account_id}`}</td>
                         <td className="px-6 py-4 font-medium text-teal-600 text-right">{formatIDR(parseFloat(receipt.amount))}</td>
                         <td className="px-6 py-4">
                             <StatusBadge status={receipt.status} />

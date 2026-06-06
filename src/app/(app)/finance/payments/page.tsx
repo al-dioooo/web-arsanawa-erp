@@ -15,7 +15,7 @@ export default function PaymentsPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
     // Fetch only outgoing payments for the Pembayaran screen
-    const { data: payments = [], isLoading } = usePayments(activeCompanyId, 'outgoing')
+    const { data: payments = [], isLoading } = usePayments(activeCompanyId, 'outbound')
 
     return (
         <div className="w-full">
@@ -66,7 +66,7 @@ export default function PaymentsPage() {
                         </td>
                         <td className="px-6 py-4 text-navy-900">{payment.partner?.name || `Vendor #${payment.partner_id}`}</td>
                         <td className="px-6 py-4 text-navy-700">{formatDateID(payment.payment_date)}</td>
-                        <td className="px-6 py-4 text-navy-700">{payment.account?.name || `Account #${payment.account_id}`}</td>
+                        <td className="px-6 py-4 text-navy-700">{`Account #${payment.cash_account_id}`}</td>
                         <td className="px-6 py-4 font-medium text-rose-600 text-right">{formatIDR(parseFloat(payment.amount))}</td>
                         <td className="px-6 py-4">
                             <StatusBadge status={payment.status} />
