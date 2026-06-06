@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,8 @@ import { cn } from "@/lib/utils"
 
 type RequestOptions = { token: string; companyId: number }
 type Branch = { id: number; name: string }
+const STOCK_OVERVIEW_PATH = "/inventory/stock"
+const MISSING_CONTEXT_MESSAGE = "Select an active company, branch, and Product Unit before recording stock."
 
 function today(): string {
     return new Date().toISOString().slice(0, 10)
@@ -49,6 +52,47 @@ function moneyLabel(value: string | number | null | undefined): string {
 function productUnitLabel(unit?: ProductUnit | null): string {
     if (!unit) return "No Product Unit"
     return unit.product?.name ? `${unit.sku} · ${unit.product.name}` : unit.sku
+}
+
+function readableError(caught: unknown, fallback: string): string {
+    return caught instanceof Error && caught.message ? caught.message : fallback
+}
+
+function useStockActionSubmit() {
+    const router = useRouter()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const submitStockAction = useCallback(async ({
+        action,
+        successMessage,
+        failureMessage,
+        contextError,
+    }: {
+        action: () => Promise<unknown>
+        successMessage: string
+        failureMessage: string
+        contextError?: string | null
+    }) => {
+        if (isSubmitting) return
+
+        if (contextError) {
+            toast.error(contextError)
+            return
+        }
+
+        setIsSubmitting(true)
+        try {
+            await action()
+            toast.success(successMessage)
+            router.push(STOCK_OVERVIEW_PATH)
+        } catch (caught) {
+            toast.error(readableError(caught, failureMessage))
+        } finally {
+            setIsSubmitting(false)
+        }
+    }, [isSubmitting, router])
+
+    return { isSubmitting, submitStockAction }
 }
 
 function useStockOptions() {
@@ -453,6 +497,7 @@ function useFormDefaults() {
 
 export function StockReceiptView() {
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
+    const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [quantity, setQuantity] = useState("")
     const [unitCost, setUnitCost] = useState("")
     const [lotNumber, setLotNumber] = useState("")
@@ -460,17 +505,20 @@ export function StockReceiptView() {
 
     const submit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!requestOptions || !branchId || !productUnitId) return
-        await recordReceipt(requestOptions, {
-            branch_id: branchId,
-            product_unit_id: productUnitId,
-            quantity: Number(quantity),
-            unit_cost: Number(unitCost),
-            lot_number: lotNumber || undefined,
-            received_at: receivedAt,
+        await submitStockAction({
+            contextError: !requestOptions || !branchId || !productUnitId ? MISSING_CONTEXT_MESSAGE : null,
+            successMessage: "Stock receipt recorded successfully.",
+            failureMessage: "Failed to record stock receipt.",
+            action: () => recordReceipt(requestOptions as RequestOptions, {
+                branch_id: branchId as number,
+                product_unit_id: productUnitId as number,
+                quantity: Number(quantity),
+                unit_cost: Number(unitCost),
+                lot_number: lotNumber || undefined,
+                received_at: receivedAt,
+            }),
         })
-        toast.success("Stock receipt recorded successfully.")
-    }, [branchId, lotNumber, productUnitId, quantity, receivedAt, requestOptions, unitCost])
+    }, [branchId, lotNumber, productUnitId, quantity, receivedAt, requestOptions, submitStockAction, unitCost])
 
     return (
         <div className="grid gap-6">
@@ -485,7 +533,7 @@ export function StockReceiptView() {
                     <Field label="Lot Number" value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} />
                     <InputDate label="Received At" value={receivedAt} onChange={(event) => setReceivedAt(event.target.value)} required />
                 </div>
-                <Button type="submit" size="xl">Record Receipt</Button>
+                <Button type="submit" size="xl" disabled={isSubmitting}>Record Receipt</Button>
             </form>
         </div>
     )
@@ -493,13 +541,23 @@ export function StockReceiptView() {
 
 export function StockIssueView() {
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
+    const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [quantity, setQuantity] = useState("")
     const [notes, setNotes] = useState("")
 
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!requestOptions || !branchId || !productUnitId) return
-        await recordIssue(requestOptions, { branch_id: branchId, product_unit_id: productUnitId, quantity: Number(quantity), notes: notes || null })
+        await submitStockAction({
+            contextError: !requestOptions || !branchId || !productUnitId ? MISSING_CONTEXT_MESSAGE : null,
+            successMessage: "Stock issue recorded successfully.",
+            failureMessage: "Failed to record stock issue.",
+            action: () => recordIssue(requestOptions as RequestOptions, {
+                branch_id: branchId as number,
+                product_unit_id: productUnitId as number,
+                quantity: Number(quantity),
+                notes: notes || null,
+            }),
+        })
     }
 
     return (
@@ -507,21 +565,32 @@ export function StockIssueView() {
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             <Field label="Issue quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
             <Field label="Issue notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" size="xl">Record Issue</Button>
+            <Button type="submit" size="xl" disabled={isSubmitting}>Record Issue</Button>
         </StockFormShell>
     )
 }
 
 export function StockAdjustmentView() {
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
+    const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [quantity, setQuantity] = useState("")
     const [unitCost, setUnitCost] = useState("")
     const [notes, setNotes] = useState("")
 
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!requestOptions || !branchId || !productUnitId) return
-        await recordAdjustment(requestOptions, { branch_id: branchId, product_unit_id: productUnitId, quantity: Number(quantity), unit_cost: unitCost ? Number(unitCost) : undefined, notes: notes || null })
+        await submitStockAction({
+            contextError: !requestOptions || !branchId || !productUnitId ? MISSING_CONTEXT_MESSAGE : null,
+            successMessage: "Stock adjustment recorded successfully.",
+            failureMessage: "Failed to record stock adjustment.",
+            action: () => recordAdjustment(requestOptions as RequestOptions, {
+                branch_id: branchId as number,
+                product_unit_id: productUnitId as number,
+                quantity: Number(quantity),
+                unit_cost: unitCost ? Number(unitCost) : undefined,
+                notes: notes || null,
+            }),
+        })
     }
 
     return (
@@ -532,13 +601,14 @@ export function StockAdjustmentView() {
                 <Field label="Adjustment cost" type="number" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} />
             </div>
             <Field label="Adjustment notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" size="xl">Record Adjustment</Button>
+            <Button type="submit" size="xl" disabled={isSubmitting}>Record Adjustment</Button>
         </StockFormShell>
     )
 }
 
 export function StockTransferView() {
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
+    const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [toBranchId, setToBranchId] = useState<number | null>(null)
     const [quantity, setQuantity] = useState("")
     const [notes, setNotes] = useState("")
@@ -558,12 +628,20 @@ export function StockTransferView() {
 
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!requestOptions || !branchId || !toBranchId || !productUnitId) return
-        await recordTransfer(requestOptions, {
-            from_branch_id: branchId,
-            to_branch_id: toBranchId,
-            items: [{ product_unit_id: productUnitId, quantity: Number(quantity) }],
-            notes: notes || null,
+        await submitStockAction({
+            contextError: !requestOptions || !branchId || !productUnitId
+                ? MISSING_CONTEXT_MESSAGE
+                : !toBranchId
+                    ? "Select a destination branch before recording stock."
+                    : null,
+            successMessage: "Stock transfer recorded successfully.",
+            failureMessage: "Failed to record stock transfer.",
+            action: () => recordTransfer(requestOptions as RequestOptions, {
+                from_branch_id: branchId as number,
+                to_branch_id: toBranchId as number,
+                items: [{ product_unit_id: productUnitId as number, quantity: Number(quantity) }],
+                notes: notes || null,
+            }),
         })
     }
 
@@ -577,7 +655,7 @@ export function StockTransferView() {
             </SelectField>
             <Field label="Transfer quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
             <Field label="Transfer notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" size="xl" disabled={!toBranchId}>Record Transfer</Button>
+            <Button type="submit" size="xl" disabled={isSubmitting || !toBranchId}>Record Transfer</Button>
         </StockFormShell>
     )
 }

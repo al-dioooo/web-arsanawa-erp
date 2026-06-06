@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { toast } from "sonner"
 import {
     StockAdjustmentView,
     StockIssueView,
@@ -22,6 +23,19 @@ import {
     recordReceipt,
     recordTransfer,
 } from "@/features/inventory/inventory-api"
+
+const push = vi.fn()
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ push }),
+}))
+
+vi.mock("sonner", () => ({
+    toast: {
+        error: vi.fn(),
+        success: vi.fn(),
+    },
+}))
 
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
@@ -65,6 +79,13 @@ const productUnit = {
 
 describe("split stock movement views", () => {
     beforeEach(() => {
+        push.mockReset()
+        vi.mocked(toast.error).mockReset()
+        vi.mocked(toast.success).mockReset()
+        vi.mocked(recordReceipt).mockReset()
+        vi.mocked(recordIssue).mockReset()
+        vi.mocked(recordAdjustment).mockReset()
+        vi.mocked(recordTransfer).mockReset()
         vi.mocked(useSession).mockReturnValue({
             token: "token",
             activeCompanyId: 1,
@@ -208,6 +229,10 @@ describe("split stock movement views", () => {
             { token: "token", companyId: 1 },
             expect.objectContaining({ product_unit_id: 8, branch_id: 1, quantity: 10, unit_cost: 1000 }),
         ))
+        expect(toast.success).toHaveBeenCalledWith("Stock receipt recorded successfully.")
+        expect(push).toHaveBeenCalledWith("/inventory/stock")
+        push.mockClear()
+        vi.mocked(toast.success).mockClear()
 
         render(<StockIssueView />)
         await waitFor(() => expect(screen.getByLabelText("Issue quantity")).toBeInTheDocument())
@@ -217,6 +242,10 @@ describe("split stock movement views", () => {
             { token: "token", companyId: 1 },
             expect.objectContaining({ product_unit_id: 8, branch_id: 1, quantity: 2 }),
         ))
+        expect(toast.success).toHaveBeenCalledWith("Stock issue recorded successfully.")
+        expect(push).toHaveBeenCalledWith("/inventory/stock")
+        push.mockClear()
+        vi.mocked(toast.success).mockClear()
 
         render(<StockAdjustmentView />)
         await waitFor(() => expect(screen.getByLabelText("Adjustment quantity")).toBeInTheDocument())
@@ -226,6 +255,10 @@ describe("split stock movement views", () => {
             { token: "token", companyId: 1 },
             expect.objectContaining({ product_unit_id: 8, branch_id: 1, quantity: -1 }),
         ))
+        expect(toast.success).toHaveBeenCalledWith("Stock adjustment recorded successfully.")
+        expect(push).toHaveBeenCalledWith("/inventory/stock")
+        push.mockClear()
+        vi.mocked(toast.success).mockClear()
 
         render(<StockTransferView />)
         await waitFor(() => expect(screen.getByLabelText("Transfer quantity")).toBeInTheDocument())
@@ -239,5 +272,42 @@ describe("split stock movement views", () => {
                 items: [{ product_unit_id: 8, quantity: 1 }],
             }),
         ))
+        expect(toast.success).toHaveBeenCalledWith("Stock transfer recorded successfully.")
+        expect(push).toHaveBeenCalledWith("/inventory/stock")
+    })
+
+    it("keeps stock action forms in place and shows an error when submission fails", async () => {
+        vi.mocked(recordIssue).mockRejectedValueOnce(new Error("Insufficient stock"))
+
+        render(<StockIssueView />)
+
+        await waitFor(() => expect(screen.getByLabelText("Issue quantity")).toBeInTheDocument())
+        fireEvent.change(screen.getByLabelText("Issue quantity"), { target: { value: "2" } })
+        fireEvent.click(screen.getByRole("button", { name: "Record Issue" }))
+
+        await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Insufficient stock"))
+        expect(push).not.toHaveBeenCalled()
+    })
+
+    it("shows a user-facing error when stock context is missing", async () => {
+        vi.mocked(useSession).mockReturnValue({
+            token: null,
+            activeCompanyId: null,
+            organizationContext: {
+                company: null,
+                membership: null,
+                branches: [],
+            },
+        } as ReturnType<typeof useSession>)
+
+        render(<StockReceiptView />)
+
+        fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } })
+        fireEvent.change(screen.getByLabelText("Unit Cost (IDR)"), { target: { value: "1000" } })
+        fireEvent.click(screen.getByRole("button", { name: "Record Receipt" }))
+
+        expect(recordReceipt).not.toHaveBeenCalled()
+        expect(toast.error).toHaveBeenCalledWith("Select an active company, branch, and Product Unit before recording stock.")
+        expect(push).not.toHaveBeenCalled()
     })
 })
