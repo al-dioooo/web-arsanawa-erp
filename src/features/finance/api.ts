@@ -61,18 +61,44 @@ export type FinanceDashboardSummary = {
         total: string
         status: string
     }>
+    income_expense_series: Array<{
+        date: string
+        income: number
+        expense: number
+    }>
 }
 
-export function loadFinanceDashboardSummary(options: ApiRequestOptions = {}) {
-    return apiRequest<FinanceDashboardSummary>("/api/v1/finance/dashboard", {}, options).then(
+export type FinanceDashboardFilters = {
+    start_date?: string
+    end_date?: string
+}
+
+function queryString(filters: Record<string, string | number | null | undefined>): string {
+    const params = new URLSearchParams()
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            params.set(key, String(value))
+        }
+    })
+
+    const query = params.toString()
+    return query ? `?${query}` : ""
+}
+
+export function loadFinanceDashboardSummary(
+    filters: FinanceDashboardFilters = {},
+    options: ApiRequestOptions = {},
+) {
+    return apiRequest<FinanceDashboardSummary>(`/api/v1/finance/dashboard${queryString(filters)}`, {}, options).then(
         (res) => res.data,
     )
 }
 
-export function useFinanceDashboardSummary(companyId: number | null) {
+export function useFinanceDashboardSummary(companyId: number | null, filters: FinanceDashboardFilters = {}) {
     return useQuery({
-        queryKey: ["finance", "dashboard", companyId],
-        queryFn: () => loadFinanceDashboardSummary(),
+        queryKey: ["finance", "dashboard", companyId, filters],
+        queryFn: () => loadFinanceDashboardSummary(filters),
         enabled: !!companyId,
     })
 }

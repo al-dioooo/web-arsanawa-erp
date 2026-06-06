@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { InputDate } from "@/components/ui/input-date"
 import { StatusPill } from "@/components/ui/status-pill"
 import { StatusBadge } from '@/features/finance/components/status-badge'
 import { Icon } from '@/components/ui/icon'
@@ -25,15 +26,42 @@ function flattenAccounts(nodes: { id: number; code: string; type: string; is_pos
     return flat
 }
 
+function formatDateInput(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+
+    return `${year}-${month}-${day}`
+}
+
+function currentMonthRange(): { start_date: string; end_date: string } {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth(), 1)
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+    return {
+        start_date: formatDateInput(start),
+        end_date: formatDateInput(end),
+    }
+}
+
+function formatChartDate(value: string): string {
+    return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+    }).format(new Date(`${value}T00:00:00`))
+}
+
 export default function FinanceDashboard() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
+    const [dashboardRange, setDashboardRange] = useState(currentMonthRange)
 
     const { data: accounts = [] } = useCOA(activeCompanyId)
     const { data: periods = [] } = usePeriods(activeCompanyId)
     const openPeriod = periods.find(p => p.status === 'open') ?? periods[0] ?? null
     const { data: trialBalanceLines = [] } = useTrialBalance(activeCompanyId, openPeriod?.id ?? null)
-    const { data: dashboardSummary, isLoading: loadingSummary } = useFinanceDashboardSummary(activeCompanyId)
+    const { data: dashboardSummary, isLoading: loadingSummary } = useFinanceDashboardSummary(activeCompanyId, dashboardRange)
 
     const isLoading = loadingSummary
 
@@ -49,6 +77,13 @@ export default function FinanceDashboard() {
     const arOutstanding = parseFloat(dashboardSummary?.counters.ar_outstanding ?? "0")
     const apOutstanding = parseFloat(dashboardSummary?.counters.ap_outstanding ?? "0")
     const pendingApprovalsCount = dashboardSummary?.counters.pending_approvals ?? 0
+    const chartData = dashboardSummary?.income_expense_series ?? []
+    const incomeTotal = chartData.reduce((sum, item) => sum + Number(item.income ?? 0), 0)
+    const expenseTotal = chartData.reduce((sum, item) => sum + Number(item.expense ?? 0), 0)
+    const maxChartAmount = Math.max(
+        1,
+        ...chartData.flatMap((item) => [Number(item.income ?? 0), Number(item.expense ?? 0)]),
+    )
 
     const recentActivity = (dashboardSummary?.recent_activity ?? []).map((item) => ({
         ...item,
@@ -157,6 +192,112 @@ export default function FinanceDashboard() {
                     </Link>
                 ))}
             </div>
+
+            <section
+                aria-label="Income and expense chart"
+                className="rounded-2xl border border-navy-100 bg-white p-5"
+            >
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div>
+                        <h2 className="text-base font-bold text-navy-900 font-display flex items-center gap-2">
+                            <Icon name="bar_chart" className="text-teal-700" />
+                            Income vs Expense
+                        </h2>
+                        <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                            <div>
+                                <span className="block text-xs font-bold uppercase tracking-wider text-navy-400">Income</span>
+                                <span className="font-semibold text-teal-700">{formatIDR(incomeTotal)}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-bold uppercase tracking-wider text-navy-400">Expense</span>
+                                <span className="font-semibold text-rose-600">{formatIDR(expenseTotal)}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-bold uppercase tracking-wider text-navy-400">Net</span>
+                                <span className={cn("font-semibold", incomeTotal - expenseTotal < 0 ? "text-rose-600" : "text-navy-900")}>
+                                    {formatIDR(incomeTotal - expenseTotal)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <InputDate
+                            label="From"
+                            aria-label="Dashboard start date"
+                            value={dashboardRange.start_date}
+                            onChange={(event) => setDashboardRange((range) => ({
+                                ...range,
+                                start_date: event.target.value,
+                            }))}
+                        />
+                        <InputDate
+                            label="To"
+                            aria-label="Dashboard end date"
+                            value={dashboardRange.end_date}
+                            onChange={(event) => setDashboardRange((range) => ({
+                                ...range,
+                                end_date: event.target.value,
+                            }))}
+                        />
+                    </div>
+                </div>
+
+                {loadingSummary ? (
+                    <div className="mt-6 h-56 rounded-xl bg-navy-50 animate-pulse" />
+                ) : chartData.length === 0 ? (
+                    <div className="mt-6 flex h-56 items-center justify-center rounded-xl border border-dashed border-navy-100 text-sm font-medium text-navy-400">
+                        No invoice or bill totals found for this date range.
+                    </div>
+                ) : (
+                    <div className="mt-6 overflow-x-auto pb-2">
+                        <div className="flex h-60 min-w-max items-end gap-3 border-b border-navy-100 px-1">
+                            {chartData.map((item) => {
+                                const income = Number(item.income ?? 0)
+                                const expense = Number(item.expense ?? 0)
+                                const incomeHeight = income > 0 ? Math.max(8, (income / maxChartAmount) * 100) : 2
+                                const expenseHeight = expense > 0 ? Math.max(8, (expense / maxChartAmount) * 100) : 2
+
+                                return (
+                                    <div key={item.date} className="flex w-14 flex-col items-center gap-2">
+                                        <div className="flex h-44 items-end gap-1">
+                                            <div
+                                                className={cn(
+                                                    "w-4 rounded-t bg-teal-600",
+                                                    income === 0 && "bg-navy-100",
+                                                )}
+                                                style={{ height: `${incomeHeight}%` }}
+                                                title={`Income ${formatIDR(income)}`}
+                                            />
+                                            <div
+                                                className={cn(
+                                                    "w-4 rounded-t bg-rose-500",
+                                                    expense === 0 && "bg-navy-100",
+                                                )}
+                                                style={{ height: `${expenseHeight}%` }}
+                                                title={`Expense ${formatIDR(expense)}`}
+                                            />
+                                        </div>
+                                        <span className="text-[11px] font-semibold text-navy-500">
+                                            {formatChartDate(item.date)}
+                                        </span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-semibold text-navy-500">
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-2.5 w-2.5 rounded-sm bg-teal-600" />
+                                Income
+                            </span>
+                            <span className="inline-flex items-center gap-2">
+                                <span className="h-2.5 w-2.5 rounded-sm bg-rose-500" />
+                                Expense
+                            </span>
+                        </div>
+                    </div>
+                )}
+            </section>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Activity */}

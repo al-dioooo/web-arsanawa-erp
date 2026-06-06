@@ -47,6 +47,12 @@ export type Bill = {
     lines?: BillLine[]
 }
 
+export type BillFilters = {
+    status?: Bill['status'] | ''
+    start_date?: string
+    end_date?: string
+}
+
 export type APBucket = {
     partner_id: number
     partner_name: string
@@ -60,10 +66,23 @@ export type APBucket = {
 
 // --- Hooks ---
 
-export function useBills(companyId: number | null) {
+function queryString(filters: Record<string, string | number | null | undefined>): string {
+    const params = new URLSearchParams()
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            params.set(key, String(value))
+        }
+    })
+
+    const query = params.toString()
+    return query ? `?${query}` : ""
+}
+
+export function useBills(companyId: number | null, filters: BillFilters = {}) {
     return useQuery({
-        queryKey: ['finance', 'bills', companyId],
-        queryFn: () => apiRequest<{ bills: Bill[] }>('/api/v1/finance/bills').then(res => res.data?.bills || []),
+        queryKey: ['finance', 'bills', companyId, filters],
+        queryFn: () => apiRequest<{ bills: Bill[] }>(`/api/v1/finance/bills${queryString(filters)}`).then(res => res.data?.bills || []),
         enabled: !!companyId,
     })
 }

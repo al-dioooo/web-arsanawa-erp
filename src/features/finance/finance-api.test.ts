@@ -62,11 +62,16 @@ describe("finance API route coverage", () => {
         ])
     })
 
-    it("loads the finance dashboard summary from the dashboard endpoint", async () => {
-        await loadFinanceDashboardSummary({ token: "token", companyId: 7 })
+    it("loads the finance dashboard summary from the dashboard endpoint with date filters", async () => {
+        await loadFinanceDashboardSummary(
+            { start_date: "2026-06-01", end_date: "2026-06-30" },
+            { token: "token", companyId: 7 },
+        )
 
         const [url, init] = vi.mocked(fetch).mock.calls[0]
         expect(String(url)).toContain("/api/v1/finance/dashboard")
+        expect(String(url)).toContain("start_date=2026-06-01")
+        expect(String(url)).toContain("end_date=2026-06-30")
         expect(init?.method ?? "GET").toBe("GET")
     })
 })

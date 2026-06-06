@@ -1,20 +1,25 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
-import { useBills } from "@/features/finance/api-bills"
+import { useBills, type BillFilters } from "@/features/finance/api-bills"
 import { formatIDR, formatDateID } from "@/lib/format"
 import Link from "next/link"
 
 export default function BillsPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
-    const { data: bills = [], isLoading } = useBills(activeCompanyId)
+    const [filters, setFilters] = useState<BillFilters>({})
+    const { data: bills = [], isLoading } = useBills(activeCompanyId, filters)
+    const hasFilters = Boolean(filters.status || filters.start_date || filters.end_date)
 
     return (
         <div className="w-full">
@@ -27,17 +32,50 @@ export default function BillsPage() {
             />
 
             <FilterBar>
-                <div className="flex gap-2">
+                <div className="flex w-full flex-wrap items-end gap-3">
                     <SelectDescription
                         label="Status"
-                        defaultValue=""
+                        value={filters.status ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            status: event.target.value as BillFilters["status"],
+                        }))}
                         options={[
                             { value: "", label: "All Statuses", description: "Show bills in every posting state." },
                             { value: "draft", label: "Draft", description: "Bills that are still being prepared." },
                             { value: "posted", label: "Posted", description: "Bills posted and waiting for settlement." },
+                            { value: "partially_paid", label: "Partially Paid", description: "Bills with remaining outstanding balances." },
                             { value: "paid", label: "Paid", description: "Bills fully settled by outgoing payments." },
+                            { value: "void", label: "Void", description: "Bills canceled after creation." },
                         ]}
                     />
+                    <InputDate
+                        label="Bill Date From"
+                        aria-label="Bill date from"
+                        value={filters.start_date ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            start_date: event.target.value,
+                        }))}
+                    />
+                    <InputDate
+                        label="Bill Date To"
+                        aria-label="Bill date to"
+                        value={filters.end_date ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            end_date: event.target.value,
+                        }))}
+                    />
+                    {hasFilters ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setFilters({})}
+                        >
+                            Clear
+                        </Button>
+                    ) : null}
                 </div>
             </FilterBar>
 
