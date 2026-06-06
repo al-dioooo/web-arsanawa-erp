@@ -38,15 +38,42 @@ export type Payment = {
     allocations?: PaymentAllocation[]
 }
 
+export type PaymentFilters = {
+    partner_id?: number
+    payment_type?: Payment['payment_type'] | ''
+    status?: Payment['status'] | ''
+    start_date?: string
+    end_date?: string
+}
+
+function queryString(filters: Record<string, string | number | null | undefined>): string {
+    const params = new URLSearchParams()
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            params.set(key, String(value))
+        }
+    })
+
+    const query = params.toString()
+    return query ? `?${query}` : ""
+}
+
 // --- Hooks ---
 
-export function usePayments(companyId: number | null, paymentType?: 'inbound' | 'outbound') {
+export function usePayments(
+    companyId: number | null,
+    filters: PaymentFilters | Payment['payment_type'] = {},
+) {
+    const normalizedFilters: PaymentFilters = typeof filters === "string"
+        ? { payment_type: filters }
+        : filters
+
     return useQuery({
-        queryKey: ['finance', 'payments', companyId, paymentType],
-        queryFn: () => {
-            const query = paymentType ? `?payment_type=${paymentType}` : ''
-            return apiRequest<{ payments: Payment[] }>(`/api/v1/finance/payments${query}`).then(res => res.data?.payments || [])
-        },
+        queryKey: ['finance', 'payments', companyId, normalizedFilters],
+        queryFn: () => apiRequest<{ payments: Payment[] }>(
+            `/api/v1/finance/payments${queryString(normalizedFilters)}`,
+        ).then(res => res.data?.payments || []),
         enabled: !!companyId,
     })
 }

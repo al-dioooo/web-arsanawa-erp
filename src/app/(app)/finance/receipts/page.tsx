@@ -1,21 +1,25 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
-import { usePayments } from "@/features/finance/api-payments"
+import { usePayments, type PaymentFilters } from "@/features/finance/api-payments"
 import { formatIDR, formatDateID } from "@/lib/format"
 import Link from "next/link"
 
 export default function ReceiptsPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
-    // Fetch only incoming payments for the Penerimaan screen
-    const { data: receipts = [], isLoading } = usePayments(activeCompanyId, 'inbound')
+    const [filters, setFilters] = useState<PaymentFilters>({ payment_type: "inbound" })
+    const { data: receipts = [], isLoading } = usePayments(activeCompanyId, filters)
+    const hasFilters = Boolean(filters.status || filters.start_date || filters.end_date)
 
     return (
         <div className="w-full">
@@ -28,10 +32,14 @@ export default function ReceiptsPage() {
             />
 
             <FilterBar>
-                <div className="flex gap-2">
+                <div className="flex w-full flex-wrap items-end gap-3">
                     <SelectDescription
                         label="Status"
-                        defaultValue=""
+                        value={filters.status ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            status: event.target.value as PaymentFilters["status"],
+                        }))}
                         options={[
                             { value: "", label: "All Statuses", description: "Show receipts in every posting state." },
                             { value: "draft", label: "Draft", description: "Receipts that are still being prepared." },
@@ -39,6 +47,33 @@ export default function ReceiptsPage() {
                             { value: "void", label: "Void", description: "Receipts canceled after creation." },
                         ]}
                     />
+                    <InputDate
+                        label="Receipt Date From"
+                        aria-label="Receipt date from"
+                        value={filters.start_date ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            start_date: event.target.value,
+                        }))}
+                    />
+                    <InputDate
+                        label="Receipt Date To"
+                        aria-label="Receipt date to"
+                        value={filters.end_date ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            end_date: event.target.value,
+                        }))}
+                    />
+                    {hasFilters ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setFilters({ payment_type: "inbound" })}
+                        >
+                            Clear
+                        </Button>
+                    ) : null}
                 </div>
             </FilterBar>
 

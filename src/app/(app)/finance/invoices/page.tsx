@@ -1,20 +1,25 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
-import { useInvoices } from "@/features/finance/api-invoices"
+import { useInvoices, type InvoiceFilters } from "@/features/finance/api-invoices"
 import { formatIDR, formatDateID } from "@/lib/format"
 import { Icon } from "@/components/ui/icon"
 
 export default function InvoicesPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
-    const { data: invoices = [], isLoading } = useInvoices(activeCompanyId)
+    const [filters, setFilters] = useState<InvoiceFilters>({})
+    const { data: invoices = [], isLoading } = useInvoices(activeCompanyId, filters)
+    const hasFilters = Boolean(filters.start_date || filters.end_date)
 
     return (
         <div className="w-full">
@@ -27,8 +32,34 @@ export default function InvoicesPage() {
             />
 
             <FilterBar>
-                <div className="flex-1 text-sm text-navy-500">
-                    Manage your accounts receivable invoices and their payment status.
+                <div className="flex w-full flex-wrap items-end gap-3">
+                    <InputDate
+                        label="Invoice Date From"
+                        aria-label="Invoice date from"
+                        value={filters.start_date ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            start_date: event.target.value,
+                        }))}
+                    />
+                    <InputDate
+                        label="Invoice Date To"
+                        aria-label="Invoice date to"
+                        value={filters.end_date ?? ""}
+                        onChange={(event) => setFilters((current) => ({
+                            ...current,
+                            end_date: event.target.value,
+                        }))}
+                    />
+                    {hasFilters ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setFilters({})}
+                        >
+                            Clear
+                        </Button>
+                    ) : null}
                 </div>
             </FilterBar>
 

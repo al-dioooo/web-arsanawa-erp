@@ -70,6 +70,12 @@ export type PartnerOption = {
     notes: string | null
 }
 
+export type InvoiceFilters = {
+    status?: Invoice['status'] | ''
+    start_date?: string
+    end_date?: string
+}
+
 function queryString(params: Record<string, string | number | null | undefined>): string {
     const search = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
@@ -95,10 +101,10 @@ export function usePartners(companyId: number | null, type?: "customer" | "suppl
 
 // --- Hooks ---
 
-export function useInvoices(companyId: number | null) {
+export function useInvoices(companyId: number | null, filters: InvoiceFilters = {}) {
     return useQuery({
-        queryKey: ['finance', 'invoices', companyId],
-        queryFn: () => apiRequest<{ invoices: Invoice[] }>('/api/v1/finance/invoices').then(res => res.data?.invoices || []),
+        queryKey: ['finance', 'invoices', companyId, filters],
+        queryFn: () => apiRequest<{ invoices: Invoice[] }>(`/api/v1/finance/invoices${queryString(filters)}`).then(res => res.data?.invoices || []),
         enabled: !!companyId,
     })
 }
