@@ -27,10 +27,6 @@ export default function APAgingPage() {
         <div className="w-full">
             <PageHeader
                 title="Accounts Payable Aging"
-                primaryAction={{
-                    label: "Export PDF",
-                    onClick: () => {}
-                }}
             />
 
             <FilterBar>

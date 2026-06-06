@@ -27,10 +27,6 @@ export default function ARAgingPage() {
         <div className="w-full">
             <PageHeader
                 title="Accounts Receivable Aging"
-                primaryAction={{
-                    label: "Export PDF",
-                    onClick: () => {}
-                }}
             />
 
             <FilterBar>
