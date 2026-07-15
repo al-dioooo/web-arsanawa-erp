@@ -244,7 +244,7 @@ export function DatePicker({
                                             className={cn(
                                                 "h-8 w-8 text-xs font-semibold rounded-lg flex items-center justify-center transition-colors cursor-pointer select-none",
                                                 cell.isCurrentMonth ? "text-navy-800" : "text-navy-300",
-                                                isSelected && "bg-teal-700 text-white font-bold hover:bg-teal-750"
+                                                isSelected && "bg-teal-700 text-white font-bold hover:bg-teal-800"
                                             )}
                                         >
                                             {cell.day}

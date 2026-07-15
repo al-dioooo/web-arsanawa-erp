@@ -4,7 +4,7 @@ import { Field, SelectField } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { InputDate } from "@/components/ui/input-date"
 import { SelectDescription } from "@/components/ui/select-description"
-import { SelectSearchable } from "@/components/ui/select-searchable"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 
 describe("Field", () => {
     it("renders a native input when no custom control is provided", () => {
@@ -89,7 +89,7 @@ describe("Shared form components", () => {
 
     it("keeps searchable select options accessible with shared styling", () => {
         render(
-            <SelectSearchable
+            <SearchableSelect
                 label="Product"
                 value="sku-1"
                 onChange={() => {}}

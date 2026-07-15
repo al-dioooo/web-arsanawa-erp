@@ -78,7 +78,7 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-navy-100 bg-teal-50/20 border-teal-100">
                     <span className="text-xs font-semibold text-teal-600 uppercase tracking-wider block mb-1">Ending Balance</span>
-                    <span className="text-lg font-bold text-teal-750">
+                    <span className="text-lg font-bold text-teal-700">
                         {formatIDR(endingBalance)}
                     </span>
                 </div>

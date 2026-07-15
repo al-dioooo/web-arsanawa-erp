@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Icon } from "@/components/ui/icon"
 import { StatusPill } from "@/components/ui/status-pill"
-import { cn } from "@/lib/utils"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 
 type InventoryPageHeaderProps = {
     title: string
@@ -34,29 +34,25 @@ export function InventoryPageHeader({
     ) : null)
 
     return (
-        <section data-inventory-page-header className={cn(inventorySurfaceClass, "p-6")}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                        {icon ? <Icon name={icon} size={16} /> : null}
-                        <span>{eyebrow}</span>
-                    </p>
-                    <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                        {title}
-                    </h1>
-                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-500 font-body">
-                        {description}
-                    </p>
+        <PageHeaderShell
+            dataAttribute="data-inventory-page-header"
+            eyebrow={(
+                <>
+                    {icon ? <Icon name={icon} size={16} /> : null}
+                    <span>{eyebrow}</span>
+                </>
+            )}
+            title={title}
+            subtitle={description}
+        >
+            <div className="flex flex-col justify-between gap-2">
+                <div className="lg:self-end">
+                    {resolvedStatus}
                 </div>
-                <div className="flex flex-col justify-between gap-2">
-                    <div className="lg:self-end">
-                        {resolvedStatus}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {actions}
-                    </div>
+                <div className="flex items-center gap-2">
+                    {actions}
                 </div>
             </div>
-        </section>
+        </PageHeaderShell>
     )
 }
