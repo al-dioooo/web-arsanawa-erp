@@ -19,6 +19,7 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
     active: "green",
     approved: "green",
     completed: "green",
+    received: "green",
     // Inactive / closed out
     void: "neutral",
     closed: "neutral",
