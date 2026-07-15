@@ -18,6 +18,7 @@ import {
 } from "@/features/pos/pos-api"
 import type { Register, Shift } from "@/features/pos/pos-types"
 import { formatCurrency, toNumber } from "@/lib/money"
+import { formatDateTimeID } from "@/lib/format"
 
 export function ShiftsView() {
     const { token, activeCompanyId } = useSession()
@@ -144,7 +145,7 @@ export function ShiftsView() {
                                         </StatusPill>
                                     </td>
                                     <td className="border-b border-navy-100/50 px-4 py-3 text-navy-600 font-medium">
-                                        {shift.opened_at ? new Date(shift.opened_at).toLocaleString() : "-"}
+                                        {shift.opened_at ? formatDateTimeID(shift.opened_at) : "-"}
                                     </td>
                                     <td className="border-b border-navy-100/50 px-4 py-3 text-navy-700 font-medium">
                                         {formatCurrency(shift.opening_float)}

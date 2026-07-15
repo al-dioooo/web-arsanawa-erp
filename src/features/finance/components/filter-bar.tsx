@@ -1,9 +1,2 @@
-import { ReactNode } from "react"
-
-export function FilterBar({ children }: { children: ReactNode }) {
-    return (
-        <section className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-navy-100 bg-white p-4">
-            {children}
-        </section>
-    )
-}
+// The filter-bar shell is a generic layout primitive shared across modules.
+export { FilterBar } from "@/components/ui/filter-bar"

@@ -14,6 +14,7 @@ import { saleStatusTone } from "@/features/pos/components/sale-status"
 import { cancelSale, getSale, loadCustomers, voidSale, type Customer, type PosRequestOptions } from "@/features/pos/pos-api"
 import type { Sale } from "@/features/pos/pos-types"
 import { formatCurrency } from "@/lib/money"
+import { formatDateID } from "@/lib/format"
 
 export function SaleDetailView({ saleId }: { saleId: number }) {
     const { token, activeCompanyId } = useSession()
@@ -237,7 +238,7 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
                                     label="Customer"
                                     value={customerName ?? (sale.partner_id ? `Partner #${sale.partner_id}` : "Walk-in")}
                                 />
-                                <SummaryRow label="Order date" value={sale.order_date ?? "-"} />
+                                <SummaryRow label="Order date" value={sale.order_date ? formatDateID(sale.order_date) : "-"} />
                                 <SummaryRow label="Branch" value={`#${sale.branch_id}`} />
                                 <SummaryRow label="Register" value={sale.register_id ? `#${sale.register_id}` : "-"} />
                                 <SummaryRow label="Revenue journal" value={sale.revenue_journal_entry_id ? `#${sale.revenue_journal_entry_id}` : "-"} />

@@ -24,6 +24,7 @@ import {
 } from "@/features/pos/pos-api"
 import type { Pagination, Sale } from "@/features/pos/pos-types"
 import { formatCurrency } from "@/lib/money"
+import { formatDateID } from "@/lib/format"
 
 export function SalesView() {
     const router = useRouter()
@@ -170,7 +171,7 @@ export function SalesView() {
                                         {sale.customer_name ?? (sale.partner_id ? `Partner #${sale.partner_id}` : "Walk-in")}
                                     </td>
                                     <td className="border-b border-navy-100/50 px-4 py-3 text-navy-600 font-medium">
-                                        {sale.order_date ?? "-"}
+                                        {sale.order_date ? formatDateID(sale.order_date) : "-"}
                                     </td>
                                     <td className="border-b border-navy-100/50 px-4 py-3 text-right font-bold text-navy-900">
                                         {formatCurrency(sale.total)}

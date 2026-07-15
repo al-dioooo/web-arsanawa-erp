@@ -15,6 +15,7 @@ import {
 } from "@/features/pos/pos-api"
 import type { SalesReport, Shift, ShiftReport } from "@/features/pos/pos-types"
 import { formatCurrency, toNumber } from "@/lib/money"
+import { formatDateID } from "@/lib/format"
 
 function today(): string {
     return new Date().toISOString().slice(0, 10)
@@ -167,7 +168,7 @@ export function ReportsView() {
                         onChange={(val) => void runShiftReport(String(val))}
                         options={shifts.map((shift) => ({
                             value: shift.id,
-                            label: `Shift #${shift.id} · ${shift.status}${shift.opened_at ? ` · ${new Date(shift.opened_at).toLocaleDateString()}` : ""}`,
+                            label: `Shift #${shift.id} · ${shift.status}${shift.opened_at ? ` · ${formatDateID(shift.opened_at)}` : ""}`,
                         }))}
                         placeholder="Select shift"
                     />

@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/money"
+
 export function titleCase(value: string): string {
     return value
         .split(/[-_.\s]+/)
@@ -17,13 +19,10 @@ export function compactDateTime(value: string | null): string {
     }).format(new Date(value));
 }
 
-export function formatIDR(value: number): string {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value);
+// Thin IDR preset over the guarded shared formatter so amounts never render as
+// "Rp NaN" and currency formatting has a single source of truth (see money.ts).
+export function formatIDR(value: string | number | null | undefined): string {
+    return formatCurrency(value, 'IDR', 'id-ID');
 }
 
 export function formatDateID(date: string | Date): string {
@@ -31,6 +30,16 @@ export function formatDateID(date: string | Date): string {
         day: 'numeric',
         month: 'short',
         year: 'numeric'
+    }).format(new Date(date));
+}
+
+export function formatDateTimeID(date: string | Date): string {
+    return new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     }).format(new Date(date));
 }
 

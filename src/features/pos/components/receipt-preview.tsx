@@ -2,6 +2,7 @@
 
 import type { Sale } from "@/features/pos/pos-types"
 import { formatCurrency, toNumber } from "@/lib/money"
+import { formatDateID } from "@/lib/format"
 
 type ReceiptPreviewProps = {
     sale: Sale
@@ -20,7 +21,7 @@ export function ReceiptPreview({ sale, customerName, registerName }: ReceiptPrev
             <header className="border-b border-dashed border-navy-200 pb-4 text-center">
                 <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Arsanawa POS</p>
                 <h1 className="mt-1 text-xl font-bold font-display">{sale.sale_number ?? `Sale #${sale.id}`}</h1>
-                <p className="mt-1 text-navy-500">{sale.order_date ?? "-"}</p>
+                <p className="mt-1 text-navy-500">{sale.order_date ? formatDateID(sale.order_date) : "-"}</p>
             </header>
 
             <section className="grid gap-1.5 border-b border-dashed border-navy-200 py-4">
