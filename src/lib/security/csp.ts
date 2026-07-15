@@ -1,4 +1,5 @@
 const API_CONNECT_SOURCES = [
+    "https://api-arsanawa-erp.azuregarden.dedyn.io",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
     "http://api-arsanawa-erp.test",
@@ -27,7 +28,7 @@ export function buildContentSecurityPolicy(
         object-src 'none';
         script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ""};
         style-src 'self' 'nonce-${nonce}'${isDevelopment ? " 'unsafe-inline'" : ""};
-        img-src 'self' blob: data:;
+        img-src 'self' blob: data: https://api-arsanawa-erp.azuregarden.dedyn.io;
         font-src 'self' data:;
         connect-src 'self' ${API_CONNECT_SOURCES.join(" ")};
         frame-src 'none';
