@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { CompanyCreateForm } from "@/features/organization/company-create-form"
@@ -53,33 +54,24 @@ export function OrganizationView() {
     return (
         <div className="grid gap-6">
             {/* Header section */}
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Organization
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            {activeCompany?.company.name ?? "Companies & Structure"}
-                        </h1>
-                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500 font-body">
-                            Manage branches, company memberships, and general organizational structure.
-                        </p>
-                    </div>
-                    {user?.is_developer ? (
-                        <StatusPill tone="green">Developer</StatusPill>
-                    ) : organizationContext?.membership ? (
-                        <StatusPill tone="green">
-                            {organizationContext.membership.role}
-                        </StatusPill>
-                    ) : null}
-                </div>
-                {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
-                        {error}
-                    </div>
+            <PageHeaderShell
+                eyebrow="Organization"
+                title={activeCompany?.company.name ?? "Companies & Structure"}
+                subtitle="Manage branches, company memberships, and general organizational structure."
+            >
+                {user?.is_developer ? (
+                    <StatusPill tone="green">Developer</StatusPill>
+                ) : organizationContext?.membership ? (
+                    <StatusPill tone="green">
+                        {organizationContext.membership.role}
+                    </StatusPill>
                 ) : null}
-            </section>
+            </PageHeaderShell>
+            {error ? (
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+                    {error}
+                </div>
+            ) : null}
 
             {/* Create Company Section */}
             <section className="rounded-2xl border border-navy-100 bg-white p-6">

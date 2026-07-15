@@ -5,6 +5,7 @@ import { useSession } from "@/features/auth/session-provider"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { moduleRegistry } from "@/lib/modules/registry"
 
 export function ModulesView() {
@@ -50,22 +51,16 @@ export function ModulesView() {
 
     return (
         <div className="grid gap-6">
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                    Module Manager
-                </p>
-                <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                    {activeCompany ? `${activeCompany.company.name} Modules` : "Select a company context"}
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500 font-body">
-                    Enable or disable core business modules for this company. Enabling a module grants access to authorized memberships.
-                </p>
-                {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
-                        {error}
-                    </div>
-                ) : null}
-            </section>
+            <PageHeaderShell
+                eyebrow="Module Manager"
+                title={activeCompany ? `${activeCompany.company.name} Modules` : "Select a company context"}
+                subtitle="Enable or disable core business modules for this company. Enabling a module grants access to authorized memberships."
+            />
+            {error ? (
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+                    {error}
+                </div>
+            ) : null}
 
             <section className="rounded-2xl border border-navy-100 bg-white p-6">
                 <h2 className="text-lg font-bold text-navy-900 font-display mb-6">Available Modules</h2>

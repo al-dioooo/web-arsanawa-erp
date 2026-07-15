@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { StatusPill } from "@/components/ui/status-pill"
 import {
     useCreatePartner,
@@ -208,17 +209,11 @@ export function PartnersView() {
 
     return (
         <div className="grid gap-6">
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                    Shared master data
-                </p>
-                <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                    Partners
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500">
-                    Maintain customers, suppliers, and shared contacts used by Finance and POS.
-                </p>
-            </section>
+            <PageHeaderShell
+                eyebrow="Shared master data"
+                title="Partners"
+                subtitle="Maintain customers, suppliers, and shared contacts used by Finance and POS."
+            />
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px]">
                 <div className="rounded-2xl border border-navy-100 bg-white p-6">

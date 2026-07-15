@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { fieldControlClassName, fieldErrorClassName, fieldLabelClassName } from "@/components/ui/form-control"
 import { SelectDescription } from "@/components/ui/select-description"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -132,21 +133,11 @@ export function PlatformSettingsView() {
 
     return (
         <div className="grid gap-6">
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            {t("platform.eyebrow")}
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            {t("platform.companySettings")}
-                        </h1>
-                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500">
-                            {t("platform.description")}
-                        </p>
-                    </div>
-                </div>
-            </section>
+            <PageHeaderShell
+                eyebrow={t("platform.eyebrow")}
+                title={t("platform.companySettings")}
+                subtitle={t("platform.description")}
+            />
 
             <WhatsAppSettings />
 

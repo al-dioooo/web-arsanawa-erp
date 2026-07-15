@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { InputDate } from "@/components/ui/input-date"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { StatusPill } from "@/components/ui/status-pill"
 import { StatusBadge } from '@/features/finance/components/status-badge'
 import { Icon } from '@/components/ui/icon'
@@ -133,33 +134,24 @@ export default function FinanceDashboard() {
     return (
         <div className="grid gap-6">
             {/* Page header — matches design system pattern */}
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Finance
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            Finance Dashboard
-                        </h1>
-                        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-500 font-body">
-                            Overview of your company&apos;s financial position — cash, receivables, payables, and pending approvals.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap items-start gap-2">
-                        <StatusPill tone={activeCompanyId ? "green" : "amber"}>
-                            {activeCompanyId ? "Company scoped" : "No company"}
-                        </StatusPill>
-                        <Button
-                            onClick={() => router.push('/finance/invoices/new')}
-                            size="xl"
-                            className="bg-teal-700 hover:bg-teal-800 text-white shadow-sm"
-                        >
-                            New Invoice
-                        </Button>
-                    </div>
+            <PageHeaderShell
+                eyebrow="Finance"
+                title="Finance Dashboard"
+                subtitle="Overview of your company's financial position — cash, receivables, payables, and pending approvals."
+            >
+                <div className="flex flex-wrap items-start gap-2">
+                    <StatusPill tone={activeCompanyId ? "green" : "amber"}>
+                        {activeCompanyId ? "Company scoped" : "No company"}
+                    </StatusPill>
+                    <Button
+                        onClick={() => router.push('/finance/invoices/new')}
+                        size="xl"
+                        className="bg-teal-700 hover:bg-teal-800 text-white shadow-sm"
+                    >
+                        New Invoice
+                    </Button>
                 </div>
-            </section>
+            </PageHeaderShell>
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

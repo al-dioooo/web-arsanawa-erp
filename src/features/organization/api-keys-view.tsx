@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { StatusPill } from "@/components/ui/status-pill"
 import { canManageOrganization } from "@/features/auth/access"
 import { useSession } from "@/features/auth/session-provider"
@@ -103,20 +104,13 @@ export function ApiKeysView() {
 
     return (
         <div className="grid gap-6">
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Organization
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">API Keys</h1>
-                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500 font-body">
-                            Create and rotate company-scoped keys for landing pages and external integrations.
-                        </p>
-                    </div>
-                    <StatusPill tone="green">{organizationContext.company.name}</StatusPill>
-                </div>
-            </section>
+            <PageHeaderShell
+                eyebrow="Organization"
+                title="API Keys"
+                subtitle="Create and rotate company-scoped keys for landing pages and external integrations."
+            >
+                <StatusPill tone="green">{organizationContext.company.name}</StatusPill>
+            </PageHeaderShell>
 
             {secret ? (
                 <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6">

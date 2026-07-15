@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
+import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import {
@@ -103,21 +104,11 @@ export function ProfileSettings() {
 
     return (
         <div className="grid gap-6">
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-teal-700 font-display">
-                            Identity
-                        </p>
-                        <h1 className="mt-2 text-2xl font-brand font-bold text-navy-900">
-                            Profile Settings
-                        </h1>
-                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-navy-500">
-                            Keep your workspace identity, locale, and timezone aligned with the API profile record.
-                        </p>
-                    </div>
-                </div>
-            </section>
+            <PageHeaderShell
+                eyebrow="Identity"
+                title="Profile Settings"
+                subtitle="Keep your workspace identity, locale, and timezone aligned with the API profile record."
+            />
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <form className="rounded-2xl border border-navy-100 bg-white p-6" onSubmit={submit}>
