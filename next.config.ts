@@ -16,6 +16,14 @@ const securityHeaders = [
         key: "Strict-Transport-Security",
         value: "max-age=31536000; includeSubDomains",
     },
+    {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+    },
+    {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), payment=()",
+    },
 ];
 
 const nextConfig: NextConfig = {

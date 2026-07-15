@@ -38,6 +38,13 @@ describe("next security headers", () => {
         expect(headers.get("Strict-Transport-Security")).toBe("max-age=31536000; includeSubDomains")
     })
 
+    it("restricts referrer leakage and browser features", async () => {
+        const headers = await configuredHeaderMap()
+
+        expect(headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin")
+        expect(headers.get("Permissions-Policy")).toBe("camera=(), microphone=(), geolocation=(), payment=()")
+    })
+
     it("builds a complete nonce-based production CSP without wildcard or unsafe-inline directives", () => {
         const policy = buildContentSecurityPolicy("test-nonce", "production")
 
