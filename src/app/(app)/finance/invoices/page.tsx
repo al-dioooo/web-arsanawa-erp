@@ -8,6 +8,7 @@ import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
 import { useInvoices, type InvoiceFilters } from "@/features/finance/api-invoices"
@@ -18,7 +19,7 @@ export default function InvoicesPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
     const [filters, setFilters] = useState<InvoiceFilters>({})
-    const { data: invoices = [], isLoading } = useInvoices(activeCompanyId, filters)
+    const { data: invoices = [], isLoading, isError, error, refetch } = useInvoices(activeCompanyId, filters)
     const hasFilters = Boolean(filters.start_date || filters.end_date)
 
     return (
@@ -64,20 +65,16 @@ export default function InvoicesPage() {
             </FilterBar>
 
             <DataTable columns={["Invoice Number", "Customer", "Date", "Due Date", "Total", "Status"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Loading invoices...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && invoices.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            No invoices found. Create one to get started.
-                        </td>
-                    </tr>
-                )}
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={invoices.length}
+                    columns={6}
+                    emptyMessage="No invoices found. Create one to get started."
+                    loadingMessage="Loading invoices..."
+                    onRetry={() => refetch()}
+                />
                 {invoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-navy-50/50 transition-colors group">
                         <td className="px-6 py-4">

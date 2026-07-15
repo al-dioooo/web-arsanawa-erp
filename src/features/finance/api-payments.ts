@@ -44,6 +44,8 @@ export type PaymentFilters = {
     status?: Payment['status'] | ''
     start_date?: string
     end_date?: string
+    per_page?: number
+    page?: number
 }
 
 function queryString(filters: Record<string, string | number | null | undefined>): string {
@@ -68,11 +70,13 @@ export function usePayments(
     const normalizedFilters: PaymentFilters = typeof filters === "string"
         ? { payment_type: filters }
         : filters
+    // Default to the API's max page size so lists aren't silently capped at 15.
+    const effective: PaymentFilters = { per_page: 100, ...normalizedFilters }
 
     return useQuery({
-        queryKey: ['finance', 'payments', companyId, normalizedFilters],
+        queryKey: ['finance', 'payments', companyId, effective],
         queryFn: () => apiRequest<{ payments: Payment[] }>(
-            `/api/v1/finance/payments${queryString(normalizedFilters)}`,
+            `/api/v1/finance/payments${queryString(effective)}`,
         ).then(res => res.data?.payments || []),
         enabled: !!companyId,
     })

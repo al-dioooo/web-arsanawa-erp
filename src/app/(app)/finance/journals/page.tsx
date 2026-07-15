@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
@@ -17,7 +18,7 @@ export default function JournalsPage() {
     const { activeCompanyId } = useSession()
     const [statusFilter, setStatusFilter] = useState<string>("")
     
-    const { data: journalEntries = [], isLoading } = useJournalEntries(activeCompanyId, {
+    const { data: journalEntries = [], isLoading, isError, error, refetch } = useJournalEntries(activeCompanyId, {
         status: statusFilter || undefined
     })
 
@@ -52,20 +53,16 @@ export default function JournalsPage() {
             </FilterBar>
 
             <DataTable columns={["Journal Number", "Date", "Period", "Description", "Total Debit", "Status"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Loading journal entries...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && journalEntries.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            No journal entries found.
-                        </td>
-                    </tr>
-                )}
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={journalEntries.length}
+                    columns={6}
+                    emptyMessage="No journal entries found."
+                    loadingMessage="Loading journal entries..."
+                    onRetry={() => refetch()}
+                />
                 {journalEntries.map((entry) => (
                     <tr key={entry.id} className="hover:bg-navy-50/50 transition-colors">
                         <td className="px-6 py-4">

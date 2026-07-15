@@ -4,6 +4,7 @@ import { useState } from "react"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
 import {
@@ -31,7 +32,7 @@ type AccountFormData = {
 
 export default function COAPage() {
     const { activeCompanyId } = useSession()
-    const { data: accounts = [], isLoading } = useCOA(activeCompanyId)
+    const { data: accounts = [], isLoading, isError, error, refetch } = useCOA(activeCompanyId)
     const updateAccount = useUpdateAccount()
     const deleteAccount = useDeleteAccount()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -56,20 +57,16 @@ export default function COAPage() {
             </FilterBar>
 
             <DataTable columns={["Code", "Name", "Type", "Balance", "Postable", "Status", "Actions"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-navy-500">
-                            Loading accounts...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && flatAccounts.length === 0 && (
-                    <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-navy-500">
-                            No accounts found. Create one to get started.
-                        </td>
-                    </tr>
-                )}
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={flatAccounts.length}
+                    columns={7}
+                    emptyMessage="No accounts found. Create one to get started."
+                    loadingMessage="Loading accounts..."
+                    onRetry={() => refetch()}
+                />
                 {flatAccounts.map((account) => (
                     <tr key={account.id} className="hover:bg-navy-50/50 transition-colors">
                         <td className="px-6 py-4">

@@ -305,13 +305,20 @@ export function useAccountMappings(companyId: number | null) {
     })
 }
 
+// The API expects `mappings` as an array of { key, account_id } objects, not an
+// associative record — send the shape the FormRequest validates.
+export function updateAccountMappings(mappings: Record<string, number>) {
+    const payload = Object.entries(mappings).map(([key, account_id]) => ({ key, account_id }))
+    return apiRequest<{ success: boolean }>('/api/v1/finance/account-mappings', {
+        method: 'PUT',
+        body: JSON.stringify({ mappings: payload }),
+    })
+}
+
 export function useUpdateAccountMappings() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (mappings: Record<string, number>) => apiRequest<{ success: boolean }>('/api/v1/finance/account-mappings', {
-            method: 'PUT',
-            body: JSON.stringify({ mappings })
-        }),
+        mutationFn: (mappings: Record<string, number>) => updateAccountMappings(mappings),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['finance', 'account-mappings'] })
         }

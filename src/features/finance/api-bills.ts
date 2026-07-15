@@ -51,6 +51,8 @@ export type BillFilters = {
     status?: Bill['status'] | ''
     start_date?: string
     end_date?: string
+    per_page?: number
+    page?: number
 }
 
 export type APBucket = {
@@ -80,11 +82,32 @@ function queryString(filters: Record<string, string | number | null | undefined>
 }
 
 export function useBills(companyId: number | null, filters: BillFilters = {}) {
+    // Default to the API's max page size so lists aren't silently capped at 15.
+    const effective: BillFilters = { per_page: 100, ...filters }
     return useQuery({
-        queryKey: ['finance', 'bills', companyId, filters],
-        queryFn: () => apiRequest<{ bills: Bill[] }>(`/api/v1/finance/bills${queryString(filters)}`).then(res => res.data?.bills || []),
+        queryKey: ['finance', 'bills', companyId, effective],
+        queryFn: () => apiRequest<{ bills: Bill[] }>(`/api/v1/finance/bills${queryString(effective)}`).then(res => res.data?.bills || []),
         enabled: !!companyId,
     })
+}
+
+/**
+ * Fetch every page of bills matching the filters, so AP aging sums the whole
+ * ledger rather than a single (default 15-row) page.
+ */
+export async function loadAllBills(filters: BillFilters = {}): Promise<Bill[]> {
+    const all: Bill[] = []
+    let page = 1
+    let lastPage = 1
+    do {
+        const res = await apiRequest<{ bills: Bill[]; pagination?: { last_page?: number } }>(
+            `/api/v1/finance/bills${queryString({ ...filters, per_page: 100, page })}`,
+        )
+        all.push(...(res.data?.bills ?? []))
+        lastPage = res.data?.pagination?.last_page ?? 1
+        page += 1
+    } while (page <= lastPage)
+    return all
 }
 
 export function useBill(id: string | null) {
@@ -140,12 +163,10 @@ export function useVoidBill() {
 }
 
 export function useAPAging(companyId: number | null) {
-    const bills = useBills(companyId)
-
     return useQuery({
         queryKey: ['finance', 'ap-aging', companyId],
-        queryFn: () => Promise.resolve(buildAgingBuckets(bills.data ?? [])),
-        enabled: !!companyId && bills.isSuccess,
+        queryFn: () => loadAllBills().then(buildAgingBuckets),
+        enabled: !!companyId,
     })
 }
 

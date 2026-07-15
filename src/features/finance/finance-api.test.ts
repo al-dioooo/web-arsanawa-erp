@@ -6,6 +6,7 @@ import {
     loadFinanceDashboardSummary,
     getTaxRate,
     updateAccount,
+    updateAccountMappings,
     updateTaxRate,
 } from "@/features/finance/api"
 
@@ -60,6 +61,20 @@ describe("finance API route coverage", () => {
             [expect.stringContaining("/api/v1/finance/tax-rates/9"), "PATCH"],
             [expect.stringContaining("/api/v1/finance/tax-rates/9"), "DELETE"],
         ])
+    })
+
+    it("sends account mappings as an array of {key, account_id} the API accepts", async () => {
+        await updateAccountMappings({ ar_account: 5, ap_account: 7 })
+
+        const [url, init] = vi.mocked(fetch).mock.calls[0]
+        expect(String(url)).toContain("/api/v1/finance/account-mappings")
+        expect(init?.method).toBe("PUT")
+        expect(JSON.parse(String(init?.body))).toEqual({
+            mappings: [
+                { key: "ar_account", account_id: 5 },
+                { key: "ap_account", account_id: 7 },
+            ],
+        })
     })
 
     it("loads the finance dashboard summary from the dashboard endpoint with date filters", async () => {

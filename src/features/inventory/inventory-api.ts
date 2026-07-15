@@ -227,6 +227,29 @@ export async function moveCategory(
     )
 }
 
+/**
+ * Save a category edit. `name`/`is_active` go through the update endpoint, but
+ * reparenting is only accepted by the dedicated move endpoint, so call it when
+ * (and only when) the parent actually changed.
+ */
+export async function saveCategoryDetails(
+    options: InventoryRequestOptions,
+    categoryId: number,
+    input: { name?: string; is_active?: boolean; parent_id: number | null },
+    originalParentId: number | null,
+) {
+    const result = await updateCategory(options, categoryId, {
+        name: input.name,
+        is_active: input.is_active,
+    })
+
+    if (input.parent_id !== originalParentId) {
+        await moveCategory(options, categoryId, { parent_id: input.parent_id })
+    }
+
+    return result
+}
+
 export async function deleteCategory(options: InventoryRequestOptions, categoryId: number) {
     return apiRequest(
         `/api/v1/inventory/categories/${categoryId}`,

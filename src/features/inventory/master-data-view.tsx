@@ -49,7 +49,7 @@ import {
     uploadProductImage,
     uploadProductUnitImage,
     updateBrand,
-    updateCategory,
+    saveCategoryDetails,
     updateProduct,
     updateProductUnit,
     updateUnit,
@@ -237,7 +237,7 @@ export function InventoryMasterDataView({
                 const response = await createEntity(kind, requestOptions, form)
                 await saveImageIfNeeded(kind, requestOptions, entityIdFromResponse(kind, response), imageInput)
             } else if (mode === "edit" && itemId) {
-                await updateEntity(kind, requestOptions, itemId, form)
+                await updateEntity(kind, requestOptions, itemId, form, (active as MasterEntity | null) ?? null)
                 await saveImageIfNeeded(kind, requestOptions, itemId, imageInput)
             }
 
@@ -846,8 +846,16 @@ async function createEntity(kind: InventoryMasterKind, options: { token: string;
     return createProductUnit(options, { product_id: Number(form.product_id), sku: form.sku, barcode: form.barcode || null, name: form.name || null, variant_ids: form.variant_ids.map(Number), is_active: form.is_active })
 }
 
-async function updateEntity(kind: InventoryMasterKind, options: { token: string; companyId: number }, id: number, form: FormState) {
-    if (kind === "categories") return updateCategory(options, id, { name: form.name, is_active: form.is_active })
+async function updateEntity(kind: InventoryMasterKind, options: { token: string; companyId: number }, id: number, form: FormState, original: MasterEntity | null) {
+    if (kind === "categories") {
+        const originalParentId = original ? (original as Category).parent_id ?? null : null
+        return saveCategoryDetails(
+            options,
+            id,
+            { name: form.name, is_active: form.is_active, parent_id: form.parent_id ? Number(form.parent_id) : null },
+            originalParentId,
+        )
+    }
     if (kind === "brands") return updateBrand(options, id, { name: form.name, is_active: form.is_active })
     if (kind === "units") return updateUnit(options, id, { name: form.name, code: form.code, is_active: form.is_active })
     if (kind === "products") return updateProduct(options, id, { name: form.name, base_uom_id: Number(form.base_uom_id), category_id: form.category_id ? Number(form.category_id) : null, brand_id: form.brand_id ? Number(form.brand_id) : null, status: form.is_active ? "active" : "inactive" })

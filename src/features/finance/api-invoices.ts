@@ -74,6 +74,8 @@ export type InvoiceFilters = {
     status?: Invoice['status'] | ''
     start_date?: string
     end_date?: string
+    per_page?: number
+    page?: number
 }
 
 function queryString(params: Record<string, string | number | null | undefined>): string {
@@ -102,11 +104,32 @@ export function usePartners(companyId: number | null, type?: "customer" | "suppl
 // --- Hooks ---
 
 export function useInvoices(companyId: number | null, filters: InvoiceFilters = {}) {
+    // Default to the API's max page size so lists aren't silently capped at 15.
+    const effective: InvoiceFilters = { per_page: 100, ...filters }
     return useQuery({
-        queryKey: ['finance', 'invoices', companyId, filters],
-        queryFn: () => apiRequest<{ invoices: Invoice[] }>(`/api/v1/finance/invoices${queryString(filters)}`).then(res => res.data?.invoices || []),
+        queryKey: ['finance', 'invoices', companyId, effective],
+        queryFn: () => apiRequest<{ invoices: Invoice[] }>(`/api/v1/finance/invoices${queryString(effective)}`).then(res => res.data?.invoices || []),
         enabled: !!companyId,
     })
+}
+
+/**
+ * Fetch every page of invoices matching the filters. Aging reports must sum the
+ * whole ledger, so they cannot rely on a single (default 15-row) page.
+ */
+export async function loadAllInvoices(filters: InvoiceFilters = {}): Promise<Invoice[]> {
+    const all: Invoice[] = []
+    let page = 1
+    let lastPage = 1
+    do {
+        const res = await apiRequest<{ invoices: Invoice[]; pagination?: { last_page?: number } }>(
+            `/api/v1/finance/invoices${queryString({ ...filters, per_page: 100, page })}`,
+        )
+        all.push(...(res.data?.invoices ?? []))
+        lastPage = res.data?.pagination?.last_page ?? 1
+        page += 1
+    } while (page <= lastPage)
+    return all
 }
 
 export function useInvoice(id: string | null) {
@@ -162,12 +185,10 @@ export function useVoidInvoice() {
 }
 
 export function useARAging(companyId: number | null) {
-    const invoices = useInvoices(companyId)
-
     return useQuery({
         queryKey: ['finance', 'ar-aging', companyId],
-        queryFn: () => Promise.resolve(buildAgingBuckets(invoices.data ?? [])),
-        enabled: !!companyId && invoices.isSuccess,
+        queryFn: () => loadAllInvoices().then(buildAgingBuckets),
+        enabled: !!companyId,
     })
 }
 

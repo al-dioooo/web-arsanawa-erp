@@ -7,6 +7,7 @@ import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
@@ -18,7 +19,7 @@ export default function ReceiptsPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
     const [filters, setFilters] = useState<PaymentFilters>({ payment_type: "inbound" })
-    const { data: receipts = [], isLoading } = usePayments(activeCompanyId, filters)
+    const { data: receipts = [], isLoading, isError, error, refetch } = usePayments(activeCompanyId, filters)
     const hasFilters = Boolean(filters.status || filters.start_date || filters.end_date)
 
     return (
@@ -78,20 +79,16 @@ export default function ReceiptsPage() {
             </FilterBar>
 
             <DataTable columns={["Receipt No.", "Customer", "Date", "Bank/Cash", "Amount", "Status"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Loading receipts...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && receipts.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            No incoming receipts found. Create one to get started.
-                        </td>
-                    </tr>
-                )}
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={receipts.length}
+                    columns={6}
+                    emptyMessage="No incoming receipts found. Create one to get started."
+                    loadingMessage="Loading receipts..."
+                    onRetry={() => refetch()}
+                />
                 {receipts.map((receipt) => (
                     <tr key={receipt.id} className="hover:bg-navy-50/50 transition-colors">
                         <td className="px-6 py-4">

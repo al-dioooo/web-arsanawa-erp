@@ -4,6 +4,7 @@ import { useState } from "react"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
 import {
@@ -28,7 +29,7 @@ type TaxRateFormData = {
 
 export default function TaxRatesPage() {
     const { activeCompanyId } = useSession()
-    const { data: taxRates = [], isLoading } = useTaxRates(activeCompanyId)
+    const { data: taxRates = [], isLoading, isError, error, refetch } = useTaxRates(activeCompanyId)
     const updateTaxRate = useUpdateTaxRate()
     const deleteTaxRate = useDeleteTaxRate()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -74,20 +75,16 @@ export default function TaxRatesPage() {
             </div>
 
             <DataTable columns={["Tax Name", "Type", "Rate (%)", "Status", "Actions"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-navy-500">
-                            Loading tax rates...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && filteredRates.length === 0 && (
-                    <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-navy-500">
-                            No {activeTab.toUpperCase()} tax rates found.
-                        </td>
-                    </tr>
-                )}
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={filteredRates.length}
+                    columns={5}
+                    emptyMessage={`No ${activeTab.toUpperCase()} tax rates found.`}
+                    loadingMessage="Loading tax rates..."
+                    onRetry={() => refetch()}
+                />
                 {filteredRates.map((rate) => (
                     <tr key={rate.id} className="hover:bg-navy-50/50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-navy-900">{rate.name}</td>

@@ -21,6 +21,7 @@ import {
     recordIssue,
     recordReceipt,
     recordTransfer,
+    saveCategoryDetails,
     loadStockLots,
     loadStockMovements,
     loadStockSnapshot,
@@ -124,6 +125,24 @@ describe("inventory API route coverage", () => {
             [expect.stringContaining("/api/v1/inventory/products/4/variants/5/availability"), "PUT"],
             [expect.stringContaining("/api/v1/inventory/products/4/variants/5"), "DELETE"],
             [expect.stringContaining("/api/v1/inventory/products/4"), "DELETE"],
+        ])
+    })
+
+    it("reparents a category via the move endpoint only when the parent changed", async () => {
+        // Parent changed (null -> 3): save details, then call move.
+        await saveCategoryDetails(requestOptions, 1, { name: "Snacks", is_active: true, parent_id: 3 }, null)
+        // Parent unchanged (3 -> 3): save details only, no move call.
+        await saveCategoryDetails(requestOptions, 2, { name: "Drinks", is_active: true, parent_id: 3 }, 3)
+
+        const calls = vi.mocked(fetch).mock.calls.map(([url, init]) => [
+            String(url),
+            init?.method ?? "GET",
+        ])
+
+        expect(calls).toEqual([
+            [expect.stringContaining("/api/v1/inventory/categories/1"), "PATCH"],
+            [expect.stringContaining("/api/v1/inventory/categories/1/move"), "POST"],
+            [expect.stringContaining("/api/v1/inventory/categories/2"), "PATCH"],
         ])
     })
 

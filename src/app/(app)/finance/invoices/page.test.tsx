@@ -40,4 +40,18 @@ describe("finance invoices page", () => {
             end_date: "2026-06-30",
         }))
     })
+
+    it("shows an error state instead of the empty state when the query fails", () => {
+        vi.mocked(useInvoices).mockReturnValue({
+            data: [],
+            isLoading: false,
+            isError: true,
+            error: new Error("Request failed"),
+        } as ReturnType<typeof useInvoices>)
+
+        render(<InvoicesPage />)
+
+        expect(screen.getByText("Request failed")).toBeInTheDocument()
+        expect(screen.queryByText(/No invoices found/i)).not.toBeInTheDocument()
+    })
 })

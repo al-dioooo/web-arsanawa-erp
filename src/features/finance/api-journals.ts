@@ -72,7 +72,8 @@ export type AccountLedgerReport = {
 export function useJournalEntries(companyId: number | null, params?: { status?: string; per_page?: number }) {
     const queryParams = new URLSearchParams()
     if (params?.status) queryParams.append('status', params.status)
-    if (params?.per_page) queryParams.append('per_page', String(params.per_page))
+    // Default to the API's max page size so the ledger isn't silently capped at 15.
+    queryParams.append('per_page', String(params?.per_page ?? 100))
 
     const queryString = queryParams.toString()
     const url = `/api/v1/finance/journal-entries${queryString ? `?${queryString}` : ''}`

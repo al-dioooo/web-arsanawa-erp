@@ -7,6 +7,7 @@ import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
@@ -18,7 +19,7 @@ export default function BillsPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
     const [filters, setFilters] = useState<BillFilters>({})
-    const { data: bills = [], isLoading } = useBills(activeCompanyId, filters)
+    const { data: bills = [], isLoading, isError, error, refetch } = useBills(activeCompanyId, filters)
     const hasFilters = Boolean(filters.status || filters.start_date || filters.end_date)
 
     return (
@@ -80,20 +81,16 @@ export default function BillsPage() {
             </FilterBar>
 
             <DataTable columns={["Bill Number", "Vendor", "Date", "Due Date", "Total", "Status"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Loading bills...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && bills.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            No bills found. Create one to get started.
-                        </td>
-                    </tr>
-                )}
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={bills.length}
+                    columns={6}
+                    emptyMessage="No bills found. Create one to get started."
+                    loadingMessage="Loading bills..."
+                    onRetry={() => refetch()}
+                />
                 {bills.map((bill) => (
                     <tr key={bill.id} className="hover:bg-navy-50/50 transition-colors">
                         <td className="px-6 py-4">
