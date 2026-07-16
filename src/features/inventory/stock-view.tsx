@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { InputDate } from "@/components/ui/input-date"
 import { MotionLinkItem } from "@/components/ui/motion-link"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -193,11 +194,13 @@ function StockSelectors({
                     <option key={branch.id} value={branch.id}>{branch.name}</option>
                 ))}
             </SelectField>
-            <SelectField label="Product Unit" value={productUnitId ?? ""} onChange={(event) => onProductUnitChange(Number(event.target.value))}>
-                {productUnits.map((unit) => (
-                    <option key={unit.id} value={unit.id}>{productUnitLabel(unit)}</option>
-                ))}
-            </SelectField>
+            <SearchableSelect
+                label="Product Unit"
+                value={productUnitId ?? ""}
+                onChange={(value) => onProductUnitChange(Number(value))}
+                options={productUnits.map((unit) => ({ value: unit.id, label: productUnitLabel(unit) }))}
+                placeholder="Select product unit"
+            />
         </div>
     )
 }
@@ -276,6 +279,7 @@ export function StockLotsView() {
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
     const [lots, setLots] = useState<StockLot[]>([])
+    const [loadError, setLoadError] = useState<string | null>(null)
 
     useEffect(() => {
         let active = true
@@ -289,17 +293,28 @@ export function StockLotsView() {
         }
     }, [branchId, defaultBranchId, defaultProductUnitId, productUnitId])
 
+    const loadLots = useCallback(async () => {
+        if (!requestOptions) return
+        try {
+            const loaded = await loadStockLots(requestOptions, { branch_id: branchId, product_unit_id: productUnitId })
+            setLots(loaded)
+            setLoadError(null)
+        } catch (caught) {
+            const message = caught instanceof Error ? caught.message : "Unable to load stock lots."
+            setLoadError(message)
+            toast.error(message)
+        }
+    }, [branchId, productUnitId, requestOptions])
+
     useEffect(() => {
         let active = true
-        void Promise.resolve().then(async () => {
-            if (!active || !requestOptions) return
-            const loaded = await loadStockLots(requestOptions, { branch_id: branchId, product_unit_id: productUnitId })
-            if (active) setLots(loaded)
+        void Promise.resolve().then(() => {
+            if (active) void loadLots()
         })
         return () => {
             active = false
         }
-    }, [branchId, productUnitId, requestOptions])
+    }, [loadLots])
 
     return (
         <div className="grid gap-6">
@@ -308,7 +323,15 @@ export function StockLotsView() {
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             </section>
             <section className="grid gap-3">
-                {lots.map((lot) => (
+                {loadError && (
+                    <div className={cn(inventorySurfaceClass, "flex items-center justify-between gap-3 p-4")}>
+                        <p className="text-sm font-semibold text-error">{loadError}</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => void loadLots()}>
+                            Retry
+                        </Button>
+                    </div>
+                )}
+                {!loadError && lots.map((lot) => (
                     <article key={lot.id} className={cn(inventorySurfaceClass, "p-4")}>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
@@ -322,7 +345,7 @@ export function StockLotsView() {
                         </div>
                     </article>
                 ))}
-                {lots.length === 0 && <p className={cn(inventorySurfaceClass, "p-6 text-center text-sm font-semibold text-navy-400")}>No lots registered for this context.</p>}
+                {!loadError && lots.length === 0 && <p className={cn(inventorySurfaceClass, "p-6 text-center text-sm font-semibold text-navy-400")}>No lots registered for this context.</p>}
             </section>
         </div>
     )
@@ -334,6 +357,7 @@ export function StockMovementsView() {
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
     const [movements, setMovements] = useState<StockMovement[]>([])
     const [total, setTotal] = useState(0)
+    const [loadError, setLoadError] = useState<string | null>(null)
 
     useEffect(() => {
         let active = true
@@ -347,20 +371,29 @@ export function StockMovementsView() {
         }
     }, [branchId, defaultBranchId, defaultProductUnitId, productUnitId])
 
+    const loadMovements = useCallback(async () => {
+        if (!requestOptions) return
+        try {
+            const loaded = await loadStockMovements(requestOptions, { branch_id: branchId, product_unit_id: productUnitId, per_page: 50 })
+            setMovements(loaded.movements)
+            setTotal(loaded.total)
+            setLoadError(null)
+        } catch (caught) {
+            const message = caught instanceof Error ? caught.message : "Unable to load stock movements."
+            setLoadError(message)
+            toast.error(message)
+        }
+    }, [branchId, productUnitId, requestOptions])
+
     useEffect(() => {
         let active = true
-        void Promise.resolve().then(async () => {
-            if (!active || !requestOptions) return
-            const loaded = await loadStockMovements(requestOptions, { branch_id: branchId, product_unit_id: productUnitId, per_page: 50 })
-            if (active) {
-                setMovements(loaded.movements)
-                setTotal(loaded.total)
-            }
+        void Promise.resolve().then(() => {
+            if (active) void loadMovements()
         })
         return () => {
             active = false
         }
-    }, [branchId, productUnitId, requestOptions])
+    }, [loadMovements])
 
     return (
         <div className="grid gap-6">
@@ -380,7 +413,24 @@ export function StockMovementsView() {
                         </tr>
                     </thead>
                     <tbody>
-                        {movements.map((movement) => (
+                        {loadError && (
+                            <tr>
+                                <td colSpan={5} className="px-4 py-8 text-center">
+                                    <p className="text-sm font-semibold text-error">{loadError}</p>
+                                    <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void loadMovements()}>
+                                        Retry
+                                    </Button>
+                                </td>
+                            </tr>
+                        )}
+                        {!loadError && movements.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="px-4 py-8 text-center text-sm font-semibold text-navy-400">
+                                    No movements recorded for this context.
+                                </td>
+                            </tr>
+                        )}
+                        {!loadError && movements.map((movement) => (
                             <tr key={movement.id} className="border-t border-navy-100">
                                 <td className="px-4 py-3 font-bold text-teal-700">
                                     <Link href={`/inventory/stock/movements/${movement.id}`}>Movement #{movement.id}</Link>
@@ -401,18 +451,30 @@ export function StockMovementsView() {
 export function StockMovementDetailView({ movementId }: { movementId: number }) {
     const { requestOptions } = useStockOptions()
     const [movement, setMovement] = useState<StockMovement | null>(null)
+    const [loadError, setLoadError] = useState<string | null>(null)
+
+    const loadMovement = useCallback(async () => {
+        if (!requestOptions) return
+        try {
+            const response = await getStockMovement(requestOptions, movementId)
+            setMovement(response.data.movement)
+            setLoadError(null)
+        } catch (caught) {
+            const message = caught instanceof Error ? caught.message : "Unable to load the stock movement."
+            setLoadError(message)
+            toast.error(message)
+        }
+    }, [movementId, requestOptions])
 
     useEffect(() => {
         let active = true
-        void Promise.resolve().then(async () => {
-            if (!active || !requestOptions) return
-            const response = await getStockMovement(requestOptions, movementId)
-            if (active) setMovement(response.data.movement)
+        void Promise.resolve().then(() => {
+            if (active) void loadMovement()
         })
         return () => {
             active = false
         }
-    }, [movementId, requestOptions])
+    }, [loadMovement])
 
     return (
         <div className="grid gap-6">
@@ -444,6 +506,13 @@ export function StockMovementDetailView({ movementId }: { movementId: number }) 
                         <p className="mt-1 font-bold text-navy-950">{movement.notes ?? "No notes"}</p>
                     </div>
                 </section>
+            ) : loadError ? (
+                <div className={cn(inventorySurfaceClass, "flex items-center justify-between gap-3 p-6")}>
+                    <p className="text-sm font-semibold text-error">{loadError}</p>
+                    <Button type="button" variant="outline" size="sm" onClick={() => void loadMovement()}>
+                        Retry
+                    </Button>
+                </div>
             ) : (
                 <p className={cn(inventorySurfaceClass, "p-6 text-sm font-semibold text-navy-400")}>Loading movement detail...</p>
             )}
