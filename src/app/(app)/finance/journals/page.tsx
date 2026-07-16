@@ -60,7 +60,6 @@ export default function JournalsPage() {
                     count={journalEntries.length}
                     columns={6}
                     emptyMessage="No journal entries found."
-                    loadingMessage="Loading journal entries..."
                     onRetry={() => refetch()}
                 />
                 {journalEntries.map((entry) => (

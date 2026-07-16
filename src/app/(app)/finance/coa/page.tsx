@@ -65,7 +65,6 @@ export default function COAPage() {
                     count={flatAccounts.length}
                     columns={7}
                     emptyMessage="No accounts found. Create one to get started."
-                    loadingMessage="Loading accounts..."
                     onRetry={() => refetch()}
                 />
                 {flatAccounts.map((account) => (

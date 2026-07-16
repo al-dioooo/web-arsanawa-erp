@@ -88,7 +88,6 @@ export default function BillsPage() {
                     count={bills.length}
                     columns={6}
                     emptyMessage="No bills found. Create one to get started."
-                    loadingMessage="Loading bills..."
                     onRetry={() => refetch()}
                 />
                 {bills.map((bill) => (

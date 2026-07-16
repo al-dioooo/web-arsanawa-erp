@@ -59,7 +59,6 @@ export default function GoodsReceiptsPage() {
                     count={receipts.length}
                     columns={8}
                     emptyMessage="No goods receipts found. Create one to get started."
-                    loadingMessage="Loading goods receipts..."
                     onRetry={() => refetch()}
                 />
                 {receipts.map((receipt: GoodsReceipt) => (

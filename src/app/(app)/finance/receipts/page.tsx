@@ -86,7 +86,6 @@ export default function ReceiptsPage() {
                     count={receipts.length}
                     columns={6}
                     emptyMessage="No incoming receipts found. Create one to get started."
-                    loadingMessage="Loading receipts..."
                     onRetry={() => refetch()}
                 />
                 {receipts.map((receipt) => (

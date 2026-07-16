@@ -186,13 +186,19 @@ export function SalesView() {
                                     </td>
                                 </tr>
                             ))}
-                            {sales.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} className="bg-navy-50/10 py-8 text-center font-medium text-navy-400">
-                                        {isLoading ? "Loading sales..." : "No sales found."}
-                                    </td>
-                                </tr>
-                            )}
+                            {isLoading && sales.length === 0
+                                ? Array.from({ length: 4 }).map((_, row) => (
+                                    <tr key={row} aria-hidden="true">
+                                        {Array.from({ length: 7 }).map((__, cell) => (
+                                            <td key={cell} className="px-4 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                                        ))}
+                                    </tr>
+                                ))
+                                : sales.length === 0 && (
+                                    <tr>
+                                        <td colSpan={7} className="bg-navy-50/10 py-8 text-center font-medium text-navy-400">No sales found.</td>
+                                    </tr>
+                                )}
                         </tbody>
                     </table>
                 </div>

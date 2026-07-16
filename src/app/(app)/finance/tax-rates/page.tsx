@@ -83,7 +83,6 @@ export default function TaxRatesPage() {
                     count={filteredRates.length}
                     columns={5}
                     emptyMessage={`No ${activeTab.toUpperCase()} tax rates found.`}
-                    loadingMessage="Loading tax rates..."
                     onRetry={() => refetch()}
                 />
                 {filteredRates.map((rate) => (

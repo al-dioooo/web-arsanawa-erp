@@ -305,7 +305,6 @@ export function PricingView() {
                                             count={variants.length}
                                             columns={5}
                                             emptyMessage="No product variants found in catalogue."
-                                            loadingMessage="Loading prices..."
                                             onRetry={() => void loadPrices()}
                                         />
                                         {!pricesError && !(pricesLoading && prices.length === 0) && variants.map((variant) => {

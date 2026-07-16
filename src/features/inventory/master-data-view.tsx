@@ -522,13 +522,19 @@ function MasterTable({
                             </td>
                         </tr>
                     ))}
-                    {rows.length === 0 && (
-                        <tr>
-                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">
-                                {isLoading ? "Loading records..." : "No records found."}
-                            </td>
-                        </tr>
-                    )}
+                    {isLoading && rows.length === 0
+                        ? Array.from({ length: 4 }).map((_, row) => (
+                            <tr key={row} aria-hidden="true">
+                                {Array.from({ length: 4 }).map((__, cell) => (
+                                    <td key={cell} className="px-5 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                                ))}
+                            </tr>
+                        ))
+                        : rows.length === 0 && (
+                            <tr>
+                                <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                            </tr>
+                        )}
                 </tbody>
             </table>
         </div>
@@ -633,13 +639,19 @@ function CategoryTreeTable({
                             </tr>
                         )
                     })}
-                    {visibleRows.length === 0 && (
-                        <tr>
-                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">
-                                {isLoading ? "Loading records..." : "No records found."}
-                            </td>
-                        </tr>
-                    )}
+                    {isLoading && visibleRows.length === 0
+                        ? Array.from({ length: 4 }).map((_, row) => (
+                            <tr key={row} aria-hidden="true">
+                                {Array.from({ length: 4 }).map((__, cell) => (
+                                    <td key={cell} className="px-5 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                                ))}
+                            </tr>
+                        ))
+                        : visibleRows.length === 0 && (
+                            <tr>
+                                <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                            </tr>
+                        )}
                 </tbody>
             </table>
         </div>
