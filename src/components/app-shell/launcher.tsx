@@ -46,10 +46,19 @@ export function ModuleLauncher() {
                 setIsOpen(false)
             }
         }
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setIsOpen(false)
+            }
+        }
         if (isOpen) {
             document.addEventListener("mousedown", handleClickOutside)
+            document.addEventListener("keydown", handleKeyDown)
         }
-        return () => document.removeEventListener("mousedown", handleClickOutside)
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside)
+            document.removeEventListener("keydown", handleKeyDown)
+        }
     }, [isOpen])
 
     const enabledSet = new Set(modules?.enabled ?? [])
@@ -76,6 +85,8 @@ export function ModuleLauncher() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
+                aria-haspopup="dialog"
+                aria-expanded={isOpen}
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-100 hover:text-navy-900 transition-all duration-150 outline-none cursor-pointer"
                 title={t("launcher.button")}
                 aria-label={t("launcher.button")}
@@ -84,7 +95,7 @@ export function ModuleLauncher() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-navy-100 bg-white p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div role="dialog" aria-label={t("launcher.button")} className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-navy-100 bg-white p-4 animate-in fade-in slide-in-from-top-2 duration-200">
                     {moduleTiles.length > 0 && (
                         <div>
                             <LauncherSection title={t("launcher.applications")} tiles={moduleTiles} pathname={pathname} />
