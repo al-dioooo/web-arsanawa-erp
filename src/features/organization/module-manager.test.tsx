@@ -113,7 +113,7 @@ function baseSession() {
             branches: [],
         },
         modules: {
-            enabled: [],
+            enabled: [] as string[],
             available: ["inventory", "finance", "pos"],
             company: {
                 id: 1,
@@ -164,6 +164,7 @@ function baseSession() {
         createCompany: vi.fn(),
         createBranch: vi.fn(),
         addMembership: vi.fn(),
+        updateCurrentProfile: vi.fn(),
         updateEntitlements,
         clearError: vi.fn(),
     }

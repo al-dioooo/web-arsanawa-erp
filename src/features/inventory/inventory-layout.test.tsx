@@ -170,9 +170,9 @@ function mockInventoryApi() {
     vi.mocked(loadInventory).mockResolvedValue(inventory)
     vi.mocked(loadInventoryDashboardSummary).mockResolvedValue({
         counters: {
-            products: { total: 0, active: 0 },
+            products: { total: 0, active: 0, inactive: 0 },
             product_units: { total: 0, active: 0 },
-            stock_lots: { active: 0 },
+            stock_lots: { active: 0, expiring_soon: 0 },
             stock_movements: { total: 0, unsettled: 0 },
             stock_value: "0.0000",
         },
@@ -180,15 +180,15 @@ function mockInventoryApi() {
     vi.mocked(listVariantGroups).mockResolvedValue({
         data: { variant_groups: [], pagination: { total: 0 } },
         message: "OK",
-    })
+    } as Awaited<ReturnType<typeof listVariantGroups>>)
     vi.mocked(listVariantMasters).mockResolvedValue({
         data: { variants: [], pagination: { total: 0 } },
         message: "OK",
-    })
+    } as Awaited<ReturnType<typeof listVariantMasters>>)
     vi.mocked(listProductUnits).mockResolvedValue({
         data: { product_units: [productUnit], pagination: { total: 1 } },
         message: "OK",
-    })
+    } as unknown as Awaited<ReturnType<typeof listProductUnits>>)
     vi.mocked(loadStockSnapshot).mockResolvedValue({
         lots: [],
         movements: [],

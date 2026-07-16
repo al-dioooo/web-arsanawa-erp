@@ -185,10 +185,10 @@ describe("split stock movement views", () => {
             },
             message: "OK",
         })
-        vi.mocked(recordReceipt).mockResolvedValue({})
-        vi.mocked(recordIssue).mockResolvedValue({})
-        vi.mocked(recordAdjustment).mockResolvedValue({})
-        vi.mocked(recordTransfer).mockResolvedValue({})
+        vi.mocked(recordReceipt).mockResolvedValue({} as Awaited<ReturnType<typeof recordReceipt>>)
+        vi.mocked(recordIssue).mockResolvedValue({} as Awaited<ReturnType<typeof recordIssue>>)
+        vi.mocked(recordAdjustment).mockResolvedValue({} as Awaited<ReturnType<typeof recordAdjustment>>)
+        vi.mocked(recordTransfer).mockResolvedValue({} as Awaited<ReturnType<typeof recordTransfer>>)
     })
 
     it("renders an overview with links into separated stock movement pages", async () => {
@@ -298,7 +298,7 @@ describe("split stock movement views", () => {
                 membership: null,
                 branches: [],
             },
-        } as ReturnType<typeof useSession>)
+        } as unknown as ReturnType<typeof useSession>)
 
         render(<StockReceiptView />)
 

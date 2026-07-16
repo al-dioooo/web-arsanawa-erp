@@ -12,6 +12,8 @@ type HeaderRule = {
 async function configuredHeaderMap() {
     expect(typeof nextConfig.headers).toBe("function")
 
+    if (!nextConfig.headers) throw new Error("nextConfig.headers must be defined")
+
     const rules = await nextConfig.headers()
     const globalRule = (rules as HeaderRule[]).find((rule) => rule.source === "/:path*")
 

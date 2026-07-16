@@ -60,7 +60,7 @@ describe("ApiKeysView", () => {
                 email_verified_at: null,
                 is_developer: false,
             },
-        } as ReturnType<typeof useSession>)
+        } as unknown as ReturnType<typeof useSession>)
 
         vi.mocked(useExternalApiKeys).mockReturnValue({
             data: [
@@ -130,15 +130,15 @@ describe("ApiKeysView", () => {
         vi.mocked(useCreateExternalApiKey).mockReturnValue({
             mutateAsync: createKey,
             isPending: false,
-        } as ReturnType<typeof useCreateExternalApiKey>)
+        } as unknown as ReturnType<typeof useCreateExternalApiKey>)
         vi.mocked(useRotateExternalApiKey).mockReturnValue({
             mutateAsync: rotateKey,
             isPending: false,
-        } as ReturnType<typeof useRotateExternalApiKey>)
+        } as unknown as ReturnType<typeof useRotateExternalApiKey>)
         vi.mocked(useRevokeExternalApiKey).mockReturnValue({
             mutateAsync: revokeKey,
             isPending: false,
-        } as ReturnType<typeof useRevokeExternalApiKey>)
+        } as unknown as ReturnType<typeof useRevokeExternalApiKey>)
     })
 
     it("creates, rotates, and revokes external API keys", async () => {

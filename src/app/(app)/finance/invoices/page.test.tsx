@@ -24,7 +24,7 @@ describe("finance invoices page", () => {
         vi.mocked(useInvoices).mockReturnValue({
             data: [],
             isLoading: false,
-        } as ReturnType<typeof useInvoices>)
+        } as unknown as ReturnType<typeof useInvoices>)
 
         render(<InvoicesPage />)
 
@@ -47,7 +47,7 @@ describe("finance invoices page", () => {
             isLoading: false,
             isError: true,
             error: new Error("Request failed"),
-        } as ReturnType<typeof useInvoices>)
+        } as unknown as ReturnType<typeof useInvoices>)
 
         render(<InvoicesPage />)
 

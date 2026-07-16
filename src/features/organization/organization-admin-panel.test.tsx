@@ -71,7 +71,7 @@ describe("OrganizationAdminPanel", () => {
                 },
             },
             isLoading: false,
-        } as ReturnType<typeof useOrganizationPermissions>)
+        } as unknown as ReturnType<typeof useOrganizationPermissions>)
 
         vi.mocked(useOrganizationRoles).mockReturnValue({
             data: [
@@ -94,15 +94,15 @@ describe("OrganizationAdminPanel", () => {
         vi.mocked(useCreateOrganizationRole).mockReturnValue({
             mutateAsync: createRole,
             isPending: false,
-        } as ReturnType<typeof useCreateOrganizationRole>)
+        } as unknown as ReturnType<typeof useCreateOrganizationRole>)
         vi.mocked(useUpdateOrganizationRole).mockReturnValue({
             mutateAsync: updateRole,
             isPending: false,
-        } as ReturnType<typeof useUpdateOrganizationRole>)
+        } as unknown as ReturnType<typeof useUpdateOrganizationRole>)
         vi.mocked(useDeleteOrganizationRole).mockReturnValue({
             mutateAsync: deleteRole,
             isPending: false,
-        } as ReturnType<typeof useDeleteOrganizationRole>)
+        } as unknown as ReturnType<typeof useDeleteOrganizationRole>)
         vi.mocked(useBranchAssignments).mockReturnValue({
             data: [
                 {
@@ -121,11 +121,11 @@ describe("OrganizationAdminPanel", () => {
         vi.mocked(useAssignBranchRole).mockReturnValue({
             mutateAsync: assignBranchRole,
             isPending: false,
-        } as ReturnType<typeof useAssignBranchRole>)
+        } as unknown as ReturnType<typeof useAssignBranchRole>)
         vi.mocked(useRevokeBranchRole).mockReturnValue({
             mutateAsync: revokeBranchRole,
             isPending: false,
-        } as ReturnType<typeof useRevokeBranchRole>)
+        } as unknown as ReturnType<typeof useRevokeBranchRole>)
     })
 
     it("surfaces memberships, roles, and permission-backed role creation", async () => {
