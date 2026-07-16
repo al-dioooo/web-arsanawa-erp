@@ -222,7 +222,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
                                                 )} />
                                                 <div>
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="font-semibold text-sm text-navy-955">
+                                                        <span className="font-semibold text-sm text-navy-950">
                                                             {action.user?.name || `User #${action.user_id}`}
                                                         </span>
                                                         <span className={cn(

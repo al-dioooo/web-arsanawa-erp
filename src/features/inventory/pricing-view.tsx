@@ -178,7 +178,7 @@ export function PricingView() {
                                             </StatusPill>
                                         </div>
                                         
-                                        <p className="mt-3 text-xs text-navy-550 font-semibold">
+                                        <p className="mt-3 text-xs text-navy-500 font-semibold">
                                             {priceList.branch_id
                                                 ? `Branch ID: ${priceList.branch_id}`
                                                 : "Company-wide"}
@@ -399,7 +399,7 @@ export function PricingView() {
                                     required
                                 />
 
-                                <div className="text-xs bg-navy-50 border border-navy-100 rounded-lg p-2.5 text-navy-550 font-medium leading-relaxed">
+                                <div className="text-xs bg-navy-50 border border-navy-100 rounded-lg p-2.5 text-navy-500 font-medium leading-relaxed">
                                     Price will be set in price list: <strong className="text-navy-800">{activePriceList.name}</strong>.
                                 </div>
 

@@ -40,7 +40,7 @@ export function EntitlementGuard({ children }: { children: React.ReactNode }) {
                             </Link>
                             <Link
                                 href="/"
-                                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-navy-250 bg-white hover:bg-navy-50 px-5 text-sm font-semibold text-navy-700 transition-all cursor-pointer"
+                                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-navy-200 bg-white hover:bg-navy-50 px-5 text-sm font-semibold text-navy-700 transition-all cursor-pointer"
                             >
                                 Back to Apps
                             </Link>

@@ -101,7 +101,7 @@ export function OrganizationView() {
                             >
                                 <div>
                                     <p className="text-sm font-bold text-navy-900 leading-tight">{branch.name}</p>
-                                    <p className="text-xs text-navy-550 font-medium mt-0.5">{branch.code ?? "No code"}</p>
+                                    <p className="text-xs text-navy-500 font-medium mt-0.5">{branch.code ?? "No code"}</p>
                                 </div>
                                 {branch.is_primary ? <StatusPill tone="green">Primary</StatusPill> : null}
                             </div>
