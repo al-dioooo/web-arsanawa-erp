@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -101,20 +101,29 @@ export function PricingView() {
     }, [refreshData])
 
     // Prices load separately per selected list so switching lists doesn't
-    // re-fetch the whole catalogue.
+    // re-fetch the whole catalogue. Responses are keyed to the list they were
+    // requested for, so a slow response can't overwrite a newer selection.
+    const selectedPriceListRef = useRef(selectedPriceListId)
+    selectedPriceListRef.current = selectedPriceListId
+
     const loadPrices = useCallback(async () => {
         if (!requestOptions || !selectedPriceListId) return
 
+        const requestedListId = selectedPriceListId
         setPricesLoading(true)
         setPricesError(null)
 
         try {
-            const response = await listPriceListPrices(requestOptions, selectedPriceListId)
+            const response = await listPriceListPrices(requestOptions, requestedListId)
+            if (selectedPriceListRef.current !== requestedListId) return
             setPrices(response.data.prices)
         } catch (caught) {
+            if (selectedPriceListRef.current !== requestedListId) return
             setPricesError(caught instanceof Error ? caught.message : "Unable to load prices.")
         } finally {
-            setPricesLoading(false)
+            if (selectedPriceListRef.current === requestedListId) {
+                setPricesLoading(false)
+            }
         }
     }, [requestOptions, selectedPriceListId])
 

@@ -162,27 +162,32 @@ export function PromotionsView() {
         event.preventDefault()
         if (!requestOptions) return
 
+        // An incomplete row must block the submit: silently dropping an empty
+        // target row would ship an untargeted discount that applies to the
+        // whole catalogue.
+        if (
+            discountForm.targets.some((target) => target.target_id === "") ||
+            discountForm.dependencies.some((dependency) => dependency.product_variant_id === "") ||
+            discountForm.giveaways.some((giveaway) => giveaway.product_variant_id === "")
+        ) {
+            toast.error("Complete or remove the empty target, dependency, and giveaway rows first.")
+            return
+        }
+
         setIsLoading(true)
 
-        // Rows with no selection are treated as drafts and left out of the payload.
-        const targets = discountForm.targets
-            .filter((target) => target.target_id !== "")
-            .map((target) => ({
-                target_type: target.target_type,
-                target_id: Number(target.target_id),
-            }))
-        const dependencies = discountForm.dependencies
-            .filter((dependency) => dependency.product_variant_id !== "")
-            .map((dependency) => ({
-                product_variant_id: Number(dependency.product_variant_id),
-                required_quantity: Number(dependency.required_quantity),
-            }))
-        const giveaways = discountForm.giveaways
-            .filter((giveaway) => giveaway.product_variant_id !== "")
-            .map((giveaway) => ({
-                product_variant_id: Number(giveaway.product_variant_id),
-                giveaway_quantity: Number(giveaway.giveaway_quantity),
-            }))
+        const targets = discountForm.targets.map((target) => ({
+            target_type: target.target_type,
+            target_id: Number(target.target_id),
+        }))
+        const dependencies = discountForm.dependencies.map((dependency) => ({
+            product_variant_id: Number(dependency.product_variant_id),
+            required_quantity: Number(dependency.required_quantity),
+        }))
+        const giveaways = discountForm.giveaways.map((giveaway) => ({
+            product_variant_id: Number(giveaway.product_variant_id),
+            giveaway_quantity: Number(giveaway.giveaway_quantity),
+        }))
 
         try {
             await createDiscount(requestOptions, {

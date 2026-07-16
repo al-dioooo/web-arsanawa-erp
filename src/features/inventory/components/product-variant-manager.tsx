@@ -159,12 +159,16 @@ export function ProductVariantManager({
     }
 
     async function toggleAvailability(variant: ProductVariant, branchId: number) {
+        const existing = variant.branch_availability?.find((entry) => entry.branch_id === branchId)
         const next = !variantAvailability(variant, branchId)
         await runMutation(
             () =>
                 setVariantAvailability(requestOptions, productId, variant.id, {
                     branch_id: branchId,
                     is_available: next,
+                    // The API upserts the whole row, so preserve the stored
+                    // exclusivity flag instead of silently resetting it.
+                    is_exclusive: existing?.is_exclusive ?? false,
                 }),
             next ? "Variant made available." : "Variant hidden for branch.",
         )

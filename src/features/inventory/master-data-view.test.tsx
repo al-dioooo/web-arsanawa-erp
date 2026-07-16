@@ -205,6 +205,7 @@ describe("InventoryMasterDataView products", () => {
             expect(setVariantAvailability).toHaveBeenCalledWith({ token: "token", companyId: 1 }, 4, 100, {
                 branch_id: 2,
                 is_available: true,
+                is_exclusive: false,
             })
         })
     })
