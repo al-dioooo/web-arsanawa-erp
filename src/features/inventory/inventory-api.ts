@@ -915,14 +915,6 @@ export async function createDiscount(
     )
 }
 
-export async function getDiscount(options: InventoryRequestOptions, discountId: number) {
-    return apiRequest(
-        `/api/v1/inventory/discounts/${discountId}`,
-        {},
-        options,
-    )
-}
-
 export async function deleteDiscount(options: InventoryRequestOptions, discountId: number) {
     return apiRequest(
         `/api/v1/inventory/discounts/${discountId}`,
