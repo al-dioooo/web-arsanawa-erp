@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
 import { buildConsoleTiles } from "@/lib/console/tiles"
 import { moduleRegistry } from "@/lib/modules/registry"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 
 type LauncherTile = {
@@ -95,7 +96,7 @@ export function ModuleLauncher() {
             </button>
 
             {isOpen && (
-                <div role="dialog" aria-label={t("launcher.button")} className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-navy-100 bg-white p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <EnterTransition role="dialog" aria-label={t("launcher.button")} duration={0.2} className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-navy-100 bg-white p-4">
                     {moduleTiles.length > 0 && (
                         <div>
                             <LauncherSection title={t("launcher.applications")} tiles={moduleTiles} pathname={pathname} />
@@ -104,7 +105,7 @@ export function ModuleLauncher() {
                     <div className={moduleTiles.length > 0 ? "mt-4" : ""}>
                         <LauncherSection title={t("launcher.console")} tiles={consoleTiles} pathname={pathname} />
                     </div>
-                </div>
+                </EnterTransition>
             )}
         </div>
     )

@@ -7,6 +7,7 @@ import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
 import { usePeriods, useCreatePeriod, useClosePeriod, useReopenPeriod } from "@/features/finance/api"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -153,7 +154,7 @@ function PeriodDrawer({ onClose }: { onClose: () => void }) {
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
                     <h2 className="text-lg font-bold text-navy-900">New Accounting Period</h2>
                     <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
@@ -206,7 +207,7 @@ function PeriodDrawer({ onClose }: { onClose: () => void }) {
                         {createPeriod.isPending ? "Saving..." : "Save Period"}
                     </Button>
                 </div>
-            </div>
+            </EnterTransition>
         </div>
     )
 }

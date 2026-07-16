@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { EnterTransition } from "@/components/ui/enter"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -423,9 +424,11 @@ export function PricingView() {
 
                     {/* Set Price Form */}
                     {activePriceList && priceForm.product_variant_id && (
-                        <form
+                        <EnterTransition
+                            as="form"
                             id="set-price-form"
-                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-150"
+                            from="bottom"
+                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
                             onSubmit={handleSetPrice}
                         >
                             <div className="flex items-center justify-between border-b border-navy-50 pb-2">
@@ -492,7 +495,7 @@ export function PricingView() {
                                     Set Price
                                 </Button>
                             </div>
-                        </form>
+                        </EnterTransition>
                     )}
                 </div>
             </div>

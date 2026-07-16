@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 
 const FOCUSABLE_SELECTOR = [
@@ -102,10 +103,12 @@ export function Dialog({
                 className="absolute inset-0 bg-navy-900/40 backdrop-blur-sm"
                 onClick={onClose}
             />
-            <div
+            <EnterTransition
                 ref={panelRef}
                 tabIndex={-1}
-                className={`relative w-full ${widthClassName} max-h-[90vh] overflow-y-auto rounded-2xl border border-navy-100 bg-white p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 outline-none`}
+                from="none"
+                scale={0.95}
+                className={`relative w-full ${widthClassName} max-h-[90vh] overflow-y-auto rounded-2xl border border-navy-100 bg-white p-6 shadow-xl outline-none`}
             >
                 <div className="flex items-start justify-between gap-4 border-b border-navy-50 pb-4">
                     <div>
@@ -127,7 +130,7 @@ export function Dialog({
                 <div className="mt-4">{children}</div>
 
                 {footer ? <div className="mt-6 flex justify-end gap-2">{footer}</div> : null}
-            </div>
+            </EnterTransition>
         </div>
     )
 }

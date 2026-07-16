@@ -6,6 +6,7 @@ import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
 import { useSession } from "@/features/auth/session-provider"
 import { useApprovalMatrices, useCreateApprovalMatrix, useUpdateApprovalMatrix, useDeleteApprovalMatrix, useCompanyMembers, type ApprovalMatrix } from "@/features/finance/api-approvals"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
@@ -243,7 +244,7 @@ function ApprovalRuleDrawer({ rule, defaultDocType, onClose }: { rule: ApprovalM
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
                     <h2 className="text-lg font-bold text-navy-900">
                         {rule ? "Edit Approval Rule" : "New Approval Rule"}
@@ -329,7 +330,7 @@ function ApprovalRuleDrawer({ rule, defaultDocType, onClose }: { rule: ApprovalM
                         {isPending ? "Saving..." : rule ? "Save Changes" : "Create Rule"}
                     </Button>
                 </div>
-            </div>
+            </EnterTransition>
         </div>
     )
 }

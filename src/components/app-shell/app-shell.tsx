@@ -12,6 +12,7 @@ import { ModuleLauncher } from "@/components/app-shell/launcher"
 import { EntitlementGuard } from "@/components/app-shell/guard"
 import { CategoryTreeNav } from "@/components/app-shell/category-tree-nav"
 import { COATreeNav } from "@/features/finance/components/coa-tree-nav"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 import { Tooltip } from "@/components/ui/tooltip"
 import { CheckIcon, ChevronDownIcon } from "@/components/icons/outline"
@@ -198,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 </button>
 
                                 {branchOpen && (
-                                    <div role="menu" aria-label={t("shell.switchBranch")} className="absolute right-0 mt-2 z-50 w-64 rounded-lg border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                                    <EnterTransition role="menu" aria-label={t("shell.switchBranch")} className="absolute right-0 mt-2 z-50 w-64 rounded-lg border border-navy-100 bg-white py-2">
                                         <div className="px-4 py-1.5 border-b border-navy-50 mb-1.5">
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
                                                 {t("shell.switchBranch")}
@@ -245,7 +246,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </EnterTransition>
                                 )}
                             </div>
                         )}
@@ -276,7 +277,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </button>
 
                             {userOpen && (
-                                <div role="menu" aria-label={t("shell.accountMenu")} className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                                <EnterTransition role="menu" aria-label={t("shell.accountMenu")} className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-navy-100 bg-white py-2">
                                     <div className="px-4 py-2 border-b border-navy-50 mb-1.5">
                                         <p className="truncate text-xs font-bold text-navy-950 leading-tight">
                                             {accountDisplayName}
@@ -417,7 +418,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             </HighlightItem>
                                         </Highlight>
                                     </div>
-                                </div>
+                                </EnterTransition>
                             )}
                         </div>
                     </div>
