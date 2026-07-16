@@ -46,11 +46,13 @@ function currentMonthRange(): { start_date: string; end_date: string } {
     }
 }
 
+const chartDateFormatter = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+})
+
 function formatChartDate(value: string): string {
-    return new Intl.DateTimeFormat("en-GB", {
-        day: "2-digit",
-        month: "short",
-    }).format(new Date(`${value}T00:00:00`))
+    return chartDateFormatter.format(new Date(`${value}T00:00:00`))
 }
 
 export default function FinanceDashboard() {

@@ -9,7 +9,11 @@ import { PromotionsView } from "@/features/inventory/promotions-view"
 import { StockOverviewView, StockReceiptView } from "@/features/inventory/stock-view"
 import { useSession } from "@/features/auth/session-provider"
 import {
+    listBrands,
+    listCategories,
+    listProducts,
     listProductUnits,
+    listUnitsOfMeasure,
     listVariantGroups,
     listVariantMasters,
     loadInventory,
@@ -42,17 +46,30 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     createVariantMaster: vi.fn(),
     deleteBrand: vi.fn(),
     deleteCategory: vi.fn(),
+    deleteDiscount: vi.fn(),
     deleteProduct: vi.fn(),
+    deleteReward: vi.fn(),
     deleteProductUnit: vi.fn(),
     deleteUnit: vi.fn(),
     deleteVariantGroup: vi.fn(),
     deleteVariantMaster: vi.fn(),
     getStockMovement: vi.fn(),
+    addVariant: vi.fn(),
     commitProductImport: vi.fn(),
+    deleteVariant: vi.fn(),
     downloadProductImportTemplate: vi.fn(),
+    getProduct: vi.fn(),
     getProductImport: vi.fn(),
     inspectProductImport: vi.fn(),
+    setVariantAvailability: vi.fn(),
+    syncProductTags: vi.fn(),
+    updateVariant: vi.fn(),
+    listBrands: vi.fn(),
+    listCategories: vi.fn(),
+    listProducts: vi.fn(),
+    listPriceListPrices: vi.fn(),
     listProductUnits: vi.fn(),
+    listUnitsOfMeasure: vi.fn(),
     listVariantGroups: vi.fn(),
     listVariantMasters: vi.fn(),
     loadInventory: vi.fn(),
@@ -168,11 +185,15 @@ function mockSession(activeCompanyId: number | null = 1) {
 
 function mockInventoryApi() {
     vi.mocked(loadInventory).mockResolvedValue(inventory)
+    vi.mocked(listCategories).mockResolvedValue({ categories: [] })
+    vi.mocked(listBrands).mockResolvedValue({ brands: [] })
+    vi.mocked(listUnitsOfMeasure).mockResolvedValue({ units: inventory.units })
+    vi.mocked(listProducts).mockResolvedValue({ products: [], productTotal: 0 })
     vi.mocked(loadInventoryDashboardSummary).mockResolvedValue({
         counters: {
-            products: { total: 0, active: 0 },
+            products: { total: 0, active: 0, inactive: 0 },
             product_units: { total: 0, active: 0 },
-            stock_lots: { active: 0 },
+            stock_lots: { active: 0, expiring_soon: 0 },
             stock_movements: { total: 0, unsettled: 0 },
             stock_value: "0.0000",
         },
@@ -180,17 +201,17 @@ function mockInventoryApi() {
     vi.mocked(listVariantGroups).mockResolvedValue({
         data: { variant_groups: [], pagination: { total: 0 } },
         message: "OK",
-    })
+    } as Awaited<ReturnType<typeof listVariantGroups>>)
     vi.mocked(listVariantMasters).mockResolvedValue({
         data: { variants: [], pagination: { total: 0 } },
         message: "OK",
-    })
+    } as Awaited<ReturnType<typeof listVariantMasters>>)
     vi.mocked(listProductUnits).mockResolvedValue({
         data: { product_units: [productUnit], pagination: { total: 1 } },
         message: "OK",
-    })
+    } as unknown as Awaited<ReturnType<typeof listProductUnits>>)
     vi.mocked(loadStockSnapshot).mockResolvedValue({
-        lots: [],
+        lotTotal: 0,
         movements: [],
         movementTotal: 0,
         totalValue: "0.0000",
@@ -286,8 +307,7 @@ describe("inventory layout unification", () => {
     it("renders product image previews and icon-only master list actions", async () => {
         mockSession()
         mockInventoryApi()
-        vi.mocked(loadInventory).mockResolvedValue({
-            ...inventory,
+        vi.mocked(listProducts).mockResolvedValue({
             products: [
                 {
                     id: 4,
@@ -327,10 +347,7 @@ describe("inventory layout unification", () => {
     it("limits product category selection to leaf categories with real leveled option layout", async () => {
         mockSession()
         mockInventoryApi()
-        vi.mocked(loadInventory).mockResolvedValue({
-            ...inventory,
-            categories: categoryTree,
-        })
+        vi.mocked(listCategories).mockResolvedValue({ categories: categoryTree })
 
         render(<InventoryMasterDataView kind="products" mode="create" />)
 
@@ -346,10 +363,7 @@ describe("inventory layout unification", () => {
     it("allows all categories in the category parent selector", async () => {
         mockSession()
         mockInventoryApi()
-        vi.mocked(loadInventory).mockResolvedValue({
-            ...inventory,
-            categories: categoryTree,
-        })
+        vi.mocked(listCategories).mockResolvedValue({ categories: categoryTree })
 
         render(<InventoryMasterDataView kind="categories" mode="create" />)
 
@@ -386,10 +400,7 @@ describe("inventory layout unification", () => {
     it("renders product categories as an expandable leveled table", async () => {
         mockSession()
         mockInventoryApi()
-        vi.mocked(loadInventory).mockResolvedValue({
-            ...inventory,
-            categories: categoryTree,
-        })
+        vi.mocked(listCategories).mockResolvedValue({ categories: categoryTree })
 
         render(<InventoryMasterDataView kind="categories" mode="list" />)
 

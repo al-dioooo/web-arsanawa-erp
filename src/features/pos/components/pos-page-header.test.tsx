@@ -23,15 +23,11 @@ describe("PosPageHeader", () => {
                 subtitle="Manage register access."
                 hasCompany
                 isLoading
-                message="Register opened."
-                error="Register failed."
             />,
         )
 
         expect(screen.getByText("Company scoped")).toBeInTheDocument()
         expect(screen.queryByText("Syncing")).not.toBeInTheDocument()
         expect(screen.queryByText("Ready")).not.toBeInTheDocument()
-        expect(screen.queryByText("Register opened.")).not.toBeInTheDocument()
-        expect(screen.queryByText("Register failed.")).not.toBeInTheDocument()
     })
 })

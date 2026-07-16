@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { EnterTransition } from "@/components/ui/enter"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -12,13 +13,17 @@ import { useSession } from "@/features/auth/session-provider"
 import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
 import {
     createPriceList,
+    listPriceListPrices,
     loadInventory,
     setPrice,
 } from "@/features/inventory/inventory-api"
 import type {
+    Price,
     PriceList,
     ProductVariant,
 } from "@/features/inventory/inventory-types"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
+import { formatCurrency } from "@/lib/money"
 function today(): string {
     return new Date().toISOString().slice(0, 10)
 }
@@ -28,8 +33,11 @@ export function PricingView() {
     const [priceLists, setPriceLists] = useState<PriceList[]>([])
     const [variants, setVariants] = useState<Array<ProductVariant & { product_name: string }>>([])
     const [selectedPriceListId, setSelectedPriceListId] = useState<number | null>(null)
-    
+
     const [isLoading, setIsLoading] = useState(false)
+    const [prices, setPrices] = useState<Price[]>([])
+    const [pricesLoading, setPricesLoading] = useState(false)
+    const [pricesError, setPricesError] = useState<string | null>(null)
 
     // Forms
     const [priceListForm, setPriceListForm] = useState({
@@ -93,6 +101,61 @@ export function PricingView() {
         }
     }, [refreshData])
 
+    // Prices load separately per selected list so switching lists doesn't
+    // re-fetch the whole catalogue. Responses are keyed to the list they were
+    // requested for, so a slow response can't overwrite a newer selection.
+    const selectedPriceListRef = useRef(selectedPriceListId)
+
+    useEffect(() => {
+        selectedPriceListRef.current = selectedPriceListId
+    }, [selectedPriceListId])
+
+    const loadPrices = useCallback(async () => {
+        if (!requestOptions || !selectedPriceListId) return
+
+        const requestedListId = selectedPriceListId
+        setPricesLoading(true)
+        setPricesError(null)
+
+        try {
+            const response = await listPriceListPrices(requestOptions, requestedListId)
+            if (selectedPriceListRef.current !== requestedListId) return
+            setPrices(response.data.prices)
+        } catch (caught) {
+            if (selectedPriceListRef.current !== requestedListId) return
+            setPricesError(caught instanceof Error ? caught.message : "Unable to load prices.")
+        } finally {
+            if (selectedPriceListRef.current === requestedListId) {
+                setPricesLoading(false)
+            }
+        }
+    }, [requestOptions, selectedPriceListId])
+
+    useEffect(() => {
+        let active = true
+        void Promise.resolve().then(() => {
+            if (active) {
+                void loadPrices()
+            }
+        })
+        return () => {
+            active = false
+        }
+    }, [loadPrices])
+
+    // Latest effective price per variant; rows arrive newest-first.
+    const currentPriceByVariant = useMemo(() => {
+        const reference = today()
+        const map = new Map<number, Price>()
+        for (const price of prices) {
+            if (map.has(price.product_variant_id)) continue
+            if (price.effective_from && price.effective_from > reference) continue
+            if (price.effective_to && price.effective_to < reference) continue
+            map.set(price.product_variant_id, price)
+        }
+        return map
+    }, [prices])
+
     async function handleCreatePriceList(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         if (!requestOptions) return
@@ -129,7 +192,7 @@ export function PricingView() {
             })
             toast.success("Variant price set successfully.")
             setPriceForm((current) => ({ ...current, price: "" }))
-            await refreshData()
+            await Promise.all([refreshData(), loadPrices()])
         } catch (caught) {
             toast.error(caught instanceof Error ? caught.message : "Failed to set price.")
         } finally {
@@ -178,7 +241,7 @@ export function PricingView() {
                                             </StatusPill>
                                         </div>
                                         
-                                        <p className="mt-3 text-xs text-navy-550 font-semibold">
+                                        <p className="mt-3 text-xs text-navy-500 font-semibold">
                                             {priceList.branch_id
                                                 ? `Branch ID: ${priceList.branch_id}`
                                                 : "Company-wide"}
@@ -229,11 +292,25 @@ export function PricingView() {
                                         <tr className="text-xs font-bold uppercase tracking-wider text-navy-500 bg-navy-50/30">
                                             <th className="border-b border-navy-100 py-3 px-4 font-display">Product & SKU</th>
                                             <th className="border-b border-navy-100 py-3 px-4 font-display">Variant SKU</th>
+                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Current Price</th>
+                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Effective From</th>
                                             <th className="border-b border-navy-100 py-3 px-4 font-display">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {variants.map((variant) => (
+                                        <TableStateRow
+                                            isLoading={pricesLoading && prices.length === 0}
+                                            isError={Boolean(pricesError)}
+                                            error={pricesError ? new Error(pricesError) : undefined}
+                                            count={variants.length}
+                                            columns={5}
+                                            emptyMessage="No product variants found in catalogue."
+                                            loadingMessage="Loading prices..."
+                                            onRetry={() => void loadPrices()}
+                                        />
+                                        {!pricesError && !(pricesLoading && prices.length === 0) && variants.map((variant) => {
+                                            const currentPrice = currentPriceByVariant.get(variant.id)
+                                            return (
                                             <tr key={variant.id} className="hover:bg-navy-50/20 transition-colors">
                                                 <td className="border-b border-navy-100/50 py-3 px-4">
                                                     <p className="font-bold text-navy-900">{variant.product_name}</p>
@@ -245,6 +322,16 @@ export function PricingView() {
                                                     <code className="text-xs bg-navy-50 px-1.5 py-0.5 rounded border border-navy-100 text-teal-800 font-semibold font-mono">
                                                         {variant.sku}
                                                     </code>
+                                                </td>
+                                                <td className="border-b border-navy-100/50 py-3 px-4">
+                                                    {currentPrice ? (
+                                                        <span className="font-bold text-navy-900">{formatCurrency(currentPrice.price)}</span>
+                                                    ) : (
+                                                        <span className="text-xs font-semibold text-navy-400">Not priced</span>
+                                                    )}
+                                                </td>
+                                                <td className="border-b border-navy-100/50 py-3 px-4 text-xs font-semibold text-navy-500">
+                                                    {currentPrice?.effective_from ?? "—"}
                                                 </td>
                                                 <td className="border-b border-navy-100/50 py-3 px-4">
                                                     <Button
@@ -267,14 +354,8 @@ export function PricingView() {
                                                     </Button>
                                                 </td>
                                             </tr>
-                                        ))}
-                                        {variants.length === 0 && (
-                                            <tr>
-                                                <td colSpan={3} className="text-center py-8 text-navy-400 font-medium bg-navy-50/10">
-                                                    No product variants found in catalogue.
-                                                </td>
-                                            </tr>
-                                        )}
+                                            )
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -343,9 +424,11 @@ export function PricingView() {
 
                     {/* Set Price Form */}
                     {activePriceList && priceForm.product_variant_id && (
-                        <form
+                        <EnterTransition
+                            as="form"
                             id="set-price-form"
-                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-150"
+                            from="bottom"
+                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
                             onSubmit={handleSetPrice}
                         >
                             <div className="flex items-center justify-between border-b border-navy-50 pb-2">
@@ -399,7 +482,7 @@ export function PricingView() {
                                     required
                                 />
 
-                                <div className="text-xs bg-navy-50 border border-navy-100 rounded-lg p-2.5 text-navy-550 font-medium leading-relaxed">
+                                <div className="text-xs bg-navy-50 border border-navy-100 rounded-lg p-2.5 text-navy-500 font-medium leading-relaxed">
                                     Price will be set in price list: <strong className="text-navy-800">{activePriceList.name}</strong>.
                                 </div>
 
@@ -412,7 +495,7 @@ export function PricingView() {
                                     Set Price
                                 </Button>
                             </div>
-                        </form>
+                        </EnterTransition>
                     )}
                 </div>
             </div>

@@ -7,6 +7,7 @@ import type {
     Discount,
     InventoryProduct,
     InventoryDashboardSummary,
+    Price,
     PriceList,
     ProductUnit,
     ProductImage,
@@ -86,6 +87,36 @@ export async function loadInventory(options: InventoryRequestOptions, loadOption
     };
 }
 
+// Per-entity loaders so views can fetch just the sets they render instead of
+// the whole loadInventory bundle.
+export async function listCategories(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ categories: Category[] }>("/api/v1/inventory/categories", {}, options);
+
+    return { categories: response.data.categories };
+}
+
+export async function listBrands(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ brands: Brand[] }>("/api/v1/inventory/brands", {}, options);
+
+    return { brands: response.data.brands };
+}
+
+export async function listUnitsOfMeasure(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ units: UnitOfMeasure[] }>("/api/v1/inventory/units-of-measure", {}, options);
+
+    return { units: response.data.units };
+}
+
+export async function listProducts(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ products: InventoryProduct[]; pagination: { total: number } }>(
+        "/api/v1/inventory/products?per_page=50",
+        {},
+        options,
+    );
+
+    return { products: response.data.products, productTotal: response.data.pagination.total };
+}
+
 async function optionalForbiddenResponse<T>(
     request: Promise<{ data: T; message: string }>,
     fallback: T,
@@ -117,8 +148,8 @@ export async function loadStockSnapshot(
     productUnitId: number | null,
 ) {
     const [lots, movements, valuation, level] = await Promise.all([
-        apiRequest<{ lots: StockLot[] }>(
-            `/api/v1/inventory/stock/lots${queryString({ branch_id: branchId })}`,
+        apiRequest<{ lots: StockLot[]; pagination: { total: number } }>(
+            `/api/v1/inventory/stock/lots${queryString({ branch_id: branchId, per_page: 1 })}`,
             {},
             options,
         ),
@@ -145,7 +176,7 @@ export async function loadStockSnapshot(
     ]);
 
     return {
-        lots: lots.data.lots,
+        lotTotal: lots.data.pagination.total,
         movements: movements.data.movements,
         movementTotal: movements.data.pagination.total,
         totalValue: valuation.data.total_value,
@@ -155,15 +186,24 @@ export async function loadStockSnapshot(
 
 export async function loadStockLots(
     options: InventoryRequestOptions,
-    filters: { branch_id?: number | null; product_unit_id?: number | null; expiring_before?: string } = {},
+    filters: {
+        branch_id?: number | null
+        product_unit_id?: number | null
+        expiring_before?: string
+        page?: number
+        per_page?: number
+    } = {},
 ) {
-    const response = await apiRequest<{ lots: StockLot[] }>(
+    const response = await apiRequest<{
+        lots: StockLot[]
+        pagination: { current_page: number; per_page: number; total: number; last_page: number }
+    }>(
         `/api/v1/inventory/stock/lots${queryString(filters)}`,
         {},
         options,
     )
 
-    return response.data.lots
+    return response.data
 }
 
 export async function loadStockMovements(
@@ -834,6 +874,18 @@ export async function setPrice(
     )
 }
 
+export async function listPriceListPrices(
+    options: InventoryRequestOptions,
+    priceListId: number,
+    params: { product_variant_id?: number } = {},
+) {
+    return apiRequest<{ prices: Price[] }>(
+        `/api/v1/inventory/price-lists/${priceListId}/prices${queryString(params)}`,
+        {},
+        options,
+    )
+}
+
 export async function resolveVariantPrice(
     options: InventoryRequestOptions,
     productId: number,
@@ -860,20 +912,15 @@ export async function createDiscount(
         starting_item_number?: number | null
         multiply?: boolean
         is_active?: boolean
+        targets?: Array<{ target_type: "variant" | "product" | "category"; target_id: number }>
+        dependencies?: Array<{ product_variant_id: number; required_quantity: number }>
+        giveaways?: Array<{ product_variant_id: number; giveaway_quantity: number }>
     }
 ) {
     return apiRequest(
         "/api/v1/inventory/discounts",
         { method: "POST", body: jsonBody(input) },
         options
-    )
-}
-
-export async function getDiscount(options: InventoryRequestOptions, discountId: number) {
-    return apiRequest(
-        `/api/v1/inventory/discounts/${discountId}`,
-        {},
-        options,
     )
 }
 

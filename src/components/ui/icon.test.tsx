@@ -52,12 +52,12 @@ function staticIconAliases() {
             if (aliasPattern.test(alias)) aliases.add(alias)
         }
 
-        for (const match of text.matchAll(/<Icon\b[^>]*>/gs)) {
+        for (const match of text.matchAll(/<Icon\b[^>]*>/g)) {
             const tag = match[0]
             const directName = tag.match(/\bname=["']([^"']+)["']/)
             if (directName?.[1] && aliasPattern.test(directName[1])) aliases.add(directName[1])
 
-            const expressionName = tag.match(/\bname=\{([^}]*)\}/s)
+            const expressionName = tag.match(/\bname=\{([^}]*)\}/)
             if (!expressionName) continue
 
             for (const expressionAlias of expressionName[1].matchAll(/[?:]\s*["']([^"']+)["']/g)) {

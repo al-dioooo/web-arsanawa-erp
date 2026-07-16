@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -21,8 +22,6 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
     const [sale, setSale] = useState<Sale | null>(null)
     const [customers, setCustomers] = useState<Customer[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -32,7 +31,6 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const [loadedSale, loadedCustomers] = await Promise.all([
                 getSale(requestOptions, saleId),
@@ -41,7 +39,7 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
             setSale(loadedSale)
             setCustomers(loadedCustomers)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load sale.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load sale.")
         } finally {
             setIsLoading(false)
         }
@@ -60,14 +58,12 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
     async function handleVoid() {
         if (!requestOptions || !sale) return
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
         try {
             const updated = await voidSale(requestOptions, sale.id)
             setSale(updated)
-            setMessage("Sale voided.")
+            toast.success("Sale voided.")
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to void sale.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to void sale.")
         } finally {
             setIsLoading(false)
         }
@@ -76,14 +72,12 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
     async function handleCancel() {
         if (!requestOptions || !sale) return
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
         try {
             const updated = await cancelSale(requestOptions, sale.id)
             setSale(updated)
-            setMessage("Sale canceled.")
+            toast.success("Sale canceled.")
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to cancel sale.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to cancel sale.")
         } finally {
             setIsLoading(false)
         }
@@ -98,8 +92,6 @@ export function SaleDetailView({ saleId }: { saleId: number }) {
                 subtitle={sale ? `${sale.type} sale` : undefined}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                message={message}
-                error={error}
                 actions={
                     <>
                         <Link href="/pos/sales">

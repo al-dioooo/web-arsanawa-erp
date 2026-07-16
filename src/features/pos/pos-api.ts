@@ -392,17 +392,17 @@ export async function loadProductsForSale(options: PosRequestOptions) {
     }
 }
 
-export async function resolveVariantPrice(
+export async function resolveCompanyPrices(
     options: PosRequestOptions,
-    productId: number,
-    variantId: number,
-): Promise<string | null> {
-    const res = await apiRequest<{ price: string | null }>(
-        `/api/v1/inventory/products/${productId}/variants/${variantId}/price`,
+): Promise<Record<number, string>> {
+    const res = await apiRequest<{ prices: { product_variant_id: number; price: string }[] }>(
+        "/api/v1/inventory/prices/resolve",
         {},
         options,
     )
-    return res.data.price
+    return Object.fromEntries(
+        res.data.prices.map((entry) => [entry.product_variant_id, entry.price]),
+    )
 }
 
 export async function loadCustomers(options: PosRequestOptions): Promise<Customer[]> {

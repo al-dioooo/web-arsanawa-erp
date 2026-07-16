@@ -35,7 +35,7 @@ describe("approval matrices page", () => {
         } as ReturnType<typeof approvalsApi.useApprovalMatrices>)
         vi.mocked(approvalsApi.useDeleteApprovalMatrix).mockReturnValue({
             mutate: vi.fn(),
-        } as ReturnType<typeof approvalsApi.useDeleteApprovalMatrix>)
+        } as unknown as ReturnType<typeof approvalsApi.useDeleteApprovalMatrix>)
         vi.mocked(approvalsApi.useCompanyMembers).mockReturnValue({
             data: [
                 {

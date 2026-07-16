@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -30,7 +31,7 @@ import {
     loadProductsForSale,
     openShift,
     removeSalePayment,
-    resolveVariantPrice,
+    resolveCompanyPrices,
     updateSale,
     type Customer,
     type PosRequestOptions,
@@ -69,8 +70,6 @@ export function RegisterView() {
     const [openShiftForm, setOpenShiftForm] = useState<{ register_id: string; opening_float: string } | null>(null)
 
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -95,7 +94,6 @@ export function RegisterView() {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const [catalogue, loadedCustomers, loadedRegisters, summary] = await Promise.all([
                 loadProductsForSale(requestOptions),
@@ -126,26 +124,26 @@ export function RegisterView() {
                 )
             }
 
-            // Resolve prices for active variants in the background.
-            const entries = await Promise.all(
-                catalogue.products
-                    .filter((product) => product.status === "active")
-                    .flatMap((product) =>
-                        product.variants
-                            .filter((variant) => variant.is_active)
-                            .map(async (variant) => {
-                                const price = await resolveVariantPrice(
-                                    requestOptions,
-                                    product.id,
-                                    variant.id,
-                                ).catch(() => null)
-                                return [`${product.id}:${variant.id}`, price] as const
-                            }),
-                    ),
+            // Resolve every variant price in one batch request.
+            const variantPrices = await resolveCompanyPrices(requestOptions).catch(
+                () => ({}) as Record<number, string>,
             )
+            const entries = catalogue.products
+                .filter((product) => product.status === "active")
+                .flatMap((product) =>
+                    product.variants
+                        .filter((variant) => variant.is_active)
+                        .map(
+                            (variant) =>
+                                [
+                                    `${product.id}:${variant.id}`,
+                                    variantPrices[variant.id] ?? null,
+                                ] as const,
+                        ),
+                )
             setPriceMap(Object.fromEntries(entries))
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load register.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load register.")
         } finally {
             setIsLoading(false)
         }
@@ -209,7 +207,7 @@ export function RegisterView() {
                     })),
                 )
             })
-            .catch((caught) => setError(caught instanceof Error ? caught.message : "Unable to resume sale."))
+            .catch((caught) => toast.error(caught instanceof Error ? caught.message : "Unable to resume sale."))
 
         return () => {
             active = false
@@ -265,13 +263,11 @@ export function RegisterView() {
     async function runMutation(callback: () => Promise<unknown>, successMessage?: string) {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
         try {
             await callback()
-            if (successMessage) setMessage(successMessage)
+            if (successMessage) toast.success(successMessage)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : "The request failed.")
         } finally {
             setIsLoading(false)
         }
@@ -281,12 +277,12 @@ export function RegisterView() {
         if (!requestOptions || !activeBranchId || cart.length === 0) return
         if (!cateringOnly && !selectedRegister) return
         if (!cateringOnly && (!shift || shift.status !== "open" || shift.register_id !== selectedRegister?.id)) {
-            setError("Open a shift for the selected register before selling.")
+            toast.error("Open a shift for the selected register before selling.")
             return
         }
 
         if (effectiveSaleType === "catering" && (!catering.partnerId || !catering.fulfilmentDate)) {
-            setError("Catering orders require a customer and a fulfilment date.")
+            toast.error("Catering orders require a customer and a fulfilment date.")
             return
         }
 
@@ -386,8 +382,6 @@ export function RegisterView() {
                 subtitle={cateringOnly ? "Create and confirm catering orders without registers, shifts, or counter payments." : "Ring up counter and catering sales. Tap a product to add it to the cart, then take payment."}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                message={message}
-                error={error}
             />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

@@ -71,7 +71,7 @@ describe("OrganizationAdminPanel", () => {
                 },
             },
             isLoading: false,
-        } as ReturnType<typeof useOrganizationPermissions>)
+        } as unknown as ReturnType<typeof useOrganizationPermissions>)
 
         vi.mocked(useOrganizationRoles).mockReturnValue({
             data: [
@@ -94,15 +94,15 @@ describe("OrganizationAdminPanel", () => {
         vi.mocked(useCreateOrganizationRole).mockReturnValue({
             mutateAsync: createRole,
             isPending: false,
-        } as ReturnType<typeof useCreateOrganizationRole>)
+        } as unknown as ReturnType<typeof useCreateOrganizationRole>)
         vi.mocked(useUpdateOrganizationRole).mockReturnValue({
             mutateAsync: updateRole,
             isPending: false,
-        } as ReturnType<typeof useUpdateOrganizationRole>)
+        } as unknown as ReturnType<typeof useUpdateOrganizationRole>)
         vi.mocked(useDeleteOrganizationRole).mockReturnValue({
             mutateAsync: deleteRole,
             isPending: false,
-        } as ReturnType<typeof useDeleteOrganizationRole>)
+        } as unknown as ReturnType<typeof useDeleteOrganizationRole>)
         vi.mocked(useBranchAssignments).mockReturnValue({
             data: [
                 {
@@ -121,11 +121,11 @@ describe("OrganizationAdminPanel", () => {
         vi.mocked(useAssignBranchRole).mockReturnValue({
             mutateAsync: assignBranchRole,
             isPending: false,
-        } as ReturnType<typeof useAssignBranchRole>)
+        } as unknown as ReturnType<typeof useAssignBranchRole>)
         vi.mocked(useRevokeBranchRole).mockReturnValue({
             mutateAsync: revokeBranchRole,
             isPending: false,
-        } as ReturnType<typeof useRevokeBranchRole>)
+        } as unknown as ReturnType<typeof useRevokeBranchRole>)
     })
 
     it("surfaces memberships, roles, and permission-backed role creation", async () => {
@@ -162,20 +162,97 @@ describe("OrganizationAdminPanel", () => {
             permissions: ["inventory.view"],
         }))
 
-        fireEvent.change(screen.getByLabelText("Assign user ID"), {
-            target: { value: "2" },
-        })
+        fireEvent.focus(screen.getByLabelText("Assign member"))
+        fireEvent.click(
+            await screen.findByRole("option", { name: "Alice Evergarden (hello@al.is-a.dev)" }),
+        )
         fireEvent.change(screen.getByLabelText("Assign role"), {
             target: { value: "11" },
         })
         fireEvent.click(screen.getByRole("button", { name: "Assign branch role" }))
 
         await waitFor(() => expect(assignBranchRole).toHaveBeenCalledWith({
-            user_id: 2,
+            user_id: 1,
             role_id: 11,
         }))
 
         fireEvent.click(screen.getByRole("button", { name: "Revoke Alice Evergarden" }))
         await waitFor(() => expect(revokeBranchRole).toHaveBeenCalledWith(1))
+    })
+
+    it("prefills and updates an existing custom role", async () => {
+        render(
+            <OrganizationAdminPanel
+                companyId={1}
+                canManage
+                branches={[
+                    {
+                        id: 1,
+                        company_id: 1,
+                        name: "Main",
+                        code: "MAIN",
+                        is_primary: true,
+                        status: "active",
+                    },
+                ]}
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "Edit" }))
+
+        expect(screen.getByLabelText("Role name")).toHaveValue("stock-supervisor")
+        expect(screen.getByLabelText(/View inventory/)).toBeChecked()
+        expect(screen.getByLabelText(/Manage stock/)).not.toBeChecked()
+
+        fireEvent.change(screen.getByLabelText("Role name"), {
+            target: { value: "stock-lead" },
+        })
+        fireEvent.click(screen.getByLabelText(/Manage stock/))
+        fireEvent.click(screen.getByRole("button", { name: "Save changes" }))
+
+        await waitFor(() => expect(updateRole).toHaveBeenCalledWith({
+            roleId: 11,
+            input: {
+                name: "stock-lead",
+                permissions: ["inventory.view", "inventory.manage-stock"],
+            },
+        }))
+
+        await waitFor(() =>
+            expect(screen.getByRole("button", { name: "Create role" })).toBeInTheDocument(),
+        )
+        expect(screen.getByLabelText("Role name")).toHaveValue("")
+        expect(screen.getByLabelText(/View inventory/)).not.toBeChecked()
+        expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument()
+    })
+
+    it("cancel leaves the role unchanged", () => {
+        render(
+            <OrganizationAdminPanel
+                companyId={1}
+                canManage
+                branches={[
+                    {
+                        id: 1,
+                        company_id: 1,
+                        name: "Main",
+                        code: "MAIN",
+                        is_primary: true,
+                        status: "active",
+                    },
+                ]}
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "Edit" }))
+        expect(screen.getByLabelText("Role name")).toHaveValue("stock-supervisor")
+
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+
+        expect(screen.getByRole("button", { name: "Create role" })).toBeInTheDocument()
+        expect(screen.getByLabelText("Role name")).toHaveValue("")
+        expect(screen.getByLabelText(/View inventory/)).not.toBeChecked()
+        expect(updateRole).not.toHaveBeenCalled()
+        expect(createRole).not.toHaveBeenCalled()
     })
 })

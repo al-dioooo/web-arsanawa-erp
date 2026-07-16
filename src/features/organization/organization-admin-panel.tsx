@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import {
     useAssignBranchRole,
@@ -13,6 +14,8 @@ import {
     useOrganizationPermissions,
     useOrganizationRoles,
     useRevokeBranchRole,
+    useUpdateOrganizationRole,
+    type OrganizationRole,
 } from "@/features/organization/organization-api"
 import type { Branch } from "@/lib/types"
 
@@ -29,10 +32,12 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
         useOrganizationPermissions()
     const { data: roles = [], isLoading: rolesLoading } = useOrganizationRoles(companyId)
     const createRole = useCreateOrganizationRole(companyId)
+    const updateRole = useUpdateOrganizationRole(companyId)
     const deleteRole = useDeleteOrganizationRole(companyId)
 
     const [roleName, setRoleName] = useState("")
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
+    const [editingRoleId, setEditingRoleId] = useState<number | null>(null)
     const [selectedBranchId, setSelectedBranchId] = useState<number | null>(branches[0]?.id ?? null)
     const [assignmentForm, setAssignmentForm] = useState({ user_id: "", role_id: "" })
     const { data: branchAssignments = [], isLoading: branchAssignmentsLoading } =
@@ -61,9 +66,33 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
         [permissionCatalog],
     )
 
+    function startEdit(role: OrganizationRole) {
+        setEditingRoleId(role.id)
+        setRoleName(role.name)
+        setSelectedPermissions([...role.permissions])
+    }
+
+    function cancelEdit() {
+        setEditingRoleId(null)
+        setRoleName("")
+        setSelectedPermissions([])
+    }
+
     async function submitRole(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         if (!companyId || !roleName.trim()) return
+
+        if (editingRoleId != null) {
+            await updateRole.mutateAsync({
+                roleId: editingRoleId,
+                input: {
+                    name: roleName.trim(),
+                    permissions: selectedPermissions,
+                },
+            })
+            cancelEdit()
+            return
+        }
 
         await createRole.mutateAsync({
             name: roleName.trim(),
@@ -172,15 +201,29 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                             Built-in
                                         </Button>
                                     ) : (
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            size="sm"
-                                            disabled={!canManage || deleteRole.isPending}
-                                            onClick={() => void deleteRole.mutateAsync(role.id)}
-                                        >
-                                            Delete
-                                        </Button>
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={!canManage}
+                                                onClick={() => startEdit(role)}
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                disabled={!canManage || deleteRole.isPending}
+                                                onClick={() => {
+                                                    if (editingRoleId === role.id) cancelEdit()
+                                                    void deleteRole.mutateAsync(role.id)
+                                                }}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                                 {role.permissions.length > 0 ? (
@@ -245,14 +288,36 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                         )}
                     </div>
 
-                    <Button
-                        type="submit"
-                        className="mt-5 w-full"
-                        size="xl"
-                        disabled={!canManage || createRole.isPending}
-                    >
-                        Create role
-                    </Button>
+                    {editingRoleId != null ? (
+                        <div className="mt-5 grid gap-2">
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                size="xl"
+                                disabled={!canManage || updateRole.isPending}
+                            >
+                                Save changes
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                size="xl"
+                                onClick={cancelEdit}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            type="submit"
+                            className="mt-5 w-full"
+                            size="xl"
+                            disabled={!canManage || createRole.isPending}
+                        >
+                            Create role
+                        </Button>
+                    )}
                 </form>
             </div>
         </section>
@@ -322,14 +387,21 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                 </div>
 
                 <form className="grid gap-4" onSubmit={submitBranchAssignment}>
-                    <Field
-                        label="Assign user ID"
-                        type="number"
-                        min={1}
+                    <SearchableSelect
+                        label="Assign member"
                         value={assignmentForm.user_id}
-                        onChange={(event) =>
-                            setAssignmentForm((current) => ({ ...current, user_id: event.target.value }))
+                        onChange={(value) =>
+                            setAssignmentForm((current) => ({ ...current, user_id: String(value) }))
                         }
+                        options={memberships
+                            .filter((membership) => membership.status === "active")
+                            .map((membership) => ({
+                                value: membership.user_id,
+                                label: membership.user
+                                    ? `${membership.user.name} (${membership.user.email})`
+                                    : `User #${membership.user_id}`,
+                            }))}
+                        placeholder="Search company members"
                         disabled={!canManage}
                     />
                     <SelectField

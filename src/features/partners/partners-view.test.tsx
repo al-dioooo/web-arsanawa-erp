@@ -63,7 +63,7 @@ describe("PartnersView", () => {
                 },
             ],
             isLoading: false,
-        } as ReturnType<typeof usePartners>)
+        } as unknown as ReturnType<typeof usePartners>)
         vi.mocked(usePartner).mockReturnValue({
             data: {
                 id: 5,
@@ -111,31 +111,31 @@ describe("PartnersView", () => {
         vi.mocked(useCreatePartner).mockReturnValue({
             mutateAsync: createPartner,
             isPending: false,
-        } as ReturnType<typeof useCreatePartner>)
+        } as unknown as ReturnType<typeof useCreatePartner>)
         vi.mocked(useUpdatePartner).mockReturnValue({
             mutateAsync: updatePartner,
             isPending: false,
-        } as ReturnType<typeof useUpdatePartner>)
+        } as unknown as ReturnType<typeof useUpdatePartner>)
         vi.mocked(useDeletePartner).mockReturnValue({
             mutateAsync: deletePartner,
             isPending: false,
-        } as ReturnType<typeof useDeletePartner>)
+        } as unknown as ReturnType<typeof useDeletePartner>)
         vi.mocked(useCreatePartnerContact).mockReturnValue({
             mutateAsync: createContact,
             isPending: false,
-        } as ReturnType<typeof useCreatePartnerContact>)
+        } as unknown as ReturnType<typeof useCreatePartnerContact>)
         vi.mocked(useDeletePartnerContact).mockReturnValue({
             mutateAsync: deleteContact,
             isPending: false,
-        } as ReturnType<typeof useDeletePartnerContact>)
+        } as unknown as ReturnType<typeof useDeletePartnerContact>)
         vi.mocked(useCreatePartnerAddress).mockReturnValue({
             mutateAsync: createAddress,
             isPending: false,
-        } as ReturnType<typeof useCreatePartnerAddress>)
+        } as unknown as ReturnType<typeof useCreatePartnerAddress>)
         vi.mocked(useDeletePartnerAddress).mockReturnValue({
             mutateAsync: deleteAddress,
             isPending: false,
-        } as ReturnType<typeof useDeletePartnerAddress>)
+        } as unknown as ReturnType<typeof useDeletePartnerAddress>)
     })
 
     it("lists partners and creates a new partner from the workspace", () => {

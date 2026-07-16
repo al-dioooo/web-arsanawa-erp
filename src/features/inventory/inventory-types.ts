@@ -71,6 +71,12 @@ export type ProductVariant = {
     purchase_uom_id: number | null;
     purchase_conversion_factor: string;
     is_active: boolean;
+    /** Only present on the product detail; a missing branch row means available. */
+    branch_availability?: Array<{
+        branch_id: number;
+        is_available: boolean;
+        is_exclusive: boolean;
+    }>;
 };
 
 export type InventoryProduct = {
@@ -186,6 +192,17 @@ export type PriceList = {
     is_active: boolean;
 };
 
+export type Price = {
+    id: number;
+    price_list_id: number;
+    product_variant_id: number;
+    product_unit_id: number | null;
+    price: string;
+    maximum_retail_price: string | null;
+    effective_from: string | null;
+    effective_to: string | null;
+};
+
 export type Discount = {
     id: number;
     company_id: number;
@@ -199,6 +216,9 @@ export type Discount = {
     effective_from: string | null;
     effective_to: string | null;
     is_active: boolean;
+    targets?: Array<{ target_type: "variant" | "product" | "category"; target_id: number }>;
+    dependencies?: Array<{ product_variant_id: number; required_quantity: number }>;
+    giveaways?: Array<{ product_variant_id: number; giveaway_quantity: number }>;
 };
 
 export type Reward = {

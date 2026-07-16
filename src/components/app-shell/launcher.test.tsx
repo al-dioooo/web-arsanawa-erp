@@ -86,7 +86,7 @@ function mockSession(enabledModules: string[] = ["inventory", "pos"]) {
             email_verified_at: null,
             is_developer: false,
         },
-    } as ReturnType<typeof useSession>)
+    } as unknown as ReturnType<typeof useSession>)
 }
 
 describe("ModuleLauncher", () => {

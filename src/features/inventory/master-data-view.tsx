@@ -15,6 +15,7 @@ import { Tooltip } from "@/components/ui/tooltip"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
 import { CategoryLeveledSelect } from "@/features/inventory/components/category-leveled-select"
+import { ProductVariantManager } from "@/features/inventory/components/product-variant-manager"
 import {
     buildCategoryTree,
     categoriesWithAncestorsForQuery,
@@ -41,10 +42,13 @@ import {
     commitProductImport,
     downloadProductImportTemplate,
     inspectProductImport,
+    listBrands,
+    listCategories,
+    listProducts,
     listProductUnits,
+    listUnitsOfMeasure,
     listVariantGroups,
     listVariantMasters,
-    loadInventory,
     previewProductImport,
     uploadProductImage,
     uploadProductUnitImage,
@@ -82,6 +86,7 @@ type FormState = {
     name: string
     code: string
     sku: string
+    variant_name: string
     barcode: string
     description: string
     parent_id: string
@@ -106,6 +111,7 @@ const emptyForm: FormState = {
     name: "",
     code: "",
     sku: "",
+    variant_name: "",
     barcode: "",
     description: "",
     parent_id: "",
@@ -140,7 +146,8 @@ export function InventoryMasterDataView({
     id?: string
 }) {
     const router = useRouter()
-    const { token, activeCompanyId } = useSession()
+    const { token, activeCompanyId, organizationContext } = useSession()
+    const branches = useMemo(() => organizationContext?.branches ?? [], [organizationContext?.branches])
     const [categories, setCategories] = useState<Category[]>([])
     const [brands, setBrands] = useState<Brand[]>([])
     const [units, setUnits] = useState<UnitOfMeasure[]>([])
@@ -167,26 +174,42 @@ export function InventoryMasterDataView({
         setIsLoading(true)
 
         try {
-            const [inventory, groups, masters, unitsResponse] = await Promise.all([
-                loadInventory(requestOptions),
-                listVariantGroups(requestOptions),
-                listVariantMasters(requestOptions),
-                listProductUnits(requestOptions, { per_page: 100 }),
-            ])
+            // Fetch only the entity sets this kind lists or references in its
+            // form selectors, not every master data type.
+            const needs = {
+                categories: kind === "categories" || kind === "products",
+                brands: kind === "brands" || kind === "products",
+                units: kind === "units" || kind === "products" || kind === "variant-groups",
+                products: kind === "products" || kind === "product-units",
+                variantGroups: kind === "variant-groups" || kind === "variants",
+                variants: kind === "variants" || kind === "product-units",
+                productUnits: kind === "product-units",
+            }
 
-            setCategories(inventory.categories)
-            setBrands(inventory.brands)
-            setUnits(inventory.units)
-            setProducts(inventory.products)
-            setVariantGroups(groups.data.variant_groups)
-            setVariants(masters.data.variants)
-            setProductUnits(unitsResponse.data.product_units)
+            const [categoriesData, brandsData, unitsData, productsData, groups, masters, unitsResponse] =
+                await Promise.all([
+                    needs.categories ? listCategories(requestOptions) : null,
+                    needs.brands ? listBrands(requestOptions) : null,
+                    needs.units ? listUnitsOfMeasure(requestOptions) : null,
+                    needs.products ? listProducts(requestOptions) : null,
+                    needs.variantGroups ? listVariantGroups(requestOptions) : null,
+                    needs.variants ? listVariantMasters(requestOptions) : null,
+                    needs.productUnits ? listProductUnits(requestOptions, { per_page: 100 }) : null,
+                ])
+
+            if (categoriesData) setCategories(categoriesData.categories)
+            if (brandsData) setBrands(brandsData.brands)
+            if (unitsData) setUnits(unitsData.units)
+            if (productsData) setProducts(productsData.products)
+            if (groups) setVariantGroups(groups.data.variant_groups)
+            if (masters) setVariants(masters.data.variants)
+            if (unitsResponse) setProductUnits(unitsResponse.data.product_units)
         } catch (caught) {
             toast.error(caught instanceof Error ? caught.message : "Unable to load inventory master data.")
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions])
+    }, [kind, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -332,7 +355,7 @@ export function InventoryMasterDataView({
                         />
                         <StatusPill tone="neutral">{`${rows.length} records`}</StatusPill>
                     </div>
-                    <MasterTable kind={kind} base={config.base} rows={rows} query={query} />
+                    <MasterTable kind={kind} base={config.base} rows={rows} query={query} isLoading={isLoading} />
                 </section>
             )}
 
@@ -344,10 +367,20 @@ export function InventoryMasterDataView({
                 />
             )}
 
+            {mode === "detail" && kind === "products" && requestOptions && itemId && (
+                <ProductVariantManager
+                    productId={itemId}
+                    requestOptions={requestOptions}
+                    branches={branches}
+                    onChanged={() => void refreshData()}
+                />
+            )}
+
             {(mode === "create" || mode === "edit") && (
                 <form onSubmit={submitForm} className={cn("grid gap-5 p-5", inventorySurfaceClass)}>
                     <FormFields
                         kind={kind}
+                        mode={mode}
                         form={form}
                         setForm={setForm}
                         categories={categories}
@@ -429,14 +462,16 @@ function MasterTable({
     base,
     rows,
     query,
+    isLoading = false,
 }: {
     kind: InventoryMasterKind
     base: string
     rows: MasterRow[]
     query: string
+    isLoading?: boolean
 }) {
     if (kind === "categories") {
-        return <CategoryTreeTable base={base} rows={rows} query={query} />
+        return <CategoryTreeTable base={base} rows={rows} query={query} isLoading={isLoading} />
     }
 
     return (
@@ -459,6 +494,8 @@ function MasterTable({
                                         <img
                                             src={item.image.url}
                                             alt={item.image.alt_text || item.title}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="h-10 w-10 rounded-md border border-navy-100 object-cover"
                                         />
                                     ) : null}
@@ -487,7 +524,9 @@ function MasterTable({
                     ))}
                     {rows.length === 0 && (
                         <tr>
-                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">
+                                {isLoading ? "Loading records..." : "No records found."}
+                            </td>
                         </tr>
                     )}
                 </tbody>
@@ -500,10 +539,12 @@ function CategoryTreeTable({
     base,
     rows,
     query,
+    isLoading = false,
 }: {
     base: string
     rows: MasterRow[]
     query: string
+    isLoading?: boolean
 }) {
     const categories = useMemo(() => rows.map((row) => row.raw as Category), [rows])
     const tree = useMemo(() => buildCategoryTree(categories), [categories])
@@ -594,7 +635,9 @@ function CategoryTreeTable({
                     })}
                     {visibleRows.length === 0 && (
                         <tr>
-                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">
+                                {isLoading ? "Loading records..." : "No records found."}
+                            </td>
                         </tr>
                     )}
                 </tbody>
@@ -644,6 +687,8 @@ function DetailPanel({
                             key={image.id}
                             src={image.url}
                             alt={image.alt_text || "Product image"}
+                            loading="lazy"
+                            decoding="async"
                             className="h-24 w-24 rounded-md border border-navy-100 object-cover"
                         />
                     ))}
@@ -666,6 +711,7 @@ function DetailPanel({
 
 function FormFields({
     kind,
+    mode,
     form,
     setForm,
     categories,
@@ -676,6 +722,7 @@ function FormFields({
     variants,
 }: {
     kind: InventoryMasterKind
+    mode: Mode
     form: FormState
     setForm: Dispatch<SetStateAction<FormState>>
     categories: Category[]
@@ -711,6 +758,12 @@ function FormFields({
                     <SearchableSelect label="Base Unit" value={form.base_uom_id} onChange={(value) => set("base_uom_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
                     <CategoryLeveledSelect label="Category" value={form.category_id} onChange={(value) => set("category_id", String(value))} categories={categories} mode="leaf" emptyLabel="No category" placeholder="No category" />
                     <SearchableSelect label="Brand" value={form.brand_id} onChange={(value) => set("brand_id", String(value))} options={brands.map((brand) => ({ value: brand.id, label: brand.name }))} />
+                    {mode === "create" && (
+                        <>
+                            <Field label="Initial variant SKU" value={form.sku} onChange={(event) => set("sku", event.target.value)} required />
+                            <Field label="Initial variant name" value={form.variant_name} onChange={(event) => set("variant_name", event.target.value)} />
+                        </>
+                    )}
                 </>
             )}
             {kind === "variant-groups" && (
@@ -795,6 +848,8 @@ function ProductImageInput({
                     <img
                         src={value.remoteUrl}
                         alt="Remote product preview"
+                        loading="lazy"
+                        decoding="async"
                         className="h-24 w-24 rounded-md border border-navy-100 object-cover"
                     />
                 ) : (
@@ -840,7 +895,7 @@ async function createEntity(kind: InventoryMasterKind, options: { token: string;
     if (kind === "categories") return createCategory(options, { name: form.name, parent_id: form.parent_id ? Number(form.parent_id) : null, is_active: form.is_active })
     if (kind === "brands") return createBrand(options, form.name)
     if (kind === "units") return createUnit(options, { name: form.name, code: form.code })
-    if (kind === "products") return createProduct(options, { name: form.name, base_uom_id: Number(form.base_uom_id), category_id: form.category_id ? Number(form.category_id) : undefined, brand_id: form.brand_id ? Number(form.brand_id) : undefined, status: form.is_active ? "active" : "inactive" })
+    if (kind === "products") return createProduct(options, { name: form.name, base_uom_id: Number(form.base_uom_id), category_id: form.category_id ? Number(form.category_id) : undefined, brand_id: form.brand_id ? Number(form.brand_id) : undefined, status: form.is_active ? "active" : "inactive", variants: [{ sku: form.sku, name: form.variant_name || undefined }] })
     if (kind === "variant-groups") return createVariantGroup(options, { name: form.name, code: form.code, unit_of_measure_id: Number(form.unit_of_measure_id), description: form.description || null, is_active: form.is_active })
     if (kind === "variants") return createVariantMaster(options, { variant_group_id: Number(form.variant_group_id), name: form.name, code: form.code, position: Number(form.position || 0), is_active: form.is_active })
     return createProductUnit(options, { product_id: Number(form.product_id), sku: form.sku, barcode: form.barcode || null, name: form.name || null, variant_ids: form.variant_ids.map(Number), is_active: form.is_active })

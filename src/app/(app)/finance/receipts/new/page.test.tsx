@@ -79,7 +79,7 @@ describe("new incoming receipt page", () => {
                     children: [],
                 },
             ],
-        } as ReturnType<typeof useCOA>)
+        } as unknown as ReturnType<typeof useCOA>)
         vi.mocked(useInvoices).mockReturnValue({
             data: [
                 {

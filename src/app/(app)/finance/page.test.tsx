@@ -34,13 +34,13 @@ describe("finance dashboard", () => {
 
         vi.mocked(useCOA).mockReturnValue({
             data: [],
-        } as ReturnType<typeof useCOA>)
+        } as unknown as ReturnType<typeof useCOA>)
         vi.mocked(usePeriods).mockReturnValue({
             data: [{ id: 4, company_id: 1, name: "June 2026", start_date: "2026-06-01", end_date: "2026-06-30", status: "open", closed_at: null }],
         } as ReturnType<typeof usePeriods>)
         vi.mocked(useTrialBalance).mockReturnValue({
             data: [],
-        } as ReturnType<typeof useTrialBalance>)
+        } as unknown as ReturnType<typeof useTrialBalance>)
         vi.mocked(useFinanceDashboardSummary).mockReturnValue({
             data: {
                 counters: {
@@ -57,7 +57,7 @@ describe("finance dashboard", () => {
                 ],
             },
             isLoading: false,
-        } as ReturnType<typeof useFinanceDashboardSummary>)
+        } as unknown as ReturnType<typeof useFinanceDashboardSummary>)
     })
 
     afterEach(() => {

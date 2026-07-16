@@ -72,13 +72,13 @@ describe("ProfileSettings", () => {
         vi.mocked(useUpdateIdentityProfile).mockReturnValue({
             mutateAsync: updateProfile,
             isPending: false,
-        } as ReturnType<typeof useUpdateIdentityProfile>)
+        } as unknown as ReturnType<typeof useUpdateIdentityProfile>)
         vi.mocked(useIdentityUserLookup).mockReturnValue({
             mutateAsync: lookupUser,
             data: null,
             error: null,
             isPending: false,
-        } as ReturnType<typeof useIdentityUserLookup>)
+        } as unknown as ReturnType<typeof useIdentityUserLookup>)
     })
 
     it("surfaces profile settings and authenticated user lookup", async () => {
@@ -130,7 +130,7 @@ describe("ProfileSettings", () => {
             data: null,
             error: new Error("Forbidden"),
             isPending: false,
-        } as ReturnType<typeof useIdentityUserLookup>)
+        } as unknown as ReturnType<typeof useIdentityUserLookup>)
 
         render(<ProfileSettings />)
 

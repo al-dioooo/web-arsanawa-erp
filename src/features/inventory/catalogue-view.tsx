@@ -241,7 +241,7 @@ export function CatalogueView() {
                                 {filteredProducts.length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="text-center py-8 text-navy-400 font-medium bg-navy-50/10">
-                                            No products found.
+                                            {isLoading ? "Loading products..." : "No products found."}
                                         </td>
                                     </tr>
                                 )}

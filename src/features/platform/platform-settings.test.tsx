@@ -104,7 +104,7 @@ describe("PlatformSettingsView", () => {
         vi.mocked(useUpsertPlatformSettings).mockReturnValue({
             mutateAsync: upsertSettings,
             isPending: false,
-        } as ReturnType<typeof useUpsertPlatformSettings>)
+        } as unknown as ReturnType<typeof useUpsertPlatformSettings>)
     })
 
     it("renders all company settings and saves every value through the batch API", async () => {
