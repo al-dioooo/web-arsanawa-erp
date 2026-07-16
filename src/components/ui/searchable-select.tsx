@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useId, type KeyboardEvent } from "react"
 import { Icon } from "@/components/ui/icon"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
 import { cn } from "@/lib/utils"
@@ -36,7 +36,11 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
+    const [activeIndex, setActiveIndex] = useState(-1)
     const containerRef = useRef<HTMLDivElement>(null)
+    const baseId = useId()
+    const listboxId = `${baseId}-listbox`
+    const errorId = `${baseId}-error`
 
     // Find label of active value
     const selectedOption = options.find(opt => String(opt.value) === String(value))
@@ -61,18 +65,98 @@ export function SearchableSelect({
         }
     }, [])
 
+    // Point the active option at the current selection (or the first option) when
+    // the menu opens or the filter changes.
+    useEffect(() => {
+        if (!isOpen) {
+            setActiveIndex(-1)
+            return
+        }
+        const selectedIndex = filteredOptions.findIndex(opt => String(opt.value) === String(value))
+        setActiveIndex(selectedIndex >= 0 ? selectedIndex : (filteredOptions.length > 0 ? 0 : -1))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, searchQuery])
+
+    // Keep the active option scrolled into view.
+    useEffect(() => {
+        if (!isOpen || activeIndex < 0) return
+        document.getElementById(`${baseId}-option-${activeIndex}`)?.scrollIntoView?.({ block: "nearest" })
+    }, [activeIndex, isOpen, baseId])
+
+    function selectOption(opt: Option) {
+        onChange(opt.value)
+        setIsOpen(false)
+        setSearchQuery("")
+    }
+
+    function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+        switch (event.key) {
+            case "ArrowDown":
+                event.preventDefault()
+                if (!isOpen) {
+                    setIsOpen(true)
+                    return
+                }
+                setActiveIndex(index => Math.min(index + 1, filteredOptions.length - 1))
+                break
+            case "ArrowUp":
+                event.preventDefault()
+                if (!isOpen) {
+                    setIsOpen(true)
+                    return
+                }
+                setActiveIndex(index => Math.max(index - 1, 0))
+                break
+            case "Home":
+                if (isOpen && filteredOptions.length > 0) {
+                    event.preventDefault()
+                    setActiveIndex(0)
+                }
+                break
+            case "End":
+                if (isOpen && filteredOptions.length > 0) {
+                    event.preventDefault()
+                    setActiveIndex(filteredOptions.length - 1)
+                }
+                break
+            case "Enter":
+                if (isOpen && activeIndex >= 0 && filteredOptions[activeIndex]) {
+                    event.preventDefault()
+                    selectOption(filteredOptions[activeIndex])
+                }
+                break
+            case "Escape":
+                if (isOpen) {
+                    event.preventDefault()
+                    setIsOpen(false)
+                    setSearchQuery("")
+                }
+                break
+        }
+    }
+
+    const activeOptionId = isOpen && activeIndex >= 0 ? `${baseId}-option-${activeIndex}` : undefined
+
     return (
         <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-navy-700", className)}>
             {label && <span className={fieldLabelClassName}>{label}</span>}
             <div className="relative">
                 <input
                     type="text"
+                    role="combobox"
+                    aria-expanded={isOpen}
+                    aria-controls={listboxId}
+                    aria-autocomplete="list"
+                    aria-activedescendant={activeOptionId}
                     aria-label={label}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? errorId : undefined}
                     required={required && !value}
                     value={isOpen ? searchQuery : displayValue}
                     placeholder={isOpen ? "Type to search..." : placeholder}
                     onFocus={() => setIsOpen(true)}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     className={cn(fieldControlClassName, "w-full pr-10 cursor-pointer")}
                 />
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-navy-500">
@@ -80,7 +164,12 @@ export function SearchableSelect({
                 </span>
 
                 {isOpen && (
-                    <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-navy-100 bg-white py-1 text-sm text-navy-900 outline-none select-none">
+                    <ul
+                        id={listboxId}
+                        role="listbox"
+                        aria-label={label}
+                        className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-navy-100 bg-white py-1 text-sm text-navy-900 outline-none select-none"
+                    >
                         {filteredOptions.length > 0 ? (
                             <Highlight
                                 value={value ? String(value) : null}
@@ -88,19 +177,21 @@ export function SearchableSelect({
                                 className="bg-teal-50/50 rounded-md"
                                 hover={true}
                             >
-                                {filteredOptions.map((opt) => (
+                                {filteredOptions.map((opt, index) => (
                                     <HighlightItem key={opt.value} value={String(opt.value)}>
                                         <li
-                                            onClick={() => {
-                                                onChange(opt.value)
-                                                setIsOpen(false)
-                                                setSearchQuery("")
-                                            }}
-                                            className={`relative cursor-pointer py-2 pl-3 pr-9 select-none transition-colors rounded-md ${
+                                            id={`${baseId}-option-${index}`}
+                                            role="option"
+                                            aria-selected={String(opt.value) === String(value)}
+                                            onClick={() => selectOption(opt)}
+                                            onMouseEnter={() => setActiveIndex(index)}
+                                            className={cn(
+                                                "relative cursor-pointer py-2 pl-3 pr-9 select-none transition-colors rounded-md",
+                                                index === activeIndex && "bg-teal-50",
                                                 String(opt.value) === String(value)
                                                     ? "text-teal-700 font-semibold"
-                                                    : "text-navy-900"
-                                            }`}
+                                                    : "text-navy-900",
+                                            )}
                                         >
                                             {opt.label}
                                             {String(opt.value) === String(value) && (
@@ -120,7 +211,7 @@ export function SearchableSelect({
                     </ul>
                 )}
             </div>
-            {error && <span className={fieldErrorClassName}>{error}</span>}
+            {error && <span id={errorId} className={fieldErrorClassName}>{error}</span>}
         </div>
     )
 }
