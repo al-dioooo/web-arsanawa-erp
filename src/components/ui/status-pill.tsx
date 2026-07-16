@@ -3,11 +3,13 @@ type StatusPillProps = {
     children: React.ReactNode;
 };
 
+// Tones map to the semantic status tokens in globals.css @theme, so status
+// colours stay consistent with the brand palette everywhere.
 const tones = {
-    green: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    amber: "border-amber-200 bg-amber-50 text-amber-800",
-    red: "border-rose-200 bg-rose-50 text-rose-800",
-    neutral: "border-stone-200 bg-stone-100 text-stone-700",
+    green: "border-success-border bg-success-soft text-success-strong",
+    amber: "border-warning-border bg-warning-soft text-warning-strong",
+    red: "border-error-border bg-error-soft text-error-strong",
+    neutral: "border-navy-200 bg-navy-100 text-navy-700",
 };
 
 export function StatusPill({ tone = "neutral", children }: StatusPillProps) {

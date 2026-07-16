@@ -167,6 +167,17 @@
     --color-white: #ffffff;
     --color-black: #000000;
 
+    /* Semantic status surfaces (soft bg / border / strong text) for pills */
+    --color-success-soft: #ecfdf5;
+    --color-success-border: #a7f3d0;
+    --color-success-strong: #065f46;
+    --color-warning-soft: #fffbeb;
+    --color-warning-border: #fde68a;
+    --color-warning-strong: #92400e;
+    --color-error-soft: #fff1f2;
+    --color-error-border: #fecdd3;
+    --color-error-strong: #9f1239;
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);
