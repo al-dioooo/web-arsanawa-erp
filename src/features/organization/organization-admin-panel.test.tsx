@@ -178,4 +178,80 @@ describe("OrganizationAdminPanel", () => {
         fireEvent.click(screen.getByRole("button", { name: "Revoke Alice Evergarden" }))
         await waitFor(() => expect(revokeBranchRole).toHaveBeenCalledWith(1))
     })
+
+    it("prefills and updates an existing custom role", async () => {
+        render(
+            <OrganizationAdminPanel
+                companyId={1}
+                canManage
+                branches={[
+                    {
+                        id: 1,
+                        company_id: 1,
+                        name: "Main",
+                        code: "MAIN",
+                        is_primary: true,
+                        status: "active",
+                    },
+                ]}
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "Edit" }))
+
+        expect(screen.getByLabelText("Role name")).toHaveValue("stock-supervisor")
+        expect(screen.getByLabelText(/View inventory/)).toBeChecked()
+        expect(screen.getByLabelText(/Manage stock/)).not.toBeChecked()
+
+        fireEvent.change(screen.getByLabelText("Role name"), {
+            target: { value: "stock-lead" },
+        })
+        fireEvent.click(screen.getByLabelText(/Manage stock/))
+        fireEvent.click(screen.getByRole("button", { name: "Save changes" }))
+
+        await waitFor(() => expect(updateRole).toHaveBeenCalledWith({
+            roleId: 11,
+            input: {
+                name: "stock-lead",
+                permissions: ["inventory.view", "inventory.manage-stock"],
+            },
+        }))
+
+        await waitFor(() =>
+            expect(screen.getByRole("button", { name: "Create role" })).toBeInTheDocument(),
+        )
+        expect(screen.getByLabelText("Role name")).toHaveValue("")
+        expect(screen.getByLabelText(/View inventory/)).not.toBeChecked()
+        expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument()
+    })
+
+    it("cancel leaves the role unchanged", () => {
+        render(
+            <OrganizationAdminPanel
+                companyId={1}
+                canManage
+                branches={[
+                    {
+                        id: 1,
+                        company_id: 1,
+                        name: "Main",
+                        code: "MAIN",
+                        is_primary: true,
+                        status: "active",
+                    },
+                ]}
+            />,
+        )
+
+        fireEvent.click(screen.getByRole("button", { name: "Edit" }))
+        expect(screen.getByLabelText("Role name")).toHaveValue("stock-supervisor")
+
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+
+        expect(screen.getByRole("button", { name: "Create role" })).toBeInTheDocument()
+        expect(screen.getByLabelText("Role name")).toHaveValue("")
+        expect(screen.getByLabelText(/View inventory/)).not.toBeChecked()
+        expect(updateRole).not.toHaveBeenCalled()
+        expect(createRole).not.toHaveBeenCalled()
+    })
 })
