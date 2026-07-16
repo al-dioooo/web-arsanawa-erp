@@ -41,10 +41,13 @@ import {
     commitProductImport,
     downloadProductImportTemplate,
     inspectProductImport,
+    listBrands,
+    listCategories,
+    listProducts,
     listProductUnits,
+    listUnitsOfMeasure,
     listVariantGroups,
     listVariantMasters,
-    loadInventory,
     previewProductImport,
     uploadProductImage,
     uploadProductUnitImage,
@@ -167,26 +170,42 @@ export function InventoryMasterDataView({
         setIsLoading(true)
 
         try {
-            const [inventory, groups, masters, unitsResponse] = await Promise.all([
-                loadInventory(requestOptions),
-                listVariantGroups(requestOptions),
-                listVariantMasters(requestOptions),
-                listProductUnits(requestOptions, { per_page: 100 }),
-            ])
+            // Fetch only the entity sets this kind lists or references in its
+            // form selectors, not every master data type.
+            const needs = {
+                categories: kind === "categories" || kind === "products",
+                brands: kind === "brands" || kind === "products",
+                units: kind === "units" || kind === "products" || kind === "variant-groups",
+                products: kind === "products" || kind === "product-units",
+                variantGroups: kind === "variant-groups" || kind === "variants",
+                variants: kind === "variants" || kind === "product-units",
+                productUnits: kind === "product-units",
+            }
 
-            setCategories(inventory.categories)
-            setBrands(inventory.brands)
-            setUnits(inventory.units)
-            setProducts(inventory.products)
-            setVariantGroups(groups.data.variant_groups)
-            setVariants(masters.data.variants)
-            setProductUnits(unitsResponse.data.product_units)
+            const [categoriesData, brandsData, unitsData, productsData, groups, masters, unitsResponse] =
+                await Promise.all([
+                    needs.categories ? listCategories(requestOptions) : null,
+                    needs.brands ? listBrands(requestOptions) : null,
+                    needs.units ? listUnitsOfMeasure(requestOptions) : null,
+                    needs.products ? listProducts(requestOptions) : null,
+                    needs.variantGroups ? listVariantGroups(requestOptions) : null,
+                    needs.variants ? listVariantMasters(requestOptions) : null,
+                    needs.productUnits ? listProductUnits(requestOptions, { per_page: 100 }) : null,
+                ])
+
+            if (categoriesData) setCategories(categoriesData.categories)
+            if (brandsData) setBrands(brandsData.brands)
+            if (unitsData) setUnits(unitsData.units)
+            if (productsData) setProducts(productsData.products)
+            if (groups) setVariantGroups(groups.data.variant_groups)
+            if (masters) setVariants(masters.data.variants)
+            if (unitsResponse) setProductUnits(unitsResponse.data.product_units)
         } catch (caught) {
             toast.error(caught instanceof Error ? caught.message : "Unable to load inventory master data.")
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions])
+    }, [kind, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -459,6 +478,8 @@ function MasterTable({
                                         <img
                                             src={item.image.url}
                                             alt={item.image.alt_text || item.title}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="h-10 w-10 rounded-md border border-navy-100 object-cover"
                                         />
                                     ) : null}
@@ -644,6 +665,8 @@ function DetailPanel({
                             key={image.id}
                             src={image.url}
                             alt={image.alt_text || "Product image"}
+                            loading="lazy"
+                            decoding="async"
                             className="h-24 w-24 rounded-md border border-navy-100 object-cover"
                         />
                     ))}
@@ -795,6 +818,8 @@ function ProductImageInput({
                     <img
                         src={value.remoteUrl}
                         alt="Remote product preview"
+                        loading="lazy"
+                        decoding="async"
                         className="h-24 w-24 rounded-md border border-navy-100 object-cover"
                     />
                 ) : (

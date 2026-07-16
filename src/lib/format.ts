@@ -8,15 +8,33 @@ export function titleCase(value: string): string {
         .join(" ");
 }
 
+// Intl formatters are hoisted to module scope; constructing them per call is
+// expensive inside list renders.
+const compactDateTimeFormatter = new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+});
+
+const dateIDFormatter = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+});
+
+const dateTimeIDFormatter = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+});
+
 export function compactDateTime(value: string | null): string {
     if (!value) {
         return "Not set";
     }
 
-    return new Intl.DateTimeFormat("en", {
-        dateStyle: "medium",
-        timeStyle: "short",
-    }).format(new Date(value));
+    return compactDateTimeFormatter.format(new Date(value));
 }
 
 // Thin IDR preset over the guarded shared formatter so amounts never render as
@@ -26,21 +44,11 @@ export function formatIDR(value: string | number | null | undefined): string {
 }
 
 export function formatDateID(date: string | Date): string {
-    return new Intl.DateTimeFormat('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-    }).format(new Date(date));
+    return dateIDFormatter.format(new Date(date));
 }
 
 export function formatDateTimeID(date: string | Date): string {
-    return new Intl.DateTimeFormat('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(date));
+    return dateTimeIDFormatter.format(new Date(date));
 }
 
 export function agingBucket(days: number): '0-30' | '31-60' | '61-90' | '>90' {

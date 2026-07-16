@@ -20,11 +20,11 @@ import type {
     Reward,
 } from "@/features/inventory/inventory-types"
 
+const quantityFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 })
+
 function numberLabel(value: string | number | null | undefined): string {
     const numeric = Number(value ?? 0)
-    return new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: 4,
-    }).format(Number.isFinite(numeric) ? numeric : 0)
+    return quantityFormatter.format(Number.isFinite(numeric) ? numeric : 0)
 }
 
 function today(): string {

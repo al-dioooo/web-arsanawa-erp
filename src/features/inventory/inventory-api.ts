@@ -86,6 +86,36 @@ export async function loadInventory(options: InventoryRequestOptions, loadOption
     };
 }
 
+// Per-entity loaders so views can fetch just the sets they render instead of
+// the whole loadInventory bundle.
+export async function listCategories(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ categories: Category[] }>("/api/v1/inventory/categories", {}, options);
+
+    return { categories: response.data.categories };
+}
+
+export async function listBrands(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ brands: Brand[] }>("/api/v1/inventory/brands", {}, options);
+
+    return { brands: response.data.brands };
+}
+
+export async function listUnitsOfMeasure(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ units: UnitOfMeasure[] }>("/api/v1/inventory/units-of-measure", {}, options);
+
+    return { units: response.data.units };
+}
+
+export async function listProducts(options: InventoryRequestOptions) {
+    const response = await apiRequest<{ products: InventoryProduct[]; pagination: { total: number } }>(
+        "/api/v1/inventory/products?per_page=50",
+        {},
+        options,
+    );
+
+    return { products: response.data.products, productTotal: response.data.pagination.total };
+}
+
 async function optionalForbiddenResponse<T>(
     request: Promise<{ data: T; message: string }>,
     fallback: T,

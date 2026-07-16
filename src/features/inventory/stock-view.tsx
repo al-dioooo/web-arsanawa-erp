@@ -35,18 +35,21 @@ function today(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
+const quantityFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 })
+const idrFormatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+})
+
 function numberLabel(value: string | number | null | undefined): string {
     const numeric = Number(value ?? 0)
-    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(Number.isFinite(numeric) ? numeric : 0)
+    return quantityFormatter.format(Number.isFinite(numeric) ? numeric : 0)
 }
 
 function moneyLabel(value: string | number | null | undefined): string {
     const numeric = Number(value ?? 0)
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        maximumFractionDigits: 0,
-    }).format(Number.isFinite(numeric) ? numeric : 0)
+    return idrFormatter.format(Number.isFinite(numeric) ? numeric : 0)
 }
 
 function productUnitLabel(unit?: ProductUnit | null): string {
