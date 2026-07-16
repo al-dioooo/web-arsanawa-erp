@@ -66,12 +66,14 @@ export function ResetPasswordForm() {
         const email = params.get("email")
         const token = params.get("token")
         if (email || token) {
+            /* eslint-disable react-hooks/set-state-in-effect */
             setForm((current) => ({
                 ...current,
                 email: email ?? current.email,
                 token: token ?? current.token,
             }))
             setLinkPrefilled(Boolean(token))
+            /* eslint-enable react-hooks/set-state-in-effect */
         }
     }, [])
 

@@ -245,14 +245,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             }
 
             try {
-                const userResponse = await apiRequest<AuthenticatedUser>(
-                    "/api/v1/auth/me",
-                    {},
-                    { token }
-                )
+                // /auth/me and the workspace load don't depend on each other, so
+                // fetch them in parallel to remove a round-trip from cold start.
+                const [userResponse, workspace] = await Promise.all([
+                    apiRequest<AuthenticatedUser>("/api/v1/auth/me", {}, { token }),
+                    loadWorkspace(token, activeCompanyId, activeBranchId),
+                ])
                 const user = userResponse.data
-
-                const workspace = await loadWorkspace(token, activeCompanyId, activeBranchId)
 
                 if (active) {
                     setState({
