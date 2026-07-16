@@ -1,7 +1,16 @@
 "use client"
 
-import { useEffect, type ReactNode } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { Icon } from "@/components/ui/icon"
+
+const FOCUSABLE_SELECTOR = [
+    "a[href]",
+    "button:not([disabled])",
+    "textarea:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    '[tabindex]:not([tabindex="-1"])',
+].join(",")
 
 type DialogProps = {
     open: boolean
@@ -23,15 +32,61 @@ export function Dialog({
     footer,
     widthClassName = "max-w-lg",
 }: DialogProps) {
+    const panelRef = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
         if (!open) return
 
+        // Remember what had focus, so it can be restored when the dialog closes.
+        const previouslyFocused = document.activeElement as HTMLElement | null
+
+        // Lock background scroll while the modal is open.
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = "hidden"
+
+        // Move focus onto the dialog panel so screen readers announce it and
+        // keyboard focus starts inside the modal.
+        const panel = panelRef.current
+        panel?.focus()
+
         function handleKey(event: KeyboardEvent) {
-            if (event.key === "Escape") onClose()
+            if (event.key === "Escape") {
+                onClose()
+                return
+            }
+
+            if (event.key !== "Tab" || !panel) return
+
+            const focusable = Array.from(
+                panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+            ).filter((element) => element.offsetParent !== null || element === document.activeElement)
+
+            if (focusable.length === 0) {
+                event.preventDefault()
+                panel.focus()
+                return
+            }
+
+            const first = focusable[0]
+            const last = focusable[focusable.length - 1]
+            const activeElement = document.activeElement
+
+            if (event.shiftKey && (activeElement === first || activeElement === panel)) {
+                event.preventDefault()
+                last.focus()
+            } else if (!event.shiftKey && activeElement === last) {
+                event.preventDefault()
+                first.focus()
+            }
         }
 
         document.addEventListener("keydown", handleKey)
-        return () => document.removeEventListener("keydown", handleKey)
+
+        return () => {
+            document.removeEventListener("keydown", handleKey)
+            document.body.style.overflow = previousOverflow
+            previouslyFocused?.focus?.()
+        }
     }, [open, onClose])
 
     if (!open) return null
@@ -48,7 +103,9 @@ export function Dialog({
                 onClick={onClose}
             />
             <div
-                className={`relative w-full ${widthClassName} max-h-[90vh] overflow-y-auto rounded-2xl border border-navy-100 bg-white p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150`}
+                ref={panelRef}
+                tabIndex={-1}
+                className={`relative w-full ${widthClassName} max-h-[90vh] overflow-y-auto rounded-2xl border border-navy-100 bg-white p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 outline-none`}
             >
                 <div className="flex items-start justify-between gap-4 border-b border-navy-50 pb-4">
                     <div>
