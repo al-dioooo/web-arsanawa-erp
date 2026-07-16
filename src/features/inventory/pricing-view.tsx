@@ -12,13 +12,17 @@ import { useSession } from "@/features/auth/session-provider"
 import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
 import {
     createPriceList,
+    listPriceListPrices,
     loadInventory,
     setPrice,
 } from "@/features/inventory/inventory-api"
 import type {
+    Price,
     PriceList,
     ProductVariant,
 } from "@/features/inventory/inventory-types"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
+import { formatCurrency } from "@/lib/money"
 function today(): string {
     return new Date().toISOString().slice(0, 10)
 }
@@ -28,8 +32,11 @@ export function PricingView() {
     const [priceLists, setPriceLists] = useState<PriceList[]>([])
     const [variants, setVariants] = useState<Array<ProductVariant & { product_name: string }>>([])
     const [selectedPriceListId, setSelectedPriceListId] = useState<number | null>(null)
-    
+
     const [isLoading, setIsLoading] = useState(false)
+    const [prices, setPrices] = useState<Price[]>([])
+    const [pricesLoading, setPricesLoading] = useState(false)
+    const [pricesError, setPricesError] = useState<string | null>(null)
 
     // Forms
     const [priceListForm, setPriceListForm] = useState({
@@ -93,6 +100,49 @@ export function PricingView() {
         }
     }, [refreshData])
 
+    // Prices load separately per selected list so switching lists doesn't
+    // re-fetch the whole catalogue.
+    const loadPrices = useCallback(async () => {
+        if (!requestOptions || !selectedPriceListId) return
+
+        setPricesLoading(true)
+        setPricesError(null)
+
+        try {
+            const response = await listPriceListPrices(requestOptions, selectedPriceListId)
+            setPrices(response.data.prices)
+        } catch (caught) {
+            setPricesError(caught instanceof Error ? caught.message : "Unable to load prices.")
+        } finally {
+            setPricesLoading(false)
+        }
+    }, [requestOptions, selectedPriceListId])
+
+    useEffect(() => {
+        let active = true
+        void Promise.resolve().then(() => {
+            if (active) {
+                void loadPrices()
+            }
+        })
+        return () => {
+            active = false
+        }
+    }, [loadPrices])
+
+    // Latest effective price per variant; rows arrive newest-first.
+    const currentPriceByVariant = useMemo(() => {
+        const reference = today()
+        const map = new Map<number, Price>()
+        for (const price of prices) {
+            if (map.has(price.product_variant_id)) continue
+            if (price.effective_from && price.effective_from > reference) continue
+            if (price.effective_to && price.effective_to < reference) continue
+            map.set(price.product_variant_id, price)
+        }
+        return map
+    }, [prices])
+
     async function handleCreatePriceList(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
         if (!requestOptions) return
@@ -129,7 +179,7 @@ export function PricingView() {
             })
             toast.success("Variant price set successfully.")
             setPriceForm((current) => ({ ...current, price: "" }))
-            await refreshData()
+            await Promise.all([refreshData(), loadPrices()])
         } catch (caught) {
             toast.error(caught instanceof Error ? caught.message : "Failed to set price.")
         } finally {
@@ -229,11 +279,25 @@ export function PricingView() {
                                         <tr className="text-xs font-bold uppercase tracking-wider text-navy-500 bg-navy-50/30">
                                             <th className="border-b border-navy-100 py-3 px-4 font-display">Product & SKU</th>
                                             <th className="border-b border-navy-100 py-3 px-4 font-display">Variant SKU</th>
+                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Current Price</th>
+                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Effective From</th>
                                             <th className="border-b border-navy-100 py-3 px-4 font-display">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {variants.map((variant) => (
+                                        <TableStateRow
+                                            isLoading={pricesLoading && prices.length === 0}
+                                            isError={Boolean(pricesError)}
+                                            error={pricesError ? new Error(pricesError) : undefined}
+                                            count={variants.length}
+                                            columns={5}
+                                            emptyMessage="No product variants found in catalogue."
+                                            loadingMessage="Loading prices..."
+                                            onRetry={() => void loadPrices()}
+                                        />
+                                        {!pricesError && !(pricesLoading && prices.length === 0) && variants.map((variant) => {
+                                            const currentPrice = currentPriceByVariant.get(variant.id)
+                                            return (
                                             <tr key={variant.id} className="hover:bg-navy-50/20 transition-colors">
                                                 <td className="border-b border-navy-100/50 py-3 px-4">
                                                     <p className="font-bold text-navy-900">{variant.product_name}</p>
@@ -245,6 +309,16 @@ export function PricingView() {
                                                     <code className="text-xs bg-navy-50 px-1.5 py-0.5 rounded border border-navy-100 text-teal-800 font-semibold font-mono">
                                                         {variant.sku}
                                                     </code>
+                                                </td>
+                                                <td className="border-b border-navy-100/50 py-3 px-4">
+                                                    {currentPrice ? (
+                                                        <span className="font-bold text-navy-900">{formatCurrency(currentPrice.price)}</span>
+                                                    ) : (
+                                                        <span className="text-xs font-semibold text-navy-400">Not priced</span>
+                                                    )}
+                                                </td>
+                                                <td className="border-b border-navy-100/50 py-3 px-4 text-xs font-semibold text-navy-500">
+                                                    {currentPrice?.effective_from ?? "—"}
                                                 </td>
                                                 <td className="border-b border-navy-100/50 py-3 px-4">
                                                     <Button
@@ -267,14 +341,8 @@ export function PricingView() {
                                                     </Button>
                                                 </td>
                                             </tr>
-                                        ))}
-                                        {variants.length === 0 && (
-                                            <tr>
-                                                <td colSpan={3} className="text-center py-8 text-navy-400 font-medium bg-navy-50/10">
-                                                    No product variants found in catalogue.
-                                                </td>
-                                            </tr>
-                                        )}
+                                            )
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

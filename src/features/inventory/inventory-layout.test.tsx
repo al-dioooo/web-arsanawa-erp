@@ -65,6 +65,7 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     listBrands: vi.fn(),
     listCategories: vi.fn(),
     listProducts: vi.fn(),
+    listPriceListPrices: vi.fn(),
     listProductUnits: vi.fn(),
     listUnitsOfMeasure: vi.fn(),
     listVariantGroups: vi.fn(),

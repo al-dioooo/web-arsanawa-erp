@@ -192,6 +192,17 @@ export type PriceList = {
     is_active: boolean;
 };
 
+export type Price = {
+    id: number;
+    price_list_id: number;
+    product_variant_id: number;
+    product_unit_id: number | null;
+    price: string;
+    maximum_retail_price: string | null;
+    effective_from: string | null;
+    effective_to: string | null;
+};
+
 export type Discount = {
     id: number;
     company_id: number;

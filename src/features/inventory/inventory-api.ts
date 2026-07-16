@@ -7,6 +7,7 @@ import type {
     Discount,
     InventoryProduct,
     InventoryDashboardSummary,
+    Price,
     PriceList,
     ProductUnit,
     ProductImage,
@@ -861,6 +862,18 @@ export async function setPrice(
         `/api/v1/inventory/price-lists/${priceListId}/prices`,
         { method: "PUT", body: jsonBody(input) },
         options
+    )
+}
+
+export async function listPriceListPrices(
+    options: InventoryRequestOptions,
+    priceListId: number,
+    params: { product_variant_id?: number } = {},
+) {
+    return apiRequest<{ prices: Price[] }>(
+        `/api/v1/inventory/price-lists/${priceListId}/prices${queryString(params)}`,
+        {},
+        options,
     )
 }
 
