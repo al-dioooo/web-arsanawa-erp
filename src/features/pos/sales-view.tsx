@@ -192,7 +192,7 @@ export function SalesView() {
                             {sales.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="bg-navy-50/10 py-8 text-center font-medium text-navy-400">
-                                        No sales found.
+                                        {isLoading ? "Loading sales..." : "No sales found."}
                                     </td>
                                 </tr>
                             )}

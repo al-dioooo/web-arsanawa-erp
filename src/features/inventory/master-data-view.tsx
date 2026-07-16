@@ -355,7 +355,7 @@ export function InventoryMasterDataView({
                         />
                         <StatusPill tone="neutral">{`${rows.length} records`}</StatusPill>
                     </div>
-                    <MasterTable kind={kind} base={config.base} rows={rows} query={query} />
+                    <MasterTable kind={kind} base={config.base} rows={rows} query={query} isLoading={isLoading} />
                 </section>
             )}
 
@@ -462,14 +462,16 @@ function MasterTable({
     base,
     rows,
     query,
+    isLoading = false,
 }: {
     kind: InventoryMasterKind
     base: string
     rows: MasterRow[]
     query: string
+    isLoading?: boolean
 }) {
     if (kind === "categories") {
-        return <CategoryTreeTable base={base} rows={rows} query={query} />
+        return <CategoryTreeTable base={base} rows={rows} query={query} isLoading={isLoading} />
     }
 
     return (
@@ -522,7 +524,9 @@ function MasterTable({
                     ))}
                     {rows.length === 0 && (
                         <tr>
-                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">
+                                {isLoading ? "Loading records..." : "No records found."}
+                            </td>
                         </tr>
                     )}
                 </tbody>
@@ -535,10 +539,12 @@ function CategoryTreeTable({
     base,
     rows,
     query,
+    isLoading = false,
 }: {
     base: string
     rows: MasterRow[]
     query: string
+    isLoading?: boolean
 }) {
     const categories = useMemo(() => rows.map((row) => row.raw as Category), [rows])
     const tree = useMemo(() => buildCategoryTree(categories), [categories])
@@ -629,7 +635,9 @@ function CategoryTreeTable({
                     })}
                     {visibleRows.length === 0 && (
                         <tr>
-                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                            <td colSpan={4} className="px-5 py-8 text-center text-navy-400">
+                                {isLoading ? "Loading records..." : "No records found."}
+                            </td>
                         </tr>
                     )}
                 </tbody>
