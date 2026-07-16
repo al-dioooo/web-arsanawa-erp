@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { ApiError } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
@@ -57,11 +57,34 @@ export function ResetPasswordForm() {
     })
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null)
     const [pending, setPending] = useState(false)
+    const [linkPrefilled, setLinkPrefilled] = useState(false)
+
+    // Prefill email/token from the emailed reset link so users don't copy the
+    // long opaque token by hand.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search)
+        const email = params.get("email")
+        const token = params.get("token")
+        if (email || token) {
+            setForm((current) => ({
+                ...current,
+                email: email ?? current.email,
+                token: token ?? current.token,
+            }))
+            setLinkPrefilled(Boolean(token))
+        }
+    }, [])
 
     async function submit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        setPending(true)
         setFieldErrors(null)
+
+        if (form.password !== form.password_confirmation) {
+            setFieldErrors({ password_confirmation: ["Passwords do not match."] })
+            return
+        }
+
+        setPending(true)
 
         try {
             toast.success(await resetPassword(form))
@@ -90,6 +113,7 @@ export function ResetPasswordForm() {
                 value={form.token}
                 error={fieldErrors?.token?.[0]}
                 onChange={(event) => setForm((current) => ({ ...current, token: event.target.value }))}
+                readOnly={linkPrefilled}
                 required
             />
             <Field
