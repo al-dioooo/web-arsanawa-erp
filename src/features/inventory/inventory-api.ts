@@ -903,6 +903,9 @@ export async function createDiscount(
         starting_item_number?: number | null
         multiply?: boolean
         is_active?: boolean
+        targets?: Array<{ target_type: "variant" | "product" | "category"; target_id: number }>
+        dependencies?: Array<{ product_variant_id: number; required_quantity: number }>
+        giveaways?: Array<{ product_variant_id: number; giveaway_quantity: number }>
     }
 ) {
     return apiRequest(

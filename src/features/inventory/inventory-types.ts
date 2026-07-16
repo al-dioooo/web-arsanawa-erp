@@ -216,6 +216,9 @@ export type Discount = {
     effective_from: string | null;
     effective_to: string | null;
     is_active: boolean;
+    targets?: Array<{ target_type: "variant" | "product" | "category"; target_id: number }>;
+    dependencies?: Array<{ product_variant_id: number; required_quantity: number }>;
+    giveaways?: Array<{ product_variant_id: number; giveaway_quantity: number }>;
 };
 
 export type Reward = {
