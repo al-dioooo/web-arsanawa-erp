@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { PartnersView } from "@/features/partners/partners-view"
 import {
@@ -163,7 +163,7 @@ describe("PartnersView", () => {
         })
     })
 
-    it("edits partners and maintains contacts and addresses from the detail panel", () => {
+    it("edits partners and maintains contacts and addresses from the detail panel", async () => {
         render(<PartnersView />)
 
         fireEvent.click(screen.getByRole("button", { name: "Acme Customer" }))
@@ -203,6 +203,8 @@ describe("PartnersView", () => {
         expect(deleteAddress).toHaveBeenCalledWith({ partnerId: 5, addressId: 9 })
 
         fireEvent.click(screen.getByRole("button", { name: "Delete partner" }))
-        expect(deletePartner).toHaveBeenCalledWith(5)
+        await screen.findByRole("dialog")
+        fireEvent.click(screen.getByRole("button", { name: "Delete" }))
+        await waitFor(() => expect(deletePartner).toHaveBeenCalledWith(5))
     })
 })

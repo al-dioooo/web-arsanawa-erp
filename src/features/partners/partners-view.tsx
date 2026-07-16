@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Field, SelectField } from "@/components/ui/field"
 import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -20,6 +21,7 @@ import {
 } from "@/features/partners/partners-api"
 
 export function PartnersView() {
+    const [confirm, confirmDialog] = useConfirm()
     const { data: partners = [], isLoading } = usePartners({ per_page: 100 })
     const createPartner = useCreatePartner()
     const updatePartner = useUpdatePartner()
@@ -209,6 +211,7 @@ export function PartnersView() {
 
     return (
         <div className="grid gap-6">
+            {confirmDialog}
             <PageHeaderShell
                 eyebrow="Shared master data"
                 title="Partners"
@@ -495,7 +498,15 @@ export function PartnersView() {
                                     variant="destructive"
                                     size="xl"
                                     disabled={deletePartner.isPending}
-                                    onClick={() => void deletePartner.mutateAsync(selectedPartner.id)}
+                                    onClick={async () => {
+                                        const ok = await confirm({
+                                            title: `Delete “${selectedPartner.name}”?`,
+                                            message: "This partner is shared by Finance and POS. This can't be undone.",
+                                            confirmLabel: "Delete",
+                                            danger: true,
+                                        })
+                                        if (ok) void deletePartner.mutateAsync(selectedPartner.id)
+                                    }}
                                 >
                                     Delete partner
                                 </Button>

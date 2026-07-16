@@ -69,10 +69,12 @@ export function SearchableSelect({
     // the menu opens or the filter changes.
     useEffect(() => {
         if (!isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveIndex(-1)
             return
         }
         const selectedIndex = filteredOptions.findIndex(opt => String(opt.value) === String(value))
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveIndex(selectedIndex >= 0 ? selectedIndex : (filteredOptions.length > 0 ? 0 : -1))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, searchQuery])

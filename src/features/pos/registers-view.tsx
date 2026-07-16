@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
 import { SearchableSelect } from "@/components/ui/searchable-select"
@@ -41,6 +42,7 @@ export function RegistersView() {
     const { token, activeCompanyId, organizationContext } = useSession()
     const branches = organizationContext?.branches ?? []
 
+    const [confirm, confirmDialog] = useConfirm()
     const [registers, setRegisters] = useState<Register[]>([])
     const [accounts, setAccounts] = useState<PostableAccount[]>([])
     const [form, setForm] = useState<RegisterForm>(EMPTY_FORM)
@@ -130,6 +132,7 @@ export function RegistersView() {
 
     return (
         <div className="grid gap-6">
+            {confirmDialog}
             <PosPageHeader
                 title="Registers"
                 subtitle="Manage POS registers per branch. Each register can be linked to a cash account for settlement."
@@ -190,12 +193,20 @@ export function RegistersView() {
                                                     variant="ghost"
                                                     size="icon-sm"
                                                     disabled={isLoading}
-                                                    onClick={() =>
-                                                        void runMutation(
-                                                            () => deleteRegister(requestOptions!, register.id),
-                                                            "Register deleted.",
-                                                        )
-                                                    }
+                                                    onClick={async () => {
+                                                        const ok = await confirm({
+                                                            title: `Delete register “${register.name}”?`,
+                                                            message: "This register will be permanently removed.",
+                                                            confirmLabel: "Delete register",
+                                                            danger: true,
+                                                        })
+                                                        if (ok) {
+                                                            void runMutation(
+                                                                () => deleteRegister(requestOptions!, register.id),
+                                                                "Register deleted.",
+                                                            )
+                                                        }
+                                                    }}
                                                 >
                                                     <Icon name="delete" size={16} className="text-rose-500" />
                                                 </Button>
