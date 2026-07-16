@@ -30,7 +30,7 @@ import {
     loadProductsForSale,
     openShift,
     removeSalePayment,
-    resolveVariantPrice,
+    resolveCompanyPrices,
     updateSale,
     type Customer,
     type PosRequestOptions,
@@ -126,23 +126,23 @@ export function RegisterView() {
                 )
             }
 
-            // Resolve prices for active variants in the background.
-            const entries = await Promise.all(
-                catalogue.products
-                    .filter((product) => product.status === "active")
-                    .flatMap((product) =>
-                        product.variants
-                            .filter((variant) => variant.is_active)
-                            .map(async (variant) => {
-                                const price = await resolveVariantPrice(
-                                    requestOptions,
-                                    product.id,
-                                    variant.id,
-                                ).catch(() => null)
-                                return [`${product.id}:${variant.id}`, price] as const
-                            }),
-                    ),
+            // Resolve every variant price in one batch request.
+            const variantPrices = await resolveCompanyPrices(requestOptions).catch(
+                () => ({}) as Record<number, string>,
             )
+            const entries = catalogue.products
+                .filter((product) => product.status === "active")
+                .flatMap((product) =>
+                    product.variants
+                        .filter((variant) => variant.is_active)
+                        .map(
+                            (variant) =>
+                                [
+                                    `${product.id}:${variant.id}`,
+                                    variantPrices[variant.id] ?? null,
+                                ] as const,
+                        ),
+                )
             setPriceMap(Object.fromEntries(entries))
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : "Unable to load register.")
