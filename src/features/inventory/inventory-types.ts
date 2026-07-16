@@ -71,6 +71,12 @@ export type ProductVariant = {
     purchase_uom_id: number | null;
     purchase_conversion_factor: string;
     is_active: boolean;
+    /** Only present on the product detail; a missing branch row means available. */
+    branch_availability?: Array<{
+        branch_id: number;
+        is_available: boolean;
+        is_exclusive: boolean;
+    }>;
 };
 
 export type InventoryProduct = {

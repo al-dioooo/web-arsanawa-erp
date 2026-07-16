@@ -15,6 +15,7 @@ import { Tooltip } from "@/components/ui/tooltip"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
 import { CategoryLeveledSelect } from "@/features/inventory/components/category-leveled-select"
+import { ProductVariantManager } from "@/features/inventory/components/product-variant-manager"
 import {
     buildCategoryTree,
     categoriesWithAncestorsForQuery,
@@ -85,6 +86,7 @@ type FormState = {
     name: string
     code: string
     sku: string
+    variant_name: string
     barcode: string
     description: string
     parent_id: string
@@ -109,6 +111,7 @@ const emptyForm: FormState = {
     name: "",
     code: "",
     sku: "",
+    variant_name: "",
     barcode: "",
     description: "",
     parent_id: "",
@@ -143,7 +146,8 @@ export function InventoryMasterDataView({
     id?: string
 }) {
     const router = useRouter()
-    const { token, activeCompanyId } = useSession()
+    const { token, activeCompanyId, organizationContext } = useSession()
+    const branches = useMemo(() => organizationContext?.branches ?? [], [organizationContext?.branches])
     const [categories, setCategories] = useState<Category[]>([])
     const [brands, setBrands] = useState<Brand[]>([])
     const [units, setUnits] = useState<UnitOfMeasure[]>([])
@@ -363,10 +367,20 @@ export function InventoryMasterDataView({
                 />
             )}
 
+            {mode === "detail" && kind === "products" && requestOptions && itemId && (
+                <ProductVariantManager
+                    productId={itemId}
+                    requestOptions={requestOptions}
+                    branches={branches}
+                    onChanged={() => void refreshData()}
+                />
+            )}
+
             {(mode === "create" || mode === "edit") && (
                 <form onSubmit={submitForm} className={cn("grid gap-5 p-5", inventorySurfaceClass)}>
                     <FormFields
                         kind={kind}
+                        mode={mode}
                         form={form}
                         setForm={setForm}
                         categories={categories}
@@ -689,6 +703,7 @@ function DetailPanel({
 
 function FormFields({
     kind,
+    mode,
     form,
     setForm,
     categories,
@@ -699,6 +714,7 @@ function FormFields({
     variants,
 }: {
     kind: InventoryMasterKind
+    mode: Mode
     form: FormState
     setForm: Dispatch<SetStateAction<FormState>>
     categories: Category[]
@@ -734,6 +750,12 @@ function FormFields({
                     <SearchableSelect label="Base Unit" value={form.base_uom_id} onChange={(value) => set("base_uom_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
                     <CategoryLeveledSelect label="Category" value={form.category_id} onChange={(value) => set("category_id", String(value))} categories={categories} mode="leaf" emptyLabel="No category" placeholder="No category" />
                     <SearchableSelect label="Brand" value={form.brand_id} onChange={(value) => set("brand_id", String(value))} options={brands.map((brand) => ({ value: brand.id, label: brand.name }))} />
+                    {mode === "create" && (
+                        <>
+                            <Field label="Initial variant SKU" value={form.sku} onChange={(event) => set("sku", event.target.value)} required />
+                            <Field label="Initial variant name" value={form.variant_name} onChange={(event) => set("variant_name", event.target.value)} />
+                        </>
+                    )}
                 </>
             )}
             {kind === "variant-groups" && (
@@ -865,7 +887,7 @@ async function createEntity(kind: InventoryMasterKind, options: { token: string;
     if (kind === "categories") return createCategory(options, { name: form.name, parent_id: form.parent_id ? Number(form.parent_id) : null, is_active: form.is_active })
     if (kind === "brands") return createBrand(options, form.name)
     if (kind === "units") return createUnit(options, { name: form.name, code: form.code })
-    if (kind === "products") return createProduct(options, { name: form.name, base_uom_id: Number(form.base_uom_id), category_id: form.category_id ? Number(form.category_id) : undefined, brand_id: form.brand_id ? Number(form.brand_id) : undefined, status: form.is_active ? "active" : "inactive" })
+    if (kind === "products") return createProduct(options, { name: form.name, base_uom_id: Number(form.base_uom_id), category_id: form.category_id ? Number(form.category_id) : undefined, brand_id: form.brand_id ? Number(form.brand_id) : undefined, status: form.is_active ? "active" : "inactive", variants: [{ sku: form.sku, name: form.variant_name || undefined }] })
     if (kind === "variant-groups") return createVariantGroup(options, { name: form.name, code: form.code, unit_of_measure_id: Number(form.unit_of_measure_id), description: form.description || null, is_active: form.is_active })
     if (kind === "variants") return createVariantMaster(options, { variant_group_id: Number(form.variant_group_id), name: form.name, code: form.code, position: Number(form.position || 0), is_active: form.is_active })
     return createProductUnit(options, { product_id: Number(form.product_id), sku: form.sku, barcode: form.barcode || null, name: form.name || null, variant_ids: form.variant_ids.map(Number), is_active: form.is_active })
