@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField } from "@/components/ui/field"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import {
     useAssignBranchRole,
@@ -386,14 +387,21 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                 </div>
 
                 <form className="grid gap-4" onSubmit={submitBranchAssignment}>
-                    <Field
-                        label="Assign user ID"
-                        type="number"
-                        min={1}
+                    <SearchableSelect
+                        label="Assign member"
                         value={assignmentForm.user_id}
-                        onChange={(event) =>
-                            setAssignmentForm((current) => ({ ...current, user_id: event.target.value }))
+                        onChange={(value) =>
+                            setAssignmentForm((current) => ({ ...current, user_id: String(value) }))
                         }
+                        options={memberships
+                            .filter((membership) => membership.status === "active")
+                            .map((membership) => ({
+                                value: membership.user_id,
+                                label: membership.user
+                                    ? `${membership.user.name} (${membership.user.email})`
+                                    : `User #${membership.user_id}`,
+                            }))}
+                        placeholder="Search company members"
                         disabled={!canManage}
                     />
                     <SelectField

@@ -162,16 +162,17 @@ describe("OrganizationAdminPanel", () => {
             permissions: ["inventory.view"],
         }))
 
-        fireEvent.change(screen.getByLabelText("Assign user ID"), {
-            target: { value: "2" },
-        })
+        fireEvent.focus(screen.getByLabelText("Assign member"))
+        fireEvent.click(
+            await screen.findByRole("option", { name: "Alice Evergarden (hello@al.is-a.dev)" }),
+        )
         fireEvent.change(screen.getByLabelText("Assign role"), {
             target: { value: "11" },
         })
         fireEvent.click(screen.getByRole("button", { name: "Assign branch role" }))
 
         await waitFor(() => expect(assignBranchRole).toHaveBeenCalledWith({
-            user_id: 2,
+            user_id: 1,
             role_id: 11,
         }))
 

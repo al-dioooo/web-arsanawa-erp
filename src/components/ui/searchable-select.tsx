@@ -20,6 +20,7 @@ type SearchableSelectProps = {
     options: Option[]
     placeholder?: string
     required?: boolean
+    disabled?: boolean
     error?: string
     className?: string
 }
@@ -31,6 +32,7 @@ export function SearchableSelect({
     options,
     placeholder = "Select option",
     required = false,
+    disabled = false,
     error,
     className = ""
 }: SearchableSelectProps) {
@@ -153,9 +155,10 @@ export function SearchableSelect({
                     aria-invalid={error ? true : undefined}
                     aria-describedby={error ? errorId : undefined}
                     required={required && !value}
+                    disabled={disabled}
                     value={isOpen ? searchQuery : displayValue}
                     placeholder={isOpen ? "Type to search..." : placeholder}
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => !disabled && setIsOpen(true)}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     className={cn(fieldControlClassName, "w-full pr-10 cursor-pointer")}

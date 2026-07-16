@@ -151,6 +151,10 @@ export function OrganizationView() {
                             }
                             required
                         />
+                        <p className="-mt-2 text-xs font-medium text-navy-400">
+                            The account ID of the person to add. Double-check it — assignments apply
+                            immediately. Existing members can be picked by name under Branch Roles.
+                        </p>
                         <SearchableSelect
                             label="Branch Assignment"
                             value={membershipForm.branch_id}
