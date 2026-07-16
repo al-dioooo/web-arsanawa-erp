@@ -258,19 +258,22 @@ export default function NewBillPage() {
                                             hideLabel
                                             type="text"
                                             placeholder="Item description..."
-                                            {...register(`lines.${index}.description` as const, { required: true })}
+                                            error={errors.lines?.[index]?.description?.message}
+                                            {...register(`lines.${index}.description` as const, { required: "Required" })}
                                         />
                                     </td>
                                     <td className="py-3 px-2">
                                         <Controller
                                             name={`lines.${index}.expense_account_id` as const}
                                             control={control}
+                                            rules={{ required: "Required" }}
                                             render={({ field: { value, onChange } }) => (
                                                 <SearchableSelect
                                                     value={value}
                                                     onChange={(val) => onChange(String(val))}
                                                     options={postableAccounts.map(a => ({ label: `${a.code} - ${a.name}`, value: String(a.id) }))}
                                                     placeholder="Account..."
+                                                    error={errors.lines?.[index]?.expense_account_id?.message}
                                                 />
                                             )}
                                         />
@@ -283,7 +286,8 @@ export default function NewBillPage() {
                                             min="0"
                                             step="any"
                                             className="text-right"
-                                            {...register(`lines.${index}.quantity` as const, { valueAsNumber: true, required: true })}
+                                            error={errors.lines?.[index]?.quantity?.message}
+                                            {...register(`lines.${index}.quantity` as const, { valueAsNumber: true, required: "Required" })}
                                         />
                                     </td>
                                     <td className="py-3 px-2">
@@ -294,7 +298,8 @@ export default function NewBillPage() {
                                             min="0"
                                             step="any"
                                             className="text-right"
-                                            {...register(`lines.${index}.unit_price` as const, { valueAsNumber: true, required: true })}
+                                            error={errors.lines?.[index]?.unit_price?.message}
+                                            {...register(`lines.${index}.unit_price` as const, { valueAsNumber: true, required: "Required" })}
                                         />
                                     </td>
                                     <td className="py-3 px-2">
