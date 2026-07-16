@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -33,7 +34,6 @@ export function ReportsView() {
     const [shiftReport, setShiftReport] = useState<ShiftReport | null>(null)
 
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -62,7 +62,6 @@ export function ReportsView() {
     async function runSalesReport() {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             setSalesReport(await getSalesReport(requestOptions, {
                 from,
@@ -70,7 +69,7 @@ export function ReportsView() {
                 branch_id: branchId ? Number(branchId) : null,
             }))
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load sales report.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load sales report.")
         } finally {
             setIsLoading(false)
         }
@@ -83,11 +82,10 @@ export function ReportsView() {
             return
         }
         setIsLoading(true)
-        setError(null)
         try {
             setShiftReport(await getShiftReport(requestOptions, Number(shiftId)))
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load shift report.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load shift report.")
         } finally {
             setIsLoading(false)
         }
@@ -100,7 +98,6 @@ export function ReportsView() {
                 subtitle="Review sales over a date range and inspect cashier shift settlements."
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                error={error}
             />
 
             {/* Sales report */}

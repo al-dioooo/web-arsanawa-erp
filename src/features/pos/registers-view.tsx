@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useConfirm } from "@/components/ui/confirm-dialog"
@@ -47,8 +48,6 @@ export function RegistersView() {
     const [accounts, setAccounts] = useState<PostableAccount[]>([])
     const [form, setForm] = useState<RegisterForm>(EMPTY_FORM)
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -58,7 +57,6 @@ export function RegistersView() {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const [loadedRegisters, loadedAccounts] = await Promise.all([
                 listRegisters(requestOptions),
@@ -67,7 +65,7 @@ export function RegistersView() {
             setRegisters(loadedRegisters)
             setAccounts(loadedAccounts)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load registers.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load registers.")
         } finally {
             setIsLoading(false)
         }
@@ -86,14 +84,12 @@ export function RegistersView() {
     async function runMutation(callback: () => Promise<unknown>, successMessage: string) {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
         try {
             await callback()
-            setMessage(successMessage)
+            toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : "The request failed.")
         } finally {
             setIsLoading(false)
         }
@@ -138,8 +134,6 @@ export function RegistersView() {
                 subtitle="Manage POS registers per branch. Each register can be linked to a cash account for settlement."
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                message={message}
-                error={error}
             />
 
             <div className="grid gap-6 xl:grid-cols-[1fr_380px]">

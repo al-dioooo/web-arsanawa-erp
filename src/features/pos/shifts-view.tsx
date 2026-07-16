@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
@@ -25,8 +26,6 @@ export function ShiftsView() {
     const [shifts, setShifts] = useState<Shift[]>([])
     const [registers, setRegisters] = useState<Register[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const [openForm, setOpenForm] = useState<{ register_id: string; opening_float: string; notes: string } | null>(null)
     const [closeTarget, setCloseTarget] = useState<Shift | null>(null)
@@ -41,7 +40,6 @@ export function ShiftsView() {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const [loadedShifts, loadedRegisters] = await Promise.all([
                 listShifts(requestOptions),
@@ -50,7 +48,7 @@ export function ShiftsView() {
             setShifts(loadedShifts)
             setRegisters(loadedRegisters)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load shifts.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load shifts.")
         } finally {
             setIsLoading(false)
         }
@@ -69,14 +67,12 @@ export function ShiftsView() {
     async function runMutation(callback: () => Promise<unknown>, successMessage: string) {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
         try {
             await callback()
-            setMessage(successMessage)
+            toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : "The request failed.")
         } finally {
             setIsLoading(false)
         }
@@ -98,8 +94,6 @@ export function ShiftsView() {
                 subtitle="Open and close cashier shifts. A shift must be open before sales can be rung up on a register."
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                message={message}
-                error={error}
                 actions={
                     <Button
                         type="button"

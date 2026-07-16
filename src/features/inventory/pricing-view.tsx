@@ -104,7 +104,10 @@ export function PricingView() {
     // re-fetch the whole catalogue. Responses are keyed to the list they were
     // requested for, so a slow response can't overwrite a newer selection.
     const selectedPriceListRef = useRef(selectedPriceListId)
-    selectedPriceListRef.current = selectedPriceListId
+
+    useEffect(() => {
+        selectedPriceListRef.current = selectedPriceListId
+    }, [selectedPriceListId])
 
     const loadPrices = useCallback(async () => {
         if (!requestOptions || !selectedPriceListId) return

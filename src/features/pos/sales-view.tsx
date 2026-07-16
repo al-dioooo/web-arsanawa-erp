@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -40,7 +41,6 @@ export function SalesView() {
         fulfilmentTo: "",
     })
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
     const [importOpen, setImportOpen] = useState(false)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
@@ -51,7 +51,6 @@ export function SalesView() {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const data = await listSales(requestOptions, {
                 status: filters.status || undefined,
@@ -65,7 +64,7 @@ export function SalesView() {
             setSales(data.sales)
             setPagination(data.pagination)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load sales.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load sales.")
         } finally {
             setIsLoading(false)
         }
@@ -84,12 +83,11 @@ export function SalesView() {
     async function runLifecycle(callback: () => Promise<Sale>) {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const updated = await callback()
             setSales((current) => current.map((sale) => (sale.id === updated.id ? updated : sale)))
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to update sale.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to update sale.")
         } finally {
             setIsLoading(false)
         }
@@ -102,7 +100,6 @@ export function SalesView() {
                 subtitle="Browse counter sales and catering orders. Open a sale to view its lines, payments, and promotions."
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                error={error}
                 actions={requestOptions ? (
                     <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
                         <Icon name="description" size={18} />
