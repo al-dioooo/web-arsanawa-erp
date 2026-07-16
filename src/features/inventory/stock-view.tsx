@@ -209,7 +209,7 @@ export function StockOverviewView() {
     const { requestOptions, branches, productUnits, defaultBranchId, defaultProductUnitId } = useStockOptions()
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
-    const [snapshot, setSnapshot] = useState({ totalValue: "0.0000", selectedOnHand: "0.0000", lots: [] as StockLot[], movements: [] as StockMovement[], movementTotal: 0 })
+    const [snapshot, setSnapshot] = useState({ totalValue: "0.0000", selectedOnHand: "0.0000", lotTotal: 0, movements: [] as StockMovement[], movementTotal: 0 })
 
     useEffect(() => {
         let active = true
@@ -259,7 +259,7 @@ export function StockOverviewView() {
                 </div>
                 <div className={cn(inventorySurfaceClass, "p-5")}>
                     <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Active Lots</p>
-                    <p className="mt-2 font-brand text-2xl font-bold text-orange-500">{snapshot.lots.filter((lot) => lot.status === "active").length}</p>
+                    <p className="mt-2 font-brand text-2xl font-bold text-orange-500">{snapshot.lotTotal}</p>
                 </div>
             </section>
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -279,6 +279,8 @@ export function StockLotsView() {
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
     const [lots, setLots] = useState<StockLot[]>([])
+    const [page, setPage] = useState(1)
+    const [lastPage, setLastPage] = useState(1)
     const [loadError, setLoadError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -296,15 +298,21 @@ export function StockLotsView() {
     const loadLots = useCallback(async () => {
         if (!requestOptions) return
         try {
-            const loaded = await loadStockLots(requestOptions, { branch_id: branchId, product_unit_id: productUnitId })
-            setLots(loaded)
+            const loaded = await loadStockLots(requestOptions, {
+                branch_id: branchId,
+                product_unit_id: productUnitId,
+                page,
+                per_page: 50,
+            })
+            setLots(loaded.lots)
+            setLastPage(loaded.pagination.last_page)
             setLoadError(null)
         } catch (caught) {
             const message = caught instanceof Error ? caught.message : "Unable to load stock lots."
             setLoadError(message)
             toast.error(message)
         }
-    }, [branchId, productUnitId, requestOptions])
+    }, [branchId, page, productUnitId, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -346,6 +354,19 @@ export function StockLotsView() {
                     </article>
                 ))}
                 {!loadError && lots.length === 0 && <p className={cn(inventorySurfaceClass, "p-6 text-center text-sm font-semibold text-navy-400")}>No lots registered for this context.</p>}
+                {lastPage > 1 && (
+                    <div className="flex items-center justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+                            Previous
+                        </Button>
+                        <span className="text-xs font-semibold text-navy-500">
+                            Page {page} of {lastPage}
+                        </span>
+                        <Button type="button" variant="outline" size="sm" disabled={page >= lastPage} onClick={() => setPage((current) => current + 1)}>
+                            Next
+                        </Button>
+                    </div>
+                )}
             </section>
         </div>
     )

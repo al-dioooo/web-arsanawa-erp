@@ -211,7 +211,7 @@ function mockInventoryApi() {
         message: "OK",
     } as unknown as Awaited<ReturnType<typeof listProductUnits>>)
     vi.mocked(loadStockSnapshot).mockResolvedValue({
-        lots: [],
+        lotTotal: 0,
         movements: [],
         movementTotal: 0,
         totalValue: "0.0000",

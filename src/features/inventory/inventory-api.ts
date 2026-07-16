@@ -148,8 +148,8 @@ export async function loadStockSnapshot(
     productUnitId: number | null,
 ) {
     const [lots, movements, valuation, level] = await Promise.all([
-        apiRequest<{ lots: StockLot[] }>(
-            `/api/v1/inventory/stock/lots${queryString({ branch_id: branchId })}`,
+        apiRequest<{ lots: StockLot[]; pagination: { total: number } }>(
+            `/api/v1/inventory/stock/lots${queryString({ branch_id: branchId, per_page: 1 })}`,
             {},
             options,
         ),
@@ -176,7 +176,7 @@ export async function loadStockSnapshot(
     ]);
 
     return {
-        lots: lots.data.lots,
+        lotTotal: lots.data.pagination.total,
         movements: movements.data.movements,
         movementTotal: movements.data.pagination.total,
         totalValue: valuation.data.total_value,
@@ -186,15 +186,24 @@ export async function loadStockSnapshot(
 
 export async function loadStockLots(
     options: InventoryRequestOptions,
-    filters: { branch_id?: number | null; product_unit_id?: number | null; expiring_before?: string } = {},
+    filters: {
+        branch_id?: number | null
+        product_unit_id?: number | null
+        expiring_before?: string
+        page?: number
+        per_page?: number
+    } = {},
 ) {
-    const response = await apiRequest<{ lots: StockLot[] }>(
+    const response = await apiRequest<{
+        lots: StockLot[]
+        pagination: { current_page: number; per_page: number; total: number; last_page: number }
+    }>(
         `/api/v1/inventory/stock/lots${queryString(filters)}`,
         {},
         options,
     )
 
-    return response.data.lots
+    return response.data
 }
 
 export async function loadStockMovements(

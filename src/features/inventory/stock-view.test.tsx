@@ -103,7 +103,7 @@ describe("split stock movement views", () => {
             message: "OK",
         })
         vi.mocked(loadStockSnapshot).mockResolvedValue({
-            lots: [],
+            lotTotal: 0,
             movements: [
                 {
                     id: 12,
@@ -126,23 +126,26 @@ describe("split stock movement views", () => {
             totalValue: "10000.0000",
             selectedOnHand: "10.0000",
         })
-        vi.mocked(loadStockLots).mockResolvedValue([
-            {
-                id: 3,
-                company_id: 1,
-                branch_id: 1,
-                product_variant_id: 5,
-                product_unit_id: 8,
-                product_unit: productUnit,
-                lot_number: "LOT-1",
-                received_quantity: "10.0000",
-                remaining_quantity: "7.0000",
-                unit_cost: "1000.0000",
-                received_at: "2026-05-30",
-                expiry_date: null,
-                status: "active",
-            },
-        ])
+        vi.mocked(loadStockLots).mockResolvedValue({
+            lots: [
+                {
+                    id: 3,
+                    company_id: 1,
+                    branch_id: 1,
+                    product_variant_id: 5,
+                    product_unit_id: 8,
+                    product_unit: productUnit,
+                    lot_number: "LOT-1",
+                    received_quantity: "10.0000",
+                    remaining_quantity: "7.0000",
+                    unit_cost: "1000.0000",
+                    received_at: "2026-05-30",
+                    expiry_date: null,
+                    status: "active",
+                },
+            ],
+            pagination: { current_page: 1, per_page: 50, total: 1, last_page: 1 },
+        })
         vi.mocked(loadStockMovements).mockResolvedValue({
             movements: [
                 {
