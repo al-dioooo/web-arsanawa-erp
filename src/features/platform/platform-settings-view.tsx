@@ -78,7 +78,11 @@ export function PlatformSettingsView() {
         void Promise.resolve().then(() => {
             if (!active) return
 
-            setDrafts(settings.map(createDraft))
+            // Credentials are write-only and are managed by their own module
+            // panel (e.g. WhatsApp), so they must never become an editable draft
+            // here — this generic editor would render them as a plain field and
+            // include them in "save all".
+            setDrafts(settings.filter((setting) => !setting.is_secret).map(createDraft))
             setFieldErrors({})
         })
         return () => {
