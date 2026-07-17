@@ -14,11 +14,6 @@ type InventoryPageHeaderProps = {
     actions?: ReactNode
 }
 
-export const inventorySurfaceClass = "rounded-2xl border border-navy-100 bg-white"
-
-export const inventoryPrimaryActionLinkClass =
-    "inline-flex h-11 items-center justify-center rounded-md bg-teal-700 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-800"
-
 export function InventoryPageHeader({
     title,
     description,

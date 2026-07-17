@@ -447,7 +447,7 @@ export function PricingView() {
                         >
                             <div className="flex items-center justify-between">
                                 <h2 className="type-section flex items-center gap-2">
-                                    <Icon name="payments" size={20} className="text-orange-500" />
+                                    <Icon name="payments" size={20} className="text-orange-700" />
                                     <span>{t("setPriceForm.heading")}</span>
                                 </h2>
                                 <Button

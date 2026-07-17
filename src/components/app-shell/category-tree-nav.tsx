@@ -50,7 +50,7 @@ export function CategoryTreeNav({ targetRoute, accentColor }: Props) {
 
     if (isLoading) {
         return (
-            <div className="mt-1 ml-9 pl-3 text-[11px] text-navy-400 font-medium">
+            <div className="mt-1 ml-9 pl-3 text-[11px] text-ink-faint font-medium">
                 Loading categories…
             </div>
         )
@@ -58,7 +58,7 @@ export function CategoryTreeNav({ targetRoute, accentColor }: Props) {
 
     if (isError) {
         return (
-            <div className="mt-1 ml-9 pl-3 text-[11px] text-rose-500 font-medium">
+            <div className="mt-1 ml-9 pl-3 text-[11px] text-error font-medium">
                 Failed to load categories
             </div>
         )
@@ -66,14 +66,14 @@ export function CategoryTreeNav({ targetRoute, accentColor }: Props) {
 
     if (tree.length === 0) {
         return (
-            <div className="mt-1 ml-9 pl-3 text-[11px] text-navy-400 font-medium">
+            <div className="mt-1 ml-9 pl-3 text-[11px] text-ink-faint font-medium">
                 No categories yet
             </div>
         )
     }
 
     return (
-        <ul className="mt-1 ml-7 grid gap-0.5 border-l border-navy-100 pl-2">
+        <ul className="mt-1 ml-7 grid gap-0.5 border-l border-line pl-2">
             {tree.map((node) => (
                 <CategoryNode
                     key={node.id}
@@ -112,7 +112,7 @@ function CategoryNode({ node, targetRoute, accentColor, selectedCategoryId, inCa
                     type="button"
                     aria-label={expanded ? "Collapse" : "Expand"}
                     onClick={() => setExpanded((prev) => !prev)}
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded text-navy-400 transition-transform duration-150 ${hasChildren ? "hover:bg-navy-100 hover:text-navy-700" : "invisible"} ${expanded ? "rotate-90" : ""}`}
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink-faint transition-transform duration-150 ${hasChildren ? "hover:bg-surface-muted hover:text-ink-secondary" : "invisible"} ${expanded ? "rotate-90" : ""}`}
                 >
                     <ChevronRightIcon className="w-3.5 h-3.5" />
                 </button>
@@ -128,7 +128,7 @@ function CategoryNode({ node, targetRoute, accentColor, selectedCategoryId, inCa
                 </Link>
             </div>
             {hasChildren && expanded && (
-                <ul className="mt-0.5 ml-3 grid gap-0.5 border-l border-navy-100 pl-2">
+                <ul className="mt-0.5 ml-3 grid gap-0.5 border-l border-line pl-2">
                     {node.children.map((child) => (
                         <CategoryNode
                             key={child.id}

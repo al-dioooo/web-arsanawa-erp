@@ -137,15 +137,12 @@
     --color-white: #ffffff;
     --color-black: #000000;
 
-    /* Radii — design-system scale.
-       --radius-xl is held at 16px and --radius-2xl pinned to 20px until the
-       page migration rewrites legacy rounded-2xl cards to rounded-lg; then
-       xl flips to the DS 32px and the 2xl compat alias is retired. */
+    /* Radii — design-system scale: sm chips/icon buttons, md buttons/nav,
+       lg cards, xl large feature surfaces. */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 20px;
-    --radius-xl: 16px;
-    --radius-2xl: 20px;
+    --radius-xl: 32px;
     --radius-pill: 9999px;
 
     /* Typography */

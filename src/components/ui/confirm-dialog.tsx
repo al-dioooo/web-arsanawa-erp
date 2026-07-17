@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useRef, useState, type ReactNode } from "react"
-import { Dialog } from "@/components/ui/dialog"
+import { Modal } from "@/components/ui/modal"
 import { Button } from "@/components/ui/button"
 
 export type ConfirmOptions = {
@@ -40,7 +40,7 @@ export function useConfirm() {
     }, [])
 
     const dialog = options ? (
-        <Dialog
+        <Modal
             open
             onClose={() => settle(false)}
             title={options.title}
@@ -64,7 +64,7 @@ export function useConfirm() {
             ) : (
                 <p className="text-sm leading-relaxed text-ink-muted">This action cannot be undone.</p>
             )}
-        </Dialog>
+        </Modal>
     ) : null
 
     return [confirm, dialog] as const

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
-import { DataTable } from "@/features/finance/components/data-table"
-import { FilterBar } from "@/features/finance/components/filter-bar"
+import { DataTable } from "@/components/ui/data-table"
+import { FilterBar } from "@/components/ui/filter-bar"
 import { PageHeader } from "@/features/finance/components/page-header"
 
 describe("finance layout components", () => {

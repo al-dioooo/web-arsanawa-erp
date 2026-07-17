@@ -134,10 +134,10 @@ function LauncherSection({
                         <Link
                             key={tile.key}
                             href={tile.route}
-                            className={`flex flex-col items-center justify-center rounded-xl p-3 text-center transition-all duration-150 group outline-none ${active ? "bg-surface-muted" : "hover:bg-surface-muted/70"}`}
+                            className={`flex flex-col items-center justify-center rounded-md p-3 text-center transition-all duration-150 group outline-none ${active ? "bg-surface-muted" : "hover:bg-surface-muted/70"}`}
                         >
                             <div
-                                className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-150 motion-safe:group-hover:scale-105 motion-safe:group-active:scale-95"
+                                className="flex h-12 w-12 items-center justify-center rounded-md transition-transform duration-150 motion-safe:group-hover:scale-105 motion-safe:group-active:scale-95"
                                 style={{
                                     backgroundColor: `${tile.accentColor}15`,
                                     color: tile.accentColor,

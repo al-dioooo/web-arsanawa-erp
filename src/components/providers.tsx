@@ -35,9 +35,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <ThemeProvider
             attribute="class"
-            // Light by default until every page is on semantic tokens —
-            // flipped to "system" at the end of the page migration.
-            defaultTheme="light"
+            defaultTheme="system"
             enableSystem
             storageKey="arsanawa-theme"
             disableTransitionOnChange

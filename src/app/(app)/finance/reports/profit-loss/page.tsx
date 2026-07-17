@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
+import { FilterBar } from "@/components/ui/filter-bar"
 import { ExportButtons } from "@/features/finance/components/export-buttons"
 import { useSession } from "@/features/auth/session-provider"
 import { usePeriods } from "@/features/finance/api"

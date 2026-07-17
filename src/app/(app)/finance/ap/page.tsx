@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
-import { DataTable } from "@/features/finance/components/data-table"
-import { TableStateRow } from "@/features/finance/components/table-state-row"
+import { DataTable } from "@/components/ui/data-table"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { useAPAging } from "@/features/finance/api-bills"
 import { formatIDR } from "@/lib/format"

@@ -326,7 +326,7 @@ export function FinanceDashboardView() {
                         {/* Not type-section: that utility pins color to var(--ink),
                             which must stay white on the gradient. */}
                         <h2 className="flex items-center gap-2 text-base font-bold tracking-tight text-white">
-                            <Icon name="bar_chart" size={18} className="text-teal-100" />
+                            <Icon name="bar_chart" size={18} className="text-white/80" />
                             {t("reports.title")}
                         </h2>
                         <ul className="mt-3 grid gap-2">
@@ -336,7 +336,7 @@ export function FinanceDashboardView() {
                                         href={report.href}
                                         className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold transition-colors hover:bg-white/20"
                                     >
-                                        <Icon name={report.icon} size={16} className="text-teal-100" />
+                                        <Icon name={report.icon} size={16} className="text-white/80" />
                                         {t(`reports.${report.key}`)}
                                     </Link>
                                 </li>

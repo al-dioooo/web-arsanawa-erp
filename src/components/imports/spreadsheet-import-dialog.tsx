@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Dialog } from "@/components/ui/dialog"
+import { Modal } from "@/components/ui/modal"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
 import { SelectDescription } from "@/components/ui/select-description"
@@ -83,7 +83,7 @@ export function SpreadsheetImportDialog({
     }
 
     return (
-        <Dialog
+        <Modal
             open={open}
             onClose={onClose}
             title={title}
@@ -96,7 +96,7 @@ export function SpreadsheetImportDialog({
                         type="button"
                         size="xl"
                         disabled={isLoading || !canCommit}
-                        className="bg-teal-700 text-white hover:bg-teal-800"
+                        className="bg-brand text-white hover:bg-brand-hover"
                         onClick={() => void run(async () => {
                             if (!result?.import.id) return
                             const committed = await operations.commit(result.import.id)
@@ -111,18 +111,18 @@ export function SpreadsheetImportDialog({
         >
             <div className="grid gap-5">
                 {operations.previewConfigured ? (
-                    <div className="grid gap-3 rounded-xl border border-teal-100 bg-teal-50/30 p-4">
+                    <div className="grid gap-3 rounded-md bg-brand-soft/30 p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <p className="text-sm font-bold text-navy-900">Configured Google Form</p>
-                                <p className="mt-1 text-xs leading-relaxed text-navy-500">
+                                <p className="text-sm font-bold text-ink">Configured Google Form</p>
+                                <p className="mt-1 text-xs leading-relaxed text-ink-muted">
                                     Preview orders from the saved SEKALORI Google Forms response sheet.
                                 </p>
                             </div>
                             {configuredImportSettingsHref ? (
                                 <a
                                     href={configuredImportSettingsHref}
-                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-navy-100 bg-white px-3 text-sm font-semibold text-navy-700 transition hover:bg-navy-50 hover:text-teal-700"
+                                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink-secondary transition hover:bg-surface-muted hover:text-teal-700"
                                 >
                                     <Icon name="settings" size={16} />
                                     Configure sheet URL
@@ -134,7 +134,7 @@ export function SpreadsheetImportDialog({
                                 type="button"
                                 size="xl"
                                 disabled={isLoading}
-                                className="bg-teal-700 text-white hover:bg-teal-800"
+                                className="bg-brand text-white hover:bg-brand-hover"
                                 onClick={() => void run(async () => {
                                     resetPreview()
                                     const configuredResult = await operations.previewConfigured!()
@@ -160,7 +160,7 @@ export function SpreadsheetImportDialog({
                     </Button>
                 </div>
 
-                <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
+                <div className="grid gap-3 rounded-md border border-line p-4">
                     <div className="flex gap-2">
                         <Button type="button" variant={sourceMode === "url" ? "default" : "outline"} size="sm" onClick={() => {
                             resetPreview()
@@ -184,14 +184,14 @@ export function SpreadsheetImportDialog({
                             placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
                         />
                     ) : (
-                        <label className="grid gap-1.5 text-sm font-medium text-navy-700">
-                            <span className="text-sm font-semibold text-navy-700">Spreadsheet file</span>
+                        <label className="grid gap-1.5 text-sm font-medium text-ink-secondary">
+                            <span className="text-sm font-semibold text-ink-secondary">Spreadsheet file</span>
                             <input
                                 aria-label="Spreadsheet file"
                                 type="file"
                                 accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                                className="min-h-11 rounded-md border border-navy-100 bg-white px-3 py-2 text-sm text-navy-900"
+                                className="min-h-11 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
                             />
                         </label>
                     )}
@@ -201,7 +201,7 @@ export function SpreadsheetImportDialog({
                             type="button"
                             size="xl"
                             disabled={isLoading || (sourceMode === "url" ? !sourceUrl : !file)}
-                            className="bg-teal-700 text-white hover:bg-teal-800"
+                            className="bg-brand text-white hover:bg-brand-hover"
                             onClick={() => void run(async () => {
                                 const inspected = await operations.inspect(sourceMode === "url" ? { sourceUrl } : { file: file ?? undefined })
                                 setResult(inspected)
@@ -215,7 +215,7 @@ export function SpreadsheetImportDialog({
                 </div>
 
                 {showSheetSelection ? (
-                    <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
+                    <div className="grid gap-3 rounded-md border border-line p-4">
                         <SelectDescription
                             label="Sheet page"
                             value={sheetName}
@@ -232,10 +232,10 @@ export function SpreadsheetImportDialog({
                         />
                         <div className="grid gap-2">
                             {sheets.map((sheet) => (
-                                <div key={sheet.name} className="flex items-center justify-between gap-3 rounded-lg bg-navy-50 px-3 py-2 text-sm">
-                                    <span className="font-semibold text-navy-800">{sheet.name}</span>
+                                <div key={sheet.name} className="flex items-center justify-between gap-3 rounded-lg bg-surface-muted px-3 py-2 text-sm">
+                                    <span className="font-semibold text-ink">{sheet.name}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium text-navy-500">{sheet.row_count} rows</span>
+                                        <span className="text-xs font-medium text-ink-muted">{sheet.row_count} rows</span>
                                         <StatusPill tone={sheet.supported ? "green" : "amber"}>{sheet.supported ? "Supported" : "Unsupported"}</StatusPill>
                                     </div>
                                 </div>
@@ -246,7 +246,7 @@ export function SpreadsheetImportDialog({
                                 type="button"
                                 size="xl"
                                 disabled={isLoading || !canPreview}
-                                className="bg-teal-700 text-white hover:bg-teal-800"
+                                className="bg-brand text-white hover:bg-brand-hover"
                                 onClick={() => void run(async () => {
                                     if (!result?.import.id) return
                                     setResult(await operations.preview(result.import.id, sheetName))
@@ -259,17 +259,17 @@ export function SpreadsheetImportDialog({
                 ) : null}
 
                 {result?.import.status ? (
-                    <div className="grid gap-3 rounded-xl border border-navy-100 p-4">
+                    <div className="grid gap-3 rounded-md border border-line p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <StatusPill tone={result.import.error_count ? "amber" : "green"}>{result.import.status}</StatusPill>
-                            <span className="text-sm font-semibold text-navy-600">
+                            <span className="text-sm font-semibold text-ink-muted">
                                 {result.import.row_count} rows · {result.import.error_count} errors
                             </span>
                         </div>
                         {rowErrors.length > 0 ? (
                             <div className="grid gap-2">
                                 {rowErrors.map((row) => (
-                                    <div key={row.id} className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                                    <div key={row.id} className="rounded-lg border bg-warning-soft px-3 py-2 text-sm text-warning-strong">
                                         <p className="font-bold">Row {row.row_number}</p>
                                         {Object.entries(row.errors).flatMap(([field, errors]) =>
                                             errors.map((error) => <p key={`${field}-${error}`}>{error}</p>),
@@ -281,6 +281,6 @@ export function SpreadsheetImportDialog({
                     </div>
                 ) : null}
             </div>
-        </Dialog>
+        </Modal>
     )
 }

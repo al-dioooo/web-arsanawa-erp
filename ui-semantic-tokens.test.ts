@@ -12,10 +12,10 @@ import { describe, expect, it } from "vitest"
  * extend SCOPES as pages are migrated (end state: all of src/).
  */
 
-const SCOPES = ["src/components/ui"]
+const SCOPES = ["src/components", "src/features", "src/app"]
 
-// Raw shades a primitive may use on purpose (brand-stable, readable on both
-// themes): brand pills and the accent button.
+// Raw shades any file may use on purpose (brand-stable, readable on both
+// themes): brand pills, the accent button, and gradient brand moments.
 const ALLOWED_RAW = new Set([
     "bg-teal-100",
     "text-teal-700",
@@ -23,6 +23,15 @@ const ALLOWED_RAW = new Set([
     "text-orange-700",
     "bg-orange-500",
     "hover:bg-orange-700",
+    "to-teal-900",
+])
+
+// Deliberate brand moments that keep raw brand shades (marketing-style
+// surfaces, not app chrome). Everything else must be semantic.
+const ALLOWED_FILES = new Set([
+    "src/app/(auth)/login/page.tsx",
+    "src/app/(auth)/forgot-password/page.tsx",
+    "src/app/(auth)/reset-password/page.tsx",
 ])
 
 const OFF_BRAND = /(?:^|[\s"'`:])(?:text|bg|border|ring|divide|fill|stroke|outline|placeholder|from|to|via)-(?:rose|amber|emerald|indigo|sky|violet|purple|slate|zinc|gray|stone|neutral|red|green|blue|lime|fuchsia|pink|cyan)-\d+/g
@@ -42,6 +51,8 @@ describe("semantic token ratchet", () => {
         it(`${scope} uses semantic utilities only`, () => {
             const violations: string[] = []
             for (const file of sourceFiles(join(__dirname, scope))) {
+                const relative = file.replace(__dirname + "/", "")
+                if (ALLOWED_FILES.has(relative)) continue
                 const content = readFileSync(file, "utf8")
                 for (const match of content.matchAll(OFF_BRAND)) {
                     violations.push(`${file.replace(__dirname + "/", "")}: ${match[0].trim()}`)
