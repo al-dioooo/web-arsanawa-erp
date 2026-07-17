@@ -20,7 +20,7 @@ export function Tooltip({
             <span
                 role="tooltip"
                 className={cn(
-                    "pointer-events-none absolute right-0 z-50 min-w-max rounded-md border border-navy-100 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700 opacity-0 shadow-sm transition group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100",
+                    "pointer-events-none absolute right-0 z-50 min-w-max rounded-md bg-ink px-2 py-1 text-[11px] font-semibold text-surface opacity-0 shadow-sm transition-opacity group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100",
                     position,
                 )}
             >

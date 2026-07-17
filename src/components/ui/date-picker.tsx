@@ -165,7 +165,7 @@ export function DatePicker({
     }
 
     return (
-        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-navy-700", className)}>
+        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-ink-secondary", className)}>
             {label && <span className={fieldLabelClassName}>{label}</span>}
             <div className="relative">
                 <input
@@ -181,7 +181,7 @@ export function DatePicker({
                 <button
                     type="button"
                     onClick={handleToggleOpen}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-navy-500 hover:text-teal-700 transition cursor-pointer"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-ink-muted hover:text-brand-ink transition-colors cursor-pointer"
                 >
                     <Icon name="calendar_month" className="text-lg" />
                 </button>
@@ -190,7 +190,7 @@ export function DatePicker({
                     <EnterTransition
                         from={position === "bottom" ? "top" : "bottom"}
                         className={cn(
-                            "absolute z-50 w-[280px] rounded-xl border border-navy-100 bg-white p-4 shadow-lg",
+                            "absolute z-50 w-70 rounded-md bg-surface-raised p-4 shadow-card-hover",
                             position === "bottom" ? "top-full mt-1" : "bottom-full mb-1"
                         )}
                     >
@@ -199,24 +199,24 @@ export function DatePicker({
                             <button
                                 type="button"
                                 onClick={handlePrevMonth}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-navy-100 hover:bg-navy-50 text-navy-600 transition cursor-pointer"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-line hover:bg-surface-muted text-ink-secondary transition-colors cursor-pointer"
                             >
                                 <Icon name="chevron_left" className="text-sm" />
                             </button>
-                            <span className="font-bold text-navy-900 font-display">
+                            <span className="font-bold text-ink font-display">
                                 {MONTHS[viewMonth]} {viewYear}
                             </span>
                             <button
                                 type="button"
                                 onClick={handleNextMonth}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-navy-100 hover:bg-navy-50 text-navy-600 transition cursor-pointer"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-line hover:bg-surface-muted text-ink-secondary transition-colors cursor-pointer"
                             >
                                 <Icon name="chevron_right" className="text-sm" />
                             </button>
                         </div>
 
                         {/* Days of week */}
-                        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-navy-400 mb-2 font-display">
+                        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-ink-faint mb-2 font-display">
                             {DAYS_OF_WEEK.map((day) => (
                                 <div key={day} className="h-8 flex items-center justify-center">
                                     {day}
@@ -228,7 +228,7 @@ export function DatePicker({
                         <Highlight
                             value={activeDayKey}
                             containerClassName="grid grid-cols-7 gap-1"
-                            className="bg-teal-50/70 rounded-lg"
+                            className="bg-surface-muted rounded-lg"
                             hover={true}
                         >
                             {daysGrid.map((cell) => {
@@ -247,8 +247,8 @@ export function DatePicker({
                                             onClick={() => handleSelectDay(cell.day, cell.offsetMonth)}
                                             className={cn(
                                                 "h-8 w-8 text-xs font-semibold rounded-lg flex items-center justify-center transition-colors cursor-pointer select-none",
-                                                cell.isCurrentMonth ? "text-navy-800" : "text-navy-300",
-                                                isSelected && "bg-teal-700 text-white font-bold hover:bg-teal-800"
+                                                cell.isCurrentMonth ? "text-ink" : "text-ink-faint",
+                                                isSelected && "bg-brand-soft text-brand-ink font-bold"
                                             )}
                                         >
                                             {cell.day}

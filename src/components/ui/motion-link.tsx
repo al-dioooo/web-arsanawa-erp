@@ -32,16 +32,16 @@ export function MotionLinkItem({
             <Link
                 data-motion-control="link-item"
                 className={cn(
-                    "group flex min-h-24 flex-col justify-between rounded-lg border border-navy-100 bg-white p-4 text-left transition-colors hover:border-teal-300 hover:bg-teal-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700/20",
+                    "group flex min-h-24 flex-col justify-between rounded-lg bg-surface p-4 text-left shadow-card transition-shadow hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                     className,
                 )}
                 {...props}
             >
-                <span className="flex items-center gap-2 text-sm font-bold text-navy-900">
-                    {icon ? <Icon name={icon} className="text-teal-700" /> : null}
+                <span className="flex items-center gap-2 text-sm font-bold text-ink">
+                    {icon ? <Icon name={icon} className="text-brand-ink" /> : null}
                     {label}
                 </span>
-                {children ? <span className="mt-3 text-xs leading-relaxed text-navy-500">{children}</span> : null}
+                {children ? <span className="mt-3 text-xs leading-relaxed text-ink-muted">{children}</span> : null}
             </Link>
         </m.div>
     )

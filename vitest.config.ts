@@ -9,6 +9,9 @@ export default defineConfig({
         globals: true,
         setupFiles: ["./src/test/setup.ts"],
         exclude: ["**/node_modules/**", "**/node_modules_old/**", "**/.next/**", "**/dist/**"],
+        // Heavy jsdom suites time out under full-suite parallel load with the
+        // 5s default even though they pass in isolation.
+        testTimeout: 15000,
     },
     resolve: {
         alias: {

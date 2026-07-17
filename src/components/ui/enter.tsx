@@ -7,6 +7,7 @@ import { DUR, EASE } from "@/lib/motion"
 const MOTION_TAGS = {
     div: m.div,
     form: m.form,
+    header: m.header,
 } as const
 
 type EnterTag = keyof typeof MOTION_TAGS

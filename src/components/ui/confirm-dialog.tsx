@@ -60,9 +60,9 @@ export function useConfirm() {
             }
         >
             {options.message ? (
-                <p className="text-sm leading-relaxed text-navy-600">{options.message}</p>
+                <p className="text-sm leading-relaxed text-ink-muted">{options.message}</p>
             ) : (
-                <p className="text-sm leading-relaxed text-navy-600">This action cannot be undone.</p>
+                <p className="text-sm leading-relaxed text-ink-muted">This action cannot be undone.</p>
             )}
         </Dialog>
     ) : null

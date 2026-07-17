@@ -5,7 +5,7 @@ import { FilterBar } from "@/features/finance/components/filter-bar"
 import { PageHeader } from "@/features/finance/components/page-header"
 
 describe("finance layout components", () => {
-    it("renders the page header with the same card treatment used by inventory pages", () => {
+    it("renders the page header on the canvas with the unified header treatment", () => {
         render(
             <PageHeader
                 title="Bills"
@@ -15,11 +15,12 @@ describe("finance layout components", () => {
         )
 
         expect(screen.getByText("Finance")).toBeInTheDocument()
-        expect(screen.getByRole("heading", { name: "Bills" })).toHaveClass("font-brand")
-        expect(screen.getByRole("banner")).toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white", "p-6")
+        expect(screen.getByRole("heading", { name: "Bills" })).toHaveClass("type-page-title")
+        expect(screen.getByRole("banner")).toHaveClass("mb-6", "flex", "flex-col", "gap-4")
+        expect(screen.getByRole("banner")).not.toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white")
     })
 
-    it("renders filter controls in an inventory-style rounded content section", () => {
+    it("renders filter controls in a design-system surface card", () => {
         render(
             <FilterBar>
                 <select aria-label="Status">
@@ -28,7 +29,9 @@ describe("finance layout components", () => {
             </FilterBar>,
         )
 
-        expect(screen.getByLabelText("Status").closest("section")).toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white")
+        const section = screen.getByLabelText("Status").closest("section")
+        expect(section).toHaveClass("rounded-lg", "bg-surface", "shadow-card")
+        expect(section).not.toHaveClass("border")
     })
 
     it("renders tables with the inventory module table shell", () => {
@@ -41,7 +44,9 @@ describe("finance layout components", () => {
             </DataTable>,
         )
 
-        expect(screen.getByRole("table").parentElement).toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white")
+        const table = screen.getByRole("table")
+        expect(table.parentElement).toHaveClass("overflow-x-auto")
+        expect(table.parentElement?.parentElement).toHaveClass("rounded-lg", "bg-surface", "shadow-card")
         expect(screen.getByRole("columnheader", { name: "Bill Number" })).toHaveClass("uppercase", "tracking-wider")
     })
 })

@@ -226,8 +226,8 @@ function headerFor(name: string) {
 }
 
 function expectDashboardHeader(name: string) {
-    expect(headerFor(name)).toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white", "p-6")
-    expect(headerFor(name)).not.toHaveClass("border-b", "pb-5")
+    expect(headerFor(name)).toHaveClass("mb-6", "flex", "flex-col", "gap-4")
+    expect(headerFor(name)).not.toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white", "border-b", "pb-5")
 }
 
 describe("inventory layout unification", () => {
