@@ -72,7 +72,6 @@ export default function InvoicesPage() {
                     count={invoices.length}
                     columns={6}
                     emptyMessage="No invoices found. Create one to get started."
-                    loadingMessage="Loading invoices..."
                     onRetry={() => refetch()}
                 />
                 {invoices.map((invoice) => (

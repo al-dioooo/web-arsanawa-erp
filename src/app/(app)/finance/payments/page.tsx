@@ -86,7 +86,6 @@ export default function PaymentsPage() {
                     count={payments.length}
                     columns={6}
                     emptyMessage="No outgoing payments found. Create one to get started."
-                    loadingMessage="Loading payments..."
                     onRetry={() => refetch()}
                 />
                 {payments.map((payment) => (

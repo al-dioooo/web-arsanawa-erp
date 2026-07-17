@@ -8,6 +8,7 @@ import { DataTable } from "@/features/finance/components/data-table"
 import { StatusBadge } from "@/features/finance/components/status-badge"
 import { useSession } from "@/features/auth/session-provider"
 import { useTaxReturns, useGenerateTaxReturn, type TaxReturn } from "@/features/finance/api-tax-returns"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 import { Button } from "@/components/ui/button"
 import { InputDate } from "@/components/ui/input-date"
@@ -203,7 +204,7 @@ function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; com
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
                     <div>
                         <h2 className="text-lg font-bold text-navy-900">Generate Tax Return</h2>
@@ -263,7 +264,7 @@ function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; com
                         {generateReturn.isPending ? "Generating..." : "Generate Return"}
                     </Button>
                 </div>
-            </div>
+            </EnterTransition>
         </div>
     )
 }

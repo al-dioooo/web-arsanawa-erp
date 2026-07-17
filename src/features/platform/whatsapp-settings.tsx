@@ -34,14 +34,20 @@ type Draft = {
 
 const EMPTY: Draft = { enabled: false, token: "", sender: "", receipt_template: "" }
 
+function readRow(settings: PlatformSetting[], key: string): PlatformSetting | undefined {
+    return settings.find((setting) => setting.key === key && setting.branch_id === null)
+}
+
 function readValue(settings: PlatformSetting[], key: string): unknown {
-    return settings.find((setting) => setting.key === key && setting.branch_id === null)?.value
+    return readRow(settings, key)?.value
 }
 
 function toDraft(settings: PlatformSetting[]): Draft {
     return {
         enabled: Boolean(readValue(settings, "enabled")),
-        token: String(readValue(settings, "token") ?? ""),
+        // The token is never seeded: the API redacts it, so the only token this
+        // field ever holds is one the user just typed.
+        token: "",
         sender: String(readValue(settings, "sender") ?? ""),
         receipt_template: String(readValue(settings, "receipt_template") ?? ""),
     }
@@ -57,6 +63,10 @@ export function WhatsAppSettings() {
     const [testPhone, setTestPhone] = useState("")
     const [testing, setTesting] = useState(false)
 
+    // The token itself never reaches the browser, so "is one saved?" is the only
+    // thing the UI can know about it.
+    const tokenConfigured = readRow(settings, "token")?.is_set ?? false
+
     // Seed the form from server settings once they arrive (and whenever they
     // change), using React's render-time "reset state on prop change" pattern.
     const [syncedFrom, setSyncedFrom] = useState<PlatformSetting[] | null>(null)
@@ -70,7 +80,9 @@ export function WhatsAppSettings() {
     }
 
     async function save() {
-        if (draft.enabled && draft.token.trim() === "") {
+        const typedToken = draft.token.trim()
+
+        if (draft.enabled && typedToken === "" && !tokenConfigured) {
             toast.error(t("tokenRequired"))
             return
         }
@@ -78,11 +90,26 @@ export function WhatsAppSettings() {
         try {
             await upsert.mutateAsync([
                 { module: MODULE, key: "enabled", value: draft.enabled },
-                { module: MODULE, key: "token", value: draft.token.trim() },
                 { module: MODULE, key: "sender", value: draft.sender.trim() },
                 { module: MODULE, key: "receipt_template", value: draft.receipt_template },
+                // Only send the token when the user actually entered one; omitting
+                // it leaves the stored credential untouched.
+                ...(typedToken !== "" ? [{ module: MODULE, key: "token", value: typedToken }] : []),
             ])
+            setDraft((current) => ({ ...current, token: "" }))
             toast.success(t("saved"))
+        } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : t("saveError"))
+        }
+    }
+
+    async function clearToken() {
+        try {
+            // An explicit empty string is the only way to remove a stored
+            // credential, since null means "leave unchanged".
+            await upsert.mutateAsync([{ module: MODULE, key: "token", value: "" }])
+            setDraft((current) => ({ ...current, token: "", enabled: false }))
+            toast.success(t("tokenCleared"))
         } catch (error) {
             toast.error(error instanceof ApiError ? error.message : t("saveError"))
         }
@@ -140,14 +167,29 @@ export function WhatsAppSettings() {
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                    label={t("token")}
-                    type="password"
-                    autoComplete="off"
-                    value={draft.token}
-                    placeholder="••••••••"
-                    onChange={(event) => set("token", event.target.value)}
-                />
+                <div className="grid gap-1.5">
+                    <Field
+                        label={t("token")}
+                        type="password"
+                        autoComplete="off"
+                        value={draft.token}
+                        placeholder={tokenConfigured ? t("tokenPlaceholderSet") : "••••••••"}
+                        onChange={(event) => set("token", event.target.value)}
+                    />
+                    {tokenConfigured ? (
+                        <div className="flex items-center justify-between gap-3">
+                            <span className={fieldDescriptionClassName}>{t("tokenConfigured")}</span>
+                            <button
+                                type="button"
+                                onClick={clearToken}
+                                disabled={upsert.isPending}
+                                className="shrink-0 text-xs font-semibold text-rose-600 underline"
+                            >
+                                {t("clearToken")}
+                            </button>
+                        </div>
+                    ) : null}
+                </div>
                 <Field
                     label={t("sender")}
                     value={draft.sender}

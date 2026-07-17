@@ -1,16 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SessionProvider } from "@/features/auth/session-provider"
 import { CommandPaletteProvider } from "@/lib/search/command-palette-context"
 import { CommandPalette } from "@/components/command-palette/command-palette"
-import { Toaster } from "sonner"
+import { toast, Toaster } from "sonner"
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
         () =>
             new QueryClient({
+                // Safety net: surface a failed mutation as an error toast unless the
+                // mutation defines its own onError handler (which shows its own).
+                mutationCache: new MutationCache({
+                    onError: (error, _variables, _context, mutation) => {
+                        if (mutation.options.onError) return
+                        const message = error instanceof Error ? error.message : "Something went wrong."
+                        toast.error(message)
+                    },
+                }),
                 defaultOptions: {
                     queries: {
                         staleTime: 5 * 60 * 1000,

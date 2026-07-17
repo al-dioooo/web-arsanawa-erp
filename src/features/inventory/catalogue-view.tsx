@@ -238,13 +238,19 @@ export function CatalogueView() {
                                         </td>
                                     </tr>
                                 ))}
-                                {filteredProducts.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="text-center py-8 text-navy-400 font-medium bg-navy-50/10">
-                                            No products found.
-                                        </td>
-                                    </tr>
-                                )}
+                                {isLoading && filteredProducts.length === 0
+                                    ? Array.from({ length: 4 }).map((_, row) => (
+                                        <tr key={row} aria-hidden="true">
+                                            {Array.from({ length: 4 }).map((__, cell) => (
+                                                <td key={cell} className="px-4 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                                            ))}
+                                        </tr>
+                                    ))
+                                    : filteredProducts.length === 0 && (
+                                        <tr>
+                                            <td colSpan={4} className="text-center py-8 text-navy-400 font-medium bg-navy-50/10">No products found.</td>
+                                        </tr>
+                                    )}
                             </tbody>
                         </table>
                     </div>

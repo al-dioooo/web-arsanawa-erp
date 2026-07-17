@@ -1,7 +1,9 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
 import { SearchableSelect } from "@/components/ui/searchable-select"
@@ -41,12 +43,11 @@ export function RegistersView() {
     const { token, activeCompanyId, organizationContext } = useSession()
     const branches = organizationContext?.branches ?? []
 
+    const [confirm, confirmDialog] = useConfirm()
     const [registers, setRegisters] = useState<Register[]>([])
     const [accounts, setAccounts] = useState<PostableAccount[]>([])
     const [form, setForm] = useState<RegisterForm>(EMPTY_FORM)
     const [isLoading, setIsLoading] = useState(false)
-    const [message, setMessage] = useState<string | null>(null)
-    const [error, setError] = useState<string | null>(null)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -56,7 +57,6 @@ export function RegistersView() {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const [loadedRegisters, loadedAccounts] = await Promise.all([
                 listRegisters(requestOptions),
@@ -65,7 +65,7 @@ export function RegistersView() {
             setRegisters(loadedRegisters)
             setAccounts(loadedAccounts)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load registers.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load registers.")
         } finally {
             setIsLoading(false)
         }
@@ -84,14 +84,12 @@ export function RegistersView() {
     async function runMutation(callback: () => Promise<unknown>, successMessage: string) {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
-        setMessage(null)
         try {
             await callback()
-            setMessage(successMessage)
+            toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : "The request failed.")
         } finally {
             setIsLoading(false)
         }
@@ -130,13 +128,12 @@ export function RegistersView() {
 
     return (
         <div className="grid gap-6">
+            {confirmDialog}
             <PosPageHeader
                 title="Registers"
                 subtitle="Manage POS registers per branch. Each register can be linked to a cash account for settlement."
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                message={message}
-                error={error}
             />
 
             <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
@@ -190,12 +187,20 @@ export function RegistersView() {
                                                     variant="ghost"
                                                     size="icon-sm"
                                                     disabled={isLoading}
-                                                    onClick={() =>
-                                                        void runMutation(
-                                                            () => deleteRegister(requestOptions!, register.id),
-                                                            "Register deleted.",
-                                                        )
-                                                    }
+                                                    onClick={async () => {
+                                                        const ok = await confirm({
+                                                            title: `Delete register “${register.name}”?`,
+                                                            message: "This register will be permanently removed.",
+                                                            confirmLabel: "Delete register",
+                                                            danger: true,
+                                                        })
+                                                        if (ok) {
+                                                            void runMutation(
+                                                                () => deleteRegister(requestOptions!, register.id),
+                                                                "Register deleted.",
+                                                            )
+                                                        }
+                                                    }}
                                                 >
                                                     <Icon name="delete" size={16} className="text-rose-500" />
                                                 </Button>

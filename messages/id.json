@@ -127,7 +127,11 @@
             "testPhoneRequired": "Masukkan nomor telepon untuk diuji.",
             "testSent": "Pesan uji terkirim.",
             "testSkipped": "WhatsApp nonaktif, jadi uji dilewati.",
-            "testFailed": "Pesan uji gagal dikirim."
+            "testFailed": "Pesan uji gagal dikirim.",
+            "tokenConfigured": "Token tersimpan. Masukkan token baru untuk menggantinya.",
+            "tokenPlaceholderSet": "Kosongkan untuk mempertahankan token tersimpan",
+            "clearToken": "Hapus token",
+            "tokenCleared": "Token dihapus."
         }
     },
     "finance": {

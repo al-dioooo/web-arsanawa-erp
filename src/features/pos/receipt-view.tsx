@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSession } from "@/features/auth/session-provider"
 import { PosPageHeader } from "@/features/pos/components/pos-page-header"
@@ -14,7 +15,6 @@ export function ReceiptView({ saleId }: { saleId: number }) {
     const [customers, setCustomers] = useState<Customer[]>([])
     const [registers, setRegisters] = useState<Register[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -24,7 +24,6 @@ export function ReceiptView({ saleId }: { saleId: number }) {
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
-        setError(null)
         try {
             const [loadedSale, loadedCustomers, loadedRegisters] = await Promise.all([
                 getSale(requestOptions, saleId),
@@ -35,7 +34,7 @@ export function ReceiptView({ saleId }: { saleId: number }) {
             setCustomers(loadedCustomers)
             setRegisters(loadedRegisters)
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to load receipt.")
+            toast.error(caught instanceof Error ? caught.message : "Unable to load receipt.")
         } finally {
             setIsLoading(false)
         }
@@ -62,7 +61,6 @@ export function ReceiptView({ saleId }: { saleId: number }) {
                 subtitle={sale?.sale_number ?? undefined}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
-                error={error}
                 actions={sale ? <ReceiptPrintActions saleId={sale.id} /> : undefined}
             />
             {sale ? <ReceiptPreview sale={sale} customerName={customerName} registerName={registerName} /> : null}

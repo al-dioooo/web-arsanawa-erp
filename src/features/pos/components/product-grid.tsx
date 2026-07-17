@@ -83,6 +83,8 @@ export function ProductGrid({ products, categories, priceMap, onAdd, disabled }:
                                 <img
                                     src={product.images[0].url}
                                     alt={product.images[0].alt_text || product.name}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="mb-2 aspect-square w-full rounded-md border border-navy-100 object-cover"
                                 />
                             ) : null}

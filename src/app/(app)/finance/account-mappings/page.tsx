@@ -85,7 +85,11 @@ export default function AccountMappingsPage() {
 
             <div className="bg-white rounded-xl border border-navy-100 shadow-sm p-6">
                 {isLoading ? (
-                    <div className="text-center py-8 text-navy-500">Loading mappings...</div>
+                    <div className="flex flex-col gap-6" aria-hidden="true">
+                        {Array.from({ length: 4 }).map((_, row) => (
+                            <div key={row} className="h-12 animate-pulse rounded-lg bg-navy-100" />
+                        ))}
+                    </div>
                 ) : (
                     <div className="flex flex-col gap-6">
                         {MAPPING_KEYS.map((item) => (

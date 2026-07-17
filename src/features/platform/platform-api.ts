@@ -18,7 +18,12 @@ export type PlatformSetting = {
     branch_id: number | null
     module: string
     key: string
+    /** Always null for credentials — the API never sends a stored secret back. */
     value: unknown
+    /** True when this setting holds a credential and is therefore write-only. */
+    is_secret: boolean
+    /** Whether a value is stored. The only signal available for a secret. */
+    is_set: boolean
 }
 
 export type PlatformSettingInput = {

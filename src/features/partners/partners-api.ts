@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { apiRequest, jsonBody } from "@/lib/api-client"
+import { useSession } from "@/features/auth/session-provider"
 
 export type PartnerType = "customer" | "supplier" | "both"
 export type PartnerStatus = "active" | "inactive"
@@ -206,15 +207,19 @@ export async function deletePartnerAddress(partnerId: number, addressId: number)
 }
 
 export function usePartners(filters: PartnerFilters = {}) {
+    // Scope the cache by company so switching companies doesn't serve stale
+    // partners from the previous company.
+    const { activeCompanyId } = useSession()
     return useQuery({
-        queryKey: ["partners", filters],
+        queryKey: ["partners", activeCompanyId, filters],
         queryFn: () => listPartners(filters),
     })
 }
 
 export function usePartner(partnerId: number | null) {
+    const { activeCompanyId } = useSession()
     return useQuery({
-        queryKey: ["partners", partnerId],
+        queryKey: ["partners", activeCompanyId, partnerId],
         queryFn: () => getPartner(partnerId as number),
         enabled: Boolean(partnerId),
     })

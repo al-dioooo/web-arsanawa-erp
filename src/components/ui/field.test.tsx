@@ -99,4 +99,21 @@ describe("Shared form components", () => {
 
         expect(screen.getByLabelText("Product")).toHaveValue("Nasi Box")
     })
+
+    it("marks a field invalid and links its error text for screen readers", () => {
+        render(<Field label="Company name" error="Name is required" name="name" />)
+
+        const control = screen.getByLabelText("Company name")
+        expect(control).toHaveAttribute("aria-invalid", "true")
+
+        const describedBy = control.getAttribute("aria-describedby")
+        expect(describedBy).toBeTruthy()
+        expect(document.getElementById(describedBy as string)).toHaveTextContent("Name is required")
+    })
+
+    it("does not mark a field invalid when there is no error", () => {
+        render(<Field label="Email" name="email" />)
+
+        expect(screen.getByLabelText("Email")).not.toHaveAttribute("aria-invalid")
+    })
 })

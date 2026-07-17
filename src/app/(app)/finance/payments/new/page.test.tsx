@@ -83,7 +83,7 @@ describe("new outgoing payment page", () => {
                     children: [],
                 },
             ],
-        } as ReturnType<typeof useCOA>)
+        } as unknown as ReturnType<typeof useCOA>)
         vi.mocked(useBills).mockReturnValue({
             data: [
                 {

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
 import { cn } from "@/lib/utils"
@@ -186,10 +187,13 @@ export function DatePicker({
                 </button>
 
                 {isOpen && (
-                    <div className={cn(
-                        "absolute z-50 w-[280px] rounded-xl border border-navy-100 bg-white p-4 shadow-lg animate-in fade-in duration-150",
-                        position === "bottom" ? "top-full mt-1 slide-in-from-top-2" : "bottom-full mb-1 slide-in-from-bottom-2"
-                    )}>
+                    <EnterTransition
+                        from={position === "bottom" ? "top" : "bottom"}
+                        className={cn(
+                            "absolute z-50 w-[280px] rounded-xl border border-navy-100 bg-white p-4 shadow-lg",
+                            position === "bottom" ? "top-full mt-1" : "bottom-full mb-1"
+                        )}
+                    >
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">
                             <button
@@ -253,7 +257,7 @@ export function DatePicker({
                                 )
                             })}
                         </Highlight>
-                    </div>
+                    </EnterTransition>
                 )}
             </div>
             {error && <span className={fieldErrorClassName}>{error}</span>}

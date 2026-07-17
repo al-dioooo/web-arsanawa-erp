@@ -11,10 +11,16 @@ vi.mock("sonner", () => ({
 
         return <div data-testid="sonner-toaster" />
     },
+    toast: { error: vi.fn(), success: vi.fn() },
 }))
 
 vi.mock("@tanstack/react-query", () => ({
     QueryClient: class QueryClient {
+        constructor(options: unknown) {
+            void options
+        }
+    },
+    MutationCache: class MutationCache {
         constructor(options: unknown) {
             void options
         }

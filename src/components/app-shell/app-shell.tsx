@@ -12,6 +12,7 @@ import { ModuleLauncher } from "@/components/app-shell/launcher"
 import { EntitlementGuard } from "@/components/app-shell/guard"
 import { CategoryTreeNav } from "@/components/app-shell/category-tree-nav"
 import { COATreeNav } from "@/features/finance/components/coa-tree-nav"
+import { EnterTransition } from "@/components/ui/enter"
 import { Icon } from "@/components/ui/icon"
 import { Tooltip } from "@/components/ui/tooltip"
 import { CheckIcon, ChevronDownIcon } from "@/components/icons/outline"
@@ -64,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const branchRef = useRef<HTMLDivElement>(null)
     const userRef = useRef<HTMLDivElement>(null)
 
-    // Close menus on outside click
+    // Close menus on outside click or Escape
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             const target = event.target as Node
@@ -75,8 +76,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 setUserOpen(false)
             }
         }
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                setBranchOpen(false)
+                setUserOpen(false)
+            }
+        }
         document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
+        document.addEventListener("keydown", handleKeyDown)
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside)
+            document.removeEventListener("keydown", handleKeyDown)
+        }
     }, [])
 
     // Close mobile sidebar on route change (deferred to avoid a cascading render)
@@ -176,6 +187,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <button
                                     type="button"
                                     onClick={() => setBranchOpen(!branchOpen)}
+                                    aria-haspopup="menu"
+                                    aria-expanded={branchOpen}
                                     className="flex items-center gap-2 rounded-lg border border-navy-100 bg-white px-4 py-2 text-xs font-bold text-navy-700 hover:bg-navy-50 transition-colors outline-none cursor-pointer"
                                 >
                                     <Icon name="warehouse" className="text-sm text-orange-500" />
@@ -186,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 </button>
 
                                 {branchOpen && (
-                                    <div className="absolute right-0 mt-2 z-50 w-64 rounded-lg border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                                    <EnterTransition role="menu" aria-label={t("shell.switchBranch")} className="absolute right-0 mt-2 z-50 w-64 rounded-lg border border-navy-100 bg-white py-2">
                                         <div className="px-4 py-1.5 border-b border-navy-50 mb-1.5">
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-navy-400 font-display">
                                                 {t("shell.switchBranch")}
@@ -204,6 +217,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                         <HighlightItem key={branch.id} value={String(branch.id)}>
                                                             <button
                                                                 type="button"
+                                                                role="menuitem"
                                                                 onClick={async () => {
                                                                     setBranchOpen(false)
                                                                     await selectBranch(branch.id)
@@ -232,7 +246,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </EnterTransition>
                                 )}
                             </div>
                         )}
@@ -245,6 +259,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             <button
                                 type="button"
                                 onClick={() => setUserOpen(!userOpen)}
+                                aria-haspopup="menu"
+                                aria-expanded={userOpen}
                                 className="flex items-center justify-center h-9 w-9 overflow-hidden rounded-xl bg-teal-100 text-teal-700 font-bold border border-teal-200 hover:scale-102 active:scale-98 transition-all outline-none cursor-pointer"
                                 aria-label={t("shell.accountMenu")}
                             >
@@ -261,7 +277,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             </button>
 
                             {userOpen && (
-                                <div className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-navy-100 bg-white py-2 animate-in fade-in slide-in-from-top-2 duration-150">
+                                <EnterTransition role="menu" aria-label={t("shell.accountMenu")} className="absolute right-0 mt-2 z-50 w-64 rounded-2xl border border-navy-100 bg-white py-2">
                                     <div className="px-4 py-2 border-b border-navy-50 mb-1.5">
                                         <p className="truncate text-xs font-bold text-navy-950 leading-tight">
                                             {accountDisplayName}
@@ -290,6 +306,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                         <HighlightItem key={entry.company.id} value={String(entry.company.id)}>
                                                             <button
                                                                 type="button"
+                                                                role="menuitem"
                                                                 onClick={() => handleSwitchCompany(entry.company.id)}
                                                                 className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors outline-none cursor-pointer ${entry.company.id === activeCompanyId ? "text-teal-700" : "text-navy-700"}`}
                                                             >
@@ -329,6 +346,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                     <button
                                                         key={code}
                                                         type="button"
+                                                        role="menuitemradio"
+                                                        aria-checked={locale === code}
                                                         onClick={async () => {
                                                             await setUserLocale(code)
                                                             router.refresh()
@@ -353,6 +372,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             <HighlightItem value="go-to-console">
                                                 <Link
                                                     href="/"
+                                                    role="menuitem"
                                                     onClick={() => setUserOpen(false)}
                                                     className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
@@ -364,6 +384,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             <HighlightItem value="profile-settings">
                                                 <Link
                                                     href="/profile"
+                                                    role="menuitem"
                                                     onClick={() => setUserOpen(false)}
                                                     className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/profile" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
@@ -375,6 +396,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             <HighlightItem value="platform-settings">
                                                 <Link
                                                     href="/platform/settings"
+                                                    role="menuitem"
                                                     onClick={() => setUserOpen(false)}
                                                     className={`flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors outline-none cursor-pointer rounded-md ${pathname === "/platform/settings" ? "text-navy-950 font-bold" : "text-navy-700"}`}
                                                 >
@@ -386,6 +408,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             <HighlightItem value="sign-out">
                                                 <button
                                                     type="button"
+                                                    role="menuitem"
                                                     onClick={handleSignOut}
                                                     className="flex w-full items-center gap-3 px-3.5 py-2 text-left text-rose-600 transition-colors outline-none cursor-pointer rounded-md"
                                                 >
@@ -395,7 +418,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             </HighlightItem>
                                         </Highlight>
                                     </div>
-                                </div>
+                                </EnterTransition>
                             )}
                         </div>
                     </div>

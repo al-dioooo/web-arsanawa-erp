@@ -45,7 +45,7 @@ vi.mock("@/features/pos/pos-api", () => ({
     loadProductsForSale: vi.fn(),
     openShift: vi.fn(),
     removeSalePayment: vi.fn(),
-    resolveVariantPrice: vi.fn(),
+    resolveCompanyPrices: vi.fn(),
     updateSale: vi.fn(),
 }))
 
@@ -159,7 +159,7 @@ describe("RegisterView catering payments", () => {
                 sales: { open: 1, today_total: "150000.0000", today_count: 1 },
             },
         } as Awaited<ReturnType<typeof posApi.loadPosDashboardSummary>>)
-        vi.mocked(posApi.resolveVariantPrice).mockResolvedValue("150000.0000")
+        vi.mocked(posApi.resolveCompanyPrices).mockResolvedValue({ 100: "150000.0000" })
         vi.mocked(posApi.getSale).mockResolvedValue(loadedSale)
         vi.mocked(posApi.completeSale).mockResolvedValue({
             ...loadedSale,
@@ -175,5 +175,10 @@ describe("RegisterView catering payments", () => {
         await waitFor(() => {
             expect(posApi.completeSale).toHaveBeenCalledWith({ token: "token-1", companyId: 1 }, 1)
         })
+
+        // Prices resolve in one batch request per refresh, not one per variant.
+        expect(vi.mocked(posApi.resolveCompanyPrices).mock.calls.length).toBe(
+            vi.mocked(posApi.loadProductsForSale).mock.calls.length,
+        )
     })
 })

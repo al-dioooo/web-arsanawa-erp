@@ -2,7 +2,6 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react
 import { cn } from "@/lib/utils"
 import {
     fieldControlClassName,
-    fieldErrorClassName,
     FormControlShell,
 } from "@/components/ui/form-control"
 
@@ -15,7 +14,7 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export function Field({ label, error, hideLabel, className, children, ...props }: FieldProps) {
     return (
-        <FormControlShell label={label} hideLabel={hideLabel}>
+        <FormControlShell label={label} error={error} hideLabel={hideLabel}>
             {children ?? (
                 <input
                     {...props}
@@ -23,7 +22,6 @@ export function Field({ label, error, hideLabel, className, children, ...props }
                     className={cn(fieldControlClassName, className)}
                 />
             )}
-            {error ? <span className={fieldErrorClassName}>{error}</span> : null}
         </FormControlShell>
     )
 }
@@ -44,7 +42,7 @@ export function SelectField({
     ...props
 }: SelectFieldProps) {
     return (
-        <FormControlShell label={label} hideLabel={hideLabel}>
+        <FormControlShell label={label} error={error} hideLabel={hideLabel}>
             <select
                 {...props}
                 aria-label={props["aria-label"] ?? label}
@@ -52,7 +50,6 @@ export function SelectField({
             >
                 {children}
             </select>
-            {error ? <span className={fieldErrorClassName}>{error}</span> : null}
         </FormControlShell>
     )
 }

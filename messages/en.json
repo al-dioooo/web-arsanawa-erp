@@ -127,7 +127,11 @@
             "testPhoneRequired": "Enter a phone number to test.",
             "testSent": "Test message sent.",
             "testSkipped": "WhatsApp is disabled, so the test was skipped.",
-            "testFailed": "The test message could not be sent."
+            "testFailed": "The test message could not be sent.",
+            "tokenConfigured": "A token is saved. Enter a new one to replace it.",
+            "tokenPlaceholderSet": "Leave blank to keep the saved token",
+            "clearToken": "Clear token",
+            "tokenCleared": "Token cleared."
         }
     },
     "finance": {

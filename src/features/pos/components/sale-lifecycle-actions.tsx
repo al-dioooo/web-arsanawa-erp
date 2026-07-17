@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import type { Sale } from "@/features/pos/pos-types"
 
 type SaleLifecycleActionsProps = {
@@ -13,9 +14,34 @@ type SaleLifecycleActionsProps = {
 }
 
 export function SaleLifecycleActions({ sale, isLoading, onCancel, onVoid }: SaleLifecycleActionsProps) {
+    const [confirm, confirmDialog] = useConfirm()
     const canResume = sale.status === "draft" || sale.status === "confirmed"
     const canCancel = sale.status === "draft" || sale.status === "confirmed"
     const canVoid = sale.status === "completed"
+
+    async function handleCancel() {
+        if (!onCancel) return
+        const ok = await confirm({
+            title: "Cancel this sale?",
+            message: "The sale will be cancelled and removed from the active queue.",
+            confirmLabel: "Cancel sale",
+            cancelLabel: "Keep sale",
+            danger: true,
+        })
+        if (ok) onCancel()
+    }
+
+    async function handleVoid() {
+        if (!onVoid) return
+        const ok = await confirm({
+            title: "Void this completed sale?",
+            message: "Voiding reverses the sale's revenue, COGS journals, and inventory. This can't be undone.",
+            confirmLabel: "Void sale",
+            cancelLabel: "Keep sale",
+            danger: true,
+        })
+        if (ok) onVoid()
+    }
 
     return (
         <div className="flex flex-wrap justify-end gap-2">
@@ -36,15 +62,16 @@ export function SaleLifecycleActions({ sale, isLoading, onCancel, onVoid }: Sale
                 </Link>
             ) : null}
             {canCancel && onCancel ? (
-                <Button type="button" variant="destructive" size="xl" disabled={isLoading} onClick={onCancel}>
+                <Button type="button" variant="destructive" size="xl" disabled={isLoading} onClick={handleCancel}>
                     Cancel sale
                 </Button>
             ) : null}
             {canVoid && onVoid ? (
-                <Button type="button" variant="destructive" size="xl" disabled={isLoading} onClick={onVoid}>
+                <Button type="button" variant="destructive" size="xl" disabled={isLoading} onClick={handleVoid}>
                     Void completed sale
                 </Button>
             ) : null}
+            {confirmDialog}
         </div>
     )
 }

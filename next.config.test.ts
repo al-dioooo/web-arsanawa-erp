@@ -12,6 +12,8 @@ type HeaderRule = {
 async function configuredHeaderMap() {
     expect(typeof nextConfig.headers).toBe("function")
 
+    if (!nextConfig.headers) throw new Error("nextConfig.headers must be defined")
+
     const rules = await nextConfig.headers()
     const globalRule = (rules as HeaderRule[]).find((rule) => rule.source === "/:path*")
 
@@ -46,7 +48,7 @@ describe("next security headers", () => {
     })
 
     it("builds a complete nonce-based production CSP without wildcard or unsafe-inline directives", () => {
-        const policy = buildContentSecurityPolicy("test-nonce", "production")
+        const policy = buildContentSecurityPolicy("test-nonce", "production", "https://api.example.com")
 
         expect(policy).toContain("default-src 'self'")
         expect(policy).toContain("base-uri 'self'")
@@ -55,14 +57,49 @@ describe("next security headers", () => {
         expect(policy).toContain("object-src 'none'")
         expect(policy).toContain("script-src 'self' 'nonce-test-nonce' 'strict-dynamic'")
         expect(policy).toContain("style-src 'self' 'nonce-test-nonce'")
-        expect(policy).toContain("img-src 'self' blob: data: https://api-arsanawa-erp.azuregarden.dedyn.io")
         expect(policy).toContain("font-src 'self' data:")
-        expect(policy).toContain("connect-src 'self' https://api-arsanawa-erp.azuregarden.dedyn.io http://127.0.0.1:8000 http://localhost:8000 http://api-arsanawa-erp.test https://api-arsanawa-erp.test https://api-arsanawa-erp-production.up.railway.app http://103.93.160.222:8080 https://api-arsanawa-erp.duckdns.org http://api-arsanawa-erp.duckdns.org")
         expect(policy).toContain("frame-src 'none'")
         expect(policy).toContain("media-src 'self'")
         expect(policy).toContain("manifest-src 'self'")
         expect(policy).toContain("worker-src 'self' blob:")
         expect(policy).not.toContain("*")
         expect(policy).not.toContain("'unsafe-inline'")
+        expect(policy).not.toContain("'unsafe-eval'")
+    })
+
+    it("allows only the configured API origin in production, not a hardcoded deploy list", () => {
+        const policy = buildContentSecurityPolicy("n", "production", "https://api.example.com")
+
+        expect(policy).toContain("connect-src 'self' https://api.example.com;")
+        expect(policy).toContain("img-src 'self' blob: data: https://api.example.com;")
+        // Historical deploy origins must not creep back: the app only ever calls
+        // NEXT_PUBLIC_API_URL, so every extra origin is unused attack surface.
+        expect(policy).not.toContain("103.93.160.222")
+        expect(policy).not.toContain("duckdns")
+        expect(policy).not.toContain("railway.app")
+        expect(policy).not.toContain("localhost")
+    })
+
+    it("never allow-lists a plaintext API origin in production", () => {
+        const policy = buildContentSecurityPolicy("n", "production", "http://api.example.com")
+
+        // A misconfigured plaintext origin is dropped rather than blessed.
+        expect(policy).not.toContain("http://api.example.com")
+        expect(policy).toContain("connect-src 'self';")
+    })
+
+    it("permits local plaintext API origins in development only", () => {
+        const policy = buildContentSecurityPolicy("n", "development", "http://localhost:8000")
+
+        expect(policy).toContain("http://localhost:8000")
+        expect(policy).toContain("http://127.0.0.1:8000")
+        expect(policy).toContain("https://api-arsanawa-erp.test")
+    })
+
+    it("falls back to a self-only policy when no API origin is configured", () => {
+        const policy = buildContentSecurityPolicy("n", "production", undefined)
+
+        expect(policy).toContain("connect-src 'self';")
+        expect(policy).toContain("img-src 'self' blob: data:;")
     })
 })

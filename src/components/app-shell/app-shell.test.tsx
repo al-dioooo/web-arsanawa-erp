@@ -142,7 +142,7 @@ function mockSession(overrides: {
             available: ["inventory", "finance", "pos"],
             company: null,
         },
-    } as ReturnType<typeof useSession>)
+    } as unknown as ReturnType<typeof useSession>)
 }
 
 describe("AppShell module sidebar", () => {

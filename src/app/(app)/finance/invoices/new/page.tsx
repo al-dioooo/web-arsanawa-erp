@@ -228,6 +228,7 @@ export default function NewInvoicePage() {
                                     <Field
                                         label="Description"
                                         placeholder="Item description..."
+                                        error={errors.lines?.[index]?.description?.message}
                                         {...register(`lines.${index}.description` as const, { required: "Required" })}
                                     />
                                 </div>
@@ -242,6 +243,7 @@ export default function NewInvoicePage() {
                                                 options={accountOptions}
                                                 value={field.value}
                                                 onChange={field.onChange}
+                                                error={errors.lines?.[index]?.revenue_account_id?.message}
                                             />
                                         )}
                                     />
@@ -251,7 +253,8 @@ export default function NewInvoicePage() {
                                         label="Qty"
                                         type="number"
                                         step="0.01"
-                                        {...register(`lines.${index}.quantity` as const, { required: true, valueAsNumber: true })}
+                                        error={errors.lines?.[index]?.quantity?.message}
+                                        {...register(`lines.${index}.quantity` as const, { required: "Required", valueAsNumber: true })}
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
@@ -259,7 +262,8 @@ export default function NewInvoicePage() {
                                         label="Unit Price"
                                         type="number"
                                         step="0.01"
-                                        {...register(`lines.${index}.unit_price` as const, { required: true, valueAsNumber: true })}
+                                        error={errors.lines?.[index]?.unit_price?.message}
+                                        {...register(`lines.${index}.unit_price` as const, { required: "Required", valueAsNumber: true })}
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">

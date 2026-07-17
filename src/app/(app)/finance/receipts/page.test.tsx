@@ -24,7 +24,7 @@ describe("finance receipts page", () => {
         vi.mocked(usePayments).mockReturnValue({
             data: [],
             isLoading: false,
-        } as ReturnType<typeof usePayments>)
+        } as unknown as ReturnType<typeof usePayments>)
 
         render(<ReceiptsPage />)
 

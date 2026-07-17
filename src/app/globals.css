@@ -67,49 +67,6 @@
 }
 
 :root {
-    /* Brand color scales */
-    --color-teal-900: #063d47;
-    --color-teal-700: #0b5c6a;
-    --color-teal-500: #137d90;
-    --color-teal-300: #5ab0be;
-    --color-teal-100: #cdeef2;
-
-    --color-orange-700: #d9522a;
-    --color-orange-500: #f47b50;
-    --color-orange-300: #f9a98a;
-    --color-orange-100: #fde8df;
-
-    --color-yellow-700: #c97a0a;
-    --color-yellow-500: #fbbe57;
-    --color-yellow-300: #fdd892;
-    --color-yellow-100: #fef3d8;
-
-    --color-cream-900: #6b5044;
-    --color-cream-700: #a37565;
-    --color-cream-500: #d4a898;
-    --color-cream-200: #fcf5f0;
-    --color-cream-100: #fffaf7;
-
-    --color-navy-950: #0a0a0a;
-    --color-navy-900: #171717;
-    --color-navy-850: #202020;
-    --color-navy-800: #262626;
-    --color-navy-700: #404040;
-    --color-navy-600: #525252;
-    --color-navy-500: #737373;
-    --color-navy-450: #8c8c8c;
-    --color-navy-400: #a3a3a3;
-    --color-navy-300: #d4d4d4;
-    --color-navy-200: #e5e5e5;
-    --color-navy-100: #f5f5f5;
-    --color-navy-50: #fafafa;
-
-    --color-success: #84cc16;
-    --color-error: #ef4444;
-    --color-warning: #fbbe57;
-    --color-white: #ffffff;
-    --color-black: #000000;
-
     /* shadcn mappings to Arsanawa */
     --background: var(--color-navy-50);
     --foreground: var(--color-navy-900);
@@ -152,6 +109,75 @@
 }
 
 @theme {
+    /*
+     * Brand color scales. These MUST live in @theme (not :root): Tailwind v4
+     * only generates `bg-navy-50`-style utilities for colors declared here.
+     * Shades marked "interpolated" fill gaps in the original brand ramp that
+     * components already reference.
+     */
+    --color-teal-50: #e6f6f8; /* interpolated */
+    --color-teal-100: #cdeef2;
+    --color-teal-200: #93cfd8; /* interpolated */
+    --color-teal-300: #5ab0be;
+    --color-teal-400: #3696a7; /* interpolated */
+    --color-teal-500: #137d90;
+    --color-teal-600: #0f6c7d; /* interpolated */
+    --color-teal-700: #0b5c6a;
+    --color-teal-800: #084c58; /* interpolated */
+    --color-teal-900: #063d47;
+
+    --color-orange-50: #fef3ef; /* interpolated */
+    --color-orange-100: #fde8df;
+    --color-orange-200: #fbc8b4; /* interpolated */
+    --color-orange-300: #f9a98a;
+    --color-orange-400: #f6926d; /* interpolated */
+    --color-orange-500: #f47b50;
+    --color-orange-600: #e6663d; /* interpolated */
+    --color-orange-700: #d9522a;
+    --color-orange-900: #a33d1f; /* interpolated */
+
+    --color-yellow-100: #fef3d8;
+    --color-yellow-300: #fdd892;
+    --color-yellow-500: #fbbe57;
+    --color-yellow-700: #c97a0a;
+
+    --color-cream-100: #fffaf7;
+    --color-cream-200: #fcf5f0;
+    --color-cream-500: #d4a898;
+    --color-cream-700: #a37565;
+    --color-cream-900: #6b5044;
+
+    --color-navy-50: #fafafa;
+    --color-navy-100: #f5f5f5;
+    --color-navy-200: #e5e5e5;
+    --color-navy-300: #d4d4d4;
+    --color-navy-400: #a3a3a3;
+    --color-navy-450: #8c8c8c;
+    --color-navy-500: #737373;
+    --color-navy-600: #525252;
+    --color-navy-700: #404040;
+    --color-navy-800: #262626;
+    --color-navy-850: #202020;
+    --color-navy-900: #171717;
+    --color-navy-950: #0a0a0a;
+
+    --color-success: #84cc16;
+    --color-error: #ef4444;
+    --color-warning: #fbbe57;
+    --color-white: #ffffff;
+    --color-black: #000000;
+
+    /* Semantic status surfaces (soft bg / border / strong text) for pills */
+    --color-success-soft: #ecfdf5;
+    --color-success-border: #a7f3d0;
+    --color-success-strong: #065f46;
+    --color-warning-soft: #fffbeb;
+    --color-warning-border: #fde68a;
+    --color-warning-strong: #92400e;
+    --color-error-soft: #fff1f2;
+    --color-error-border: #fecdd3;
+    --color-error-strong: #9f1239;
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);

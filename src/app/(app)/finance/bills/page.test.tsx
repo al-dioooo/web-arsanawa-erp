@@ -24,7 +24,7 @@ describe("finance bills page", () => {
         vi.mocked(useBills).mockReturnValue({
             data: [],
             isLoading: false,
-        } as ReturnType<typeof useBills>)
+        } as unknown as ReturnType<typeof useBills>)
 
         render(<BillsPage />)
 
@@ -41,7 +41,7 @@ describe("finance bills page", () => {
         vi.mocked(useBills).mockReturnValue({
             data: [],
             isLoading: false,
-        } as ReturnType<typeof useBills>)
+        } as unknown as ReturnType<typeof useBills>)
 
         render(<BillsPage />)
 

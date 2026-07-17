@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
 import { Field, SelectField } from "@/components/ui/field"
 import { PageHeaderShell } from "@/components/ui/page-header-shell"
 import { StatusPill } from "@/components/ui/status-pill"
@@ -20,6 +21,7 @@ import {
 } from "@/features/partners/partners-api"
 
 export function PartnersView() {
+    const [confirm, confirmDialog] = useConfirm()
     const { data: partners = [], isLoading } = usePartners({ per_page: 100 })
     const createPartner = useCreatePartner()
     const updatePartner = useUpdatePartner()
@@ -209,6 +211,7 @@ export function PartnersView() {
 
     return (
         <div className="grid gap-6">
+            {confirmDialog}
             <PageHeaderShell
                 eyebrow="Shared master data"
                 title="Partners"
@@ -226,9 +229,11 @@ export function PartnersView() {
 
                     <div className="grid gap-2">
                         {isLoading ? (
-                            <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                                Loading partners...
-                            </p>
+                            <div className="grid gap-2" aria-hidden="true">
+                                {Array.from({ length: 4 }).map((_, row) => (
+                                    <div key={row} className="h-16 animate-pulse rounded-xl bg-navy-100" />
+                                ))}
+                            </div>
                         ) : partners.length > 0 ? (
                             partners.map((partner) => (
                                 <button
@@ -495,7 +500,15 @@ export function PartnersView() {
                                     variant="destructive"
                                     size="xl"
                                     disabled={deletePartner.isPending}
-                                    onClick={() => void deletePartner.mutateAsync(selectedPartner.id)}
+                                    onClick={async () => {
+                                        const ok = await confirm({
+                                            title: `Delete “${selectedPartner.name}”?`,
+                                            message: "This partner is shared by Finance and POS. This can't be undone.",
+                                            confirmLabel: "Delete",
+                                            danger: true,
+                                        })
+                                        if (ok) void deletePartner.mutateAsync(selectedPartner.id)
+                                    }}
                                 >
                                     Delete partner
                                 </Button>
