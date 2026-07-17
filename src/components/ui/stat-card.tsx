@@ -12,7 +12,8 @@ import { useCountUp } from "@/lib/use-count-up"
 
 export interface StatCardProps {
     label: string
-    href: string
+    /** When set, the whole card links into the owning module's detail page. */
+    href?: string
     value: number
     /**
      * Turns the animated value into the displayed string. MUST be
@@ -21,8 +22,11 @@ export interface StatCardProps {
     formatValue: (n: number) => string
     isLoading?: boolean
     isError?: boolean
-    /** Title of the compact error state shown when the query failed. */
-    errorLabel: string
+    /**
+     * Title of the compact error state shown when the query failed.
+     * Required whenever `isError` can become true.
+     */
+    errorLabel?: string
     /** Optional pill/trend rendered under the value (e.g. "5 transaksi"). */
     badge?: ReactNode
     /** Optional sparkline series rendered at the bottom of the card. */
@@ -32,7 +36,8 @@ export interface StatCardProps {
 
 /**
  * Dashboard stat tile: label, count-up value, optional badge and sparkline.
- * The whole card is a link into the owning module's detail page.
+ * With `href` the whole card is a link (hover lift + chevron); without it
+ * the tile renders as a static metric card.
  */
 export function StatCard({
     label,
@@ -61,21 +66,33 @@ export function StatCard({
         )
     }
 
-    return (
-        <Card as={Link} href={href} hover className="group flex min-h-28 flex-col">
+    const body = (
+        <>
             <div className="flex items-start justify-between gap-2">
                 <CardLabel>{label}</CardLabel>
-                <Icon
-                    name="chevron_right"
-                    size={16}
-                    className="mt-0.5 shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5"
-                />
+                {href ? (
+                    <Icon
+                        name="chevron_right"
+                        size={16}
+                        className="mt-0.5 shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5"
+                    />
+                ) : null}
             </div>
             <CardValue className="mt-1">{display}</CardValue>
             {badge ? <div className="mt-2">{badge}</div> : null}
             {spark && spark.length > 0 ? (
                 <SparkBars data={spark} color={sparkColor} height={36} className="mt-3" />
             ) : null}
-        </Card>
+        </>
     )
+
+    if (href) {
+        return (
+            <Card as={Link} href={href} hover className="group flex min-h-28 flex-col">
+                {body}
+            </Card>
+        )
+    }
+
+    return <Card className="flex min-h-28 flex-col">{body}</Card>
 }

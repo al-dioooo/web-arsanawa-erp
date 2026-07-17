@@ -175,6 +175,37 @@
         }
     },
     "inventory": {
+        "dashboard": {
+            "eyebrow": "Inventory",
+            "title": "Inventory Dashboard",
+            "subtitle": "Track catalogue readiness, sellable SKUs, stock value, and stock movements that still need attention.",
+            "status": {
+                "scoped": "Company scoped",
+                "noCompany": "No company"
+            },
+            "newProduct": "New Product",
+            "widgetError": "Couldn't load data",
+            "statCards": {
+                "products": "Products",
+                "sellableSkus": "Sellable SKUs",
+                "stockValue": "Stock Value",
+                "unsettledMovements": "Unsettled Movements",
+                "activeCount": "{count} active",
+                "activeLots": "{count} active lots",
+                "ledgerRows": "{count} ledger rows"
+            },
+            "needsAttention": {
+                "title": "Needs Attention",
+                "unsettledMovements": "Unsettled stock movements",
+                "expiringLots": "Lots expiring soon",
+                "allClear": "All clear",
+                "allClearHint": "Nothing needs your attention right now."
+            },
+            "quickActions": {
+                "title": "Quick Actions",
+                "openCatalogue": "Open catalogue"
+            }
+        },
         "nav": {
             "product": "PRODUCT",
             "variants": "VARIANTS",
@@ -199,6 +230,50 @@
         }
     },
     "finance": {
+        "dashboard": {
+            "eyebrow": "Finance",
+            "title": "Dashboard",
+            "subtitle": "Overview of your company's financial position — cash, receivables, payables, and pending approvals.",
+            "newInvoice": "New Invoice",
+            "widgetError": "Couldn't load data",
+            "kpis": {
+                "cashPosition": "Cash Position",
+                "arOutstanding": "AR Outstanding",
+                "apOutstanding": "AP Outstanding",
+                "pendingApprovals": "Pending Approvals"
+            },
+            "chart": {
+                "title": "Income vs Expense",
+                "income": "Income",
+                "expense": "Expense",
+                "net": "Net",
+                "average": "Average",
+                "from": "From",
+                "to": "To",
+                "empty": "No data in this range",
+                "emptyHint": "No invoice or bill totals found for this date range."
+            },
+            "recentActivity": {
+                "title": "Recent Activity",
+                "empty": "No activity yet",
+                "emptyHint": "Recent invoices and bills will appear here.",
+                "viewAll": "View all"
+            },
+            "quickActions": {
+                "title": "Quick Actions",
+                "newInvoice": "New Invoice",
+                "newBill": "New Bill",
+                "recordPayment": "Record Payment",
+                "recordReceipt": "Record Receipt",
+                "journalEntry": "Journal Entry"
+            },
+            "reports": {
+                "title": "Reports",
+                "trialBalance": "Trial Balance",
+                "incomeStatement": "Income Statement",
+                "taxReturns": "Tax Returns (SPT)"
+            }
+        },
         "nav": {
             "transactions": "TRANSACTIONS",
             "payablesAndReceivables": "PAYABLES & RECEIVABLES",
@@ -250,6 +325,57 @@
             "sales": "Sales",
             "registers": "Registers",
             "reports": "Reports"
+        },
+        "reports": {
+            "title": "Reports",
+            "subtitle": "Review sales over a date range and inspect cashier shift settlements.",
+            "sales": {
+                "title": "Sales Report",
+                "from": "From",
+                "to": "To",
+                "branch": "Branch",
+                "allBranches": "All branches",
+                "run": "Run report",
+                "error": "Unable to load the sales report.",
+                "empty": "No report yet",
+                "emptyHint": "Pick a date range and run the report.",
+                "totalSales": "Total Sales",
+                "saleCount": "Transactions",
+                "byType": "By Type",
+                "byPaymentMethod": "By Payment Method",
+                "breakdownEmpty": "No data yet",
+                "amount": "Sales"
+            },
+            "saleTypes": {
+                "counter": "Counter",
+                "catering": "Catering"
+            },
+            "paymentMethods": {
+                "cash": "Cash",
+                "card": "Card",
+                "qris": "QRIS",
+                "transfer": "Transfer"
+            },
+            "shift": {
+                "title": "Shift Settlement",
+                "subtitle": "Inspect the cash settlement for each cashier shift.",
+                "select": "Shift",
+                "selectPlaceholder": "Select shift",
+                "optionLabel": "Shift #{id}",
+                "status": {
+                    "open": "Open",
+                    "closed": "Closed"
+                },
+                "empty": "No shifts yet",
+                "emptyHint": "Cashier shifts will appear here for settlement reporting.",
+                "error": "Unable to load the shift report.",
+                "openingFloat": "Opening float",
+                "cashSales": "Cash sales",
+                "nonCashSales": "Non-cash sales",
+                "expectedCash": "Expected cash",
+                "countedCash": "Counted cash",
+                "variance": "Variance"
+            }
         }
     }
 }

@@ -175,6 +175,37 @@
         }
     },
     "inventory": {
+        "dashboard": {
+            "eyebrow": "Inventory",
+            "title": "Dashboard Inventory",
+            "subtitle": "Pantau kesiapan katalog, SKU siap jual, nilai stok, dan pergerakan stok yang masih perlu ditindaklanjuti.",
+            "status": {
+                "scoped": "Terhubung ke perusahaan",
+                "noCompany": "Belum ada perusahaan"
+            },
+            "newProduct": "Produk Baru",
+            "widgetError": "Data tidak dapat dimuat",
+            "statCards": {
+                "products": "Produk",
+                "sellableSkus": "SKU Siap Jual",
+                "stockValue": "Nilai Stok",
+                "unsettledMovements": "Pergerakan Belum Selesai",
+                "activeCount": "{count} aktif",
+                "activeLots": "{count} lot aktif",
+                "ledgerRows": "{count} baris buku pergerakan"
+            },
+            "needsAttention": {
+                "title": "Perlu Tindakan",
+                "unsettledMovements": "Pergerakan stok belum selesai",
+                "expiringLots": "Lot stok segera kedaluwarsa",
+                "allClear": "Semua beres",
+                "allClearHint": "Tidak ada yang perlu ditindaklanjuti saat ini."
+            },
+            "quickActions": {
+                "title": "Aksi Cepat",
+                "openCatalogue": "Buka katalog"
+            }
+        },
         "nav": {
             "product": "PRODUK",
             "variants": "VARIAN",
@@ -199,6 +230,50 @@
         }
     },
     "finance": {
+        "dashboard": {
+            "eyebrow": "Finance",
+            "title": "Dashboard",
+            "subtitle": "Ringkasan posisi keuangan perusahaan — kas, piutang, hutang, dan persetujuan yang menunggu.",
+            "newInvoice": "Faktur Baru",
+            "widgetError": "Data tidak dapat dimuat",
+            "kpis": {
+                "cashPosition": "Posisi Kas",
+                "arOutstanding": "Piutang Usaha (AR)",
+                "apOutstanding": "Hutang Usaha (AP)",
+                "pendingApprovals": "Persetujuan Menunggu"
+            },
+            "chart": {
+                "title": "Pemasukan vs Pengeluaran",
+                "income": "Pemasukan",
+                "expense": "Pengeluaran",
+                "net": "Neto",
+                "average": "Rata-rata",
+                "from": "Dari",
+                "to": "Sampai",
+                "empty": "Tidak ada data pada rentang ini",
+                "emptyHint": "Tidak ada total faktur atau tagihan pada rentang tanggal ini."
+            },
+            "recentActivity": {
+                "title": "Aktivitas Terbaru",
+                "empty": "Belum ada aktivitas",
+                "emptyHint": "Faktur dan tagihan terbaru akan muncul di sini.",
+                "viewAll": "Lihat semua"
+            },
+            "quickActions": {
+                "title": "Aksi Cepat",
+                "newInvoice": "Faktur Baru",
+                "newBill": "Tagihan Baru",
+                "recordPayment": "Catat Pembayaran",
+                "recordReceipt": "Catat Penerimaan",
+                "journalEntry": "Entri Jurnal"
+            },
+            "reports": {
+                "title": "Laporan",
+                "trialBalance": "Neraca Saldo",
+                "incomeStatement": "Laporan Laba Rugi",
+                "taxReturns": "SPT Pajak"
+            }
+        },
         "nav": {
             "transactions": "TRANSAKSI",
             "payablesAndReceivables": "HUTANG & PIUTANG",
@@ -250,6 +325,57 @@
             "sales": "Penjualan",
             "registers": "Register",
             "reports": "Laporan"
+        },
+        "reports": {
+            "title": "Laporan",
+            "subtitle": "Tinjau penjualan dalam rentang tanggal dan periksa penyelesaian kas shift kasir.",
+            "sales": {
+                "title": "Laporan Penjualan",
+                "from": "Dari",
+                "to": "Sampai",
+                "branch": "Cabang",
+                "allBranches": "Semua cabang",
+                "run": "Jalankan laporan",
+                "error": "Laporan penjualan tidak dapat dimuat.",
+                "empty": "Belum ada laporan",
+                "emptyHint": "Pilih rentang tanggal lalu jalankan laporan.",
+                "totalSales": "Total Penjualan",
+                "saleCount": "Jumlah Transaksi",
+                "byType": "Berdasarkan Tipe",
+                "byPaymentMethod": "Berdasarkan Metode Pembayaran",
+                "breakdownEmpty": "Belum ada data",
+                "amount": "Penjualan"
+            },
+            "saleTypes": {
+                "counter": "Counter",
+                "catering": "Catering"
+            },
+            "paymentMethods": {
+                "cash": "Tunai",
+                "card": "Kartu",
+                "qris": "QRIS",
+                "transfer": "Transfer"
+            },
+            "shift": {
+                "title": "Penyelesaian Shift",
+                "subtitle": "Periksa perhitungan kas untuk setiap shift kasir.",
+                "select": "Shift",
+                "selectPlaceholder": "Pilih shift",
+                "optionLabel": "Shift #{id}",
+                "status": {
+                    "open": "Terbuka",
+                    "closed": "Ditutup"
+                },
+                "empty": "Belum ada shift",
+                "emptyHint": "Shift kasir akan muncul di sini untuk laporan penyelesaian kas.",
+                "error": "Laporan shift tidak dapat dimuat.",
+                "openingFloat": "Modal awal",
+                "cashSales": "Penjualan tunai",
+                "nonCashSales": "Penjualan non-tunai",
+                "expectedCash": "Kas seharusnya",
+                "countedCash": "Kas terhitung",
+                "variance": "Selisih"
+            }
         }
     }
 }

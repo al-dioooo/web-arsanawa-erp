@@ -2,12 +2,20 @@
 
 import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
+
+import { CategoryBarChart, type CategoryDatum } from "@/components/charts/category-bar-chart"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Icon } from "@/components/ui/icon"
+import { EmptyState } from "@/components/ui/empty-state"
+import { PageHeader } from "@/components/ui/page-header"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Skeleton, SkeletonCard } from "@/components/ui/skeleton"
+import { StaggerGroup, StaggerItem } from "@/components/ui/stagger"
+import { StatCard } from "@/components/ui/stat-card"
+import { StatusPill } from "@/components/ui/status-pill"
 import { useSession } from "@/features/auth/session-provider"
-import { PosPageHeader } from "@/features/pos/components/pos-page-header"
 import {
     getSalesReport,
     getShiftReport,
@@ -15,14 +23,100 @@ import {
     type PosRequestOptions,
 } from "@/features/pos/pos-api"
 import type { SalesReport, Shift, ShiftReport } from "@/features/pos/pos-types"
-import { formatCurrency, toNumber } from "@/lib/money"
+import { CHART_SERIES } from "@/lib/chart-theme"
 import { formatDateID } from "@/lib/format"
+import { formatCurrency, toNumber } from "@/lib/money"
+
+// Module-level Intl-bound formatters: referentially stable across renders,
+// as useCountUp requires.
+const idrFormatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+})
+const formatIdrValue = idrFormatter.format.bind(idrFormatter)
+
+const countFormatter = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 })
+const formatCountValue = countFormatter.format.bind(countFormatter)
+
+/** Known enum keys with localized labels in pos.reports.saleTypes.*. */
+const SALE_TYPE_KEYS: ReadonlySet<string> = new Set(["counter", "catering"])
+/** Known enum keys with localized labels in pos.reports.paymentMethods.*. */
+const PAYMENT_METHOD_KEYS: ReadonlySet<string> = new Set(["cash", "card", "qris", "transfer"])
+
+/** Fallback label-casing for unknown breakdown keys: "bank_transfer" → "Bank transfer". */
+export function labelCaseKey(key: string): string {
+    const words = key.replace(/[_-]+/g, " ").trim()
+    return words ? words.charAt(0).toUpperCase() + words.slice(1) : key
+}
+
+/**
+ * Maps an API breakdown record ({ key: "150000.0000" }) onto chart rows,
+ * parsing the decimal strings and ranking largest-first.
+ */
+export function toBreakdownData(
+    rows: Record<string, string>,
+    labelFor: (key: string) => string = labelCaseKey,
+): CategoryDatum[] {
+    return Object.entries(rows)
+        .map(([key, value]) => ({ label: labelFor(key), value: toNumber(value) }))
+        .sort((a, b) => b.value - a.value)
+}
+
+/** Per-bar row height keeps short breakdowns from rendering one giant bar. */
+function breakdownChartHeight(rowCount: number): number {
+    return Math.max(140, rowCount * 52 + 36)
+}
+
+interface BreakdownCardProps {
+    title: string
+    rows: Record<string, string>
+    /** Localizes known enum keys; unknown keys fall back to label-casing. */
+    labelFor?: (key: string) => string
+    emptyTitle: string
+    /** Localized series name shown in the chart tooltip. */
+    valueLabel: string
+    color?: string
+}
+
+/** Card wrapping one categorical breakdown of the sales report. */
+export function BreakdownCard({
+    title,
+    rows,
+    labelFor,
+    emptyTitle,
+    valueLabel,
+    color,
+}: BreakdownCardProps) {
+    const data = toBreakdownData(rows, labelFor)
+
+    return (
+        <Card padding="lg">
+            <h3 className="type-section">{title}</h3>
+            {data.length === 0 ? (
+                <EmptyState compact icon="insights" title={emptyTitle} />
+            ) : (
+                <CategoryBarChart
+                    className="mt-4"
+                    data={data}
+                    valueLabel={valueLabel}
+                    valueFormatter={formatIdrValue}
+                    color={color}
+                    height={breakdownChartHeight(data.length)}
+                    labelWidth={130}
+                />
+            )}
+        </Card>
+    )
+}
 
 function today(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
 export function ReportsView() {
+    const t = useTranslations("pos.reports")
+    const rootT = useTranslations()
     const { token, activeCompanyId, organizationContext } = useSession()
     const [from, setFrom] = useState(today())
     const [to, setTo] = useState(today())
@@ -33,7 +127,8 @@ export function ReportsView() {
     const [selectedShift, setSelectedShift] = useState("")
     const [shiftReport, setShiftReport] = useState<ShiftReport | null>(null)
 
-    const [isLoading, setIsLoading] = useState(false)
+    const [isSalesLoading, setIsSalesLoading] = useState(false)
+    const [isShiftLoading, setIsShiftLoading] = useState(false)
 
     const requestOptions = useMemo<PosRequestOptions | null>(() => {
         if (!token || !activeCompanyId) return null
@@ -61,7 +156,7 @@ export function ReportsView() {
 
     async function runSalesReport() {
         if (!requestOptions) return
-        setIsLoading(true)
+        setIsSalesLoading(true)
         try {
             setSalesReport(await getSalesReport(requestOptions, {
                 from,
@@ -69,9 +164,9 @@ export function ReportsView() {
                 branch_id: branchId ? Number(branchId) : null,
             }))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load sales report.")
+            toast.error(caught instanceof Error ? caught.message : t("sales.error"))
         } finally {
-            setIsLoading(false)
+            setIsSalesLoading(false)
         }
     }
 
@@ -81,157 +176,203 @@ export function ReportsView() {
             setShiftReport(null)
             return
         }
-        setIsLoading(true)
+        setIsShiftLoading(true)
         try {
             setShiftReport(await getShiftReport(requestOptions, Number(shiftId)))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load shift report.")
+            toast.error(caught instanceof Error ? caught.message : t("shift.error"))
         } finally {
-            setIsLoading(false)
+            setIsShiftLoading(false)
         }
     }
 
+    const saleTypeLabel = (key: string) =>
+        SALE_TYPE_KEYS.has(key) ? t(`saleTypes.${key}`) : labelCaseKey(key)
+    const paymentMethodLabel = (key: string) =>
+        PAYMENT_METHOD_KEYS.has(key) ? t(`paymentMethods.${key}`) : labelCaseKey(key)
+
+    const variance = toNumber(shiftReport?.cash_variance)
+
     return (
         <div className="grid gap-6">
-            <PosPageHeader
-                title="Reports"
-                subtitle="Review sales over a date range and inspect cashier shift settlements."
-                hasCompany={!!activeCompanyId}
-                isLoading={isLoading}
+            <PageHeader
+                eyebrow={rootT("modules.pos")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                status={
+                    <StatusPill tone={activeCompanyId ? "green" : "amber"}>
+                        {activeCompanyId ? rootT("common.companyScoped") : rootT("common.noCompany")}
+                    </StatusPill>
+                }
+                className="mb-0"
             />
 
-            {/* Sales report */}
-            <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                <h2 className="mb-4 flex items-center gap-2 border-b border-navy-50 pb-3 text-lg font-bold text-navy-900 font-display">
-                    <Icon name="insights" className="text-teal-700" />
-                    <span>Sales report</span>
-                </h2>
-                <div className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
-                    <DatePicker label="From" value={from} onChange={setFrom} />
-                    <DatePicker label="To" value={to} onChange={setTo} />
+            {/* Sales report controls */}
+            <Card padding="lg">
+                <h2 className="type-section">{t("sales.title")}</h2>
+                <div className="mt-4 grid items-end gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                    <DatePicker label={t("sales.from")} value={from} onChange={setFrom} />
+                    <DatePicker label={t("sales.to")} value={to} onChange={setTo} />
                     <SearchableSelect
-                        label="Branch"
+                        label={t("sales.branch")}
                         value={branchId}
                         onChange={(value) => setBranchId(String(value))}
                         options={[
-                            { value: "", label: "All branches" },
+                            { value: "", label: t("sales.allBranches") },
                             ...(organizationContext?.branches ?? []).map((branch) => ({
                                 value: branch.id,
                                 label: branch.name,
                             })),
                         ]}
-                        placeholder="All branches"
+                        placeholder={t("sales.allBranches")}
                     />
                     <Button
                         type="button"
                         size="xl"
-                        disabled={isLoading || !from || !to}
+                        disabled={isSalesLoading || !from || !to}
                         onClick={runSalesReport}
-                        className="bg-teal-700 hover:bg-teal-800 text-white"
                     >
-                        Run report
+                        {t("sales.run")}
                     </Button>
                 </div>
+                {!salesReport && !isSalesLoading ? (
+                    <EmptyState
+                        compact
+                        icon="insights"
+                        title={t("sales.empty")}
+                        description={t("sales.emptyHint")}
+                    />
+                ) : null}
+            </Card>
 
-                {salesReport && (
-                    <div className="mt-6 grid gap-4">
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <SummaryCard label="Total sales" value={formatCurrency(salesReport.total_sales)} />
-                            <SummaryCard label="Sale count" value={String(salesReport.sale_count)} />
-                        </div>
-                        <div className="grid gap-4 lg:grid-cols-2">
-                            <BreakdownTable title="By type" rows={salesReport.by_type} />
-                            <BreakdownTable title="By payment method" rows={salesReport.by_payment_method} />
-                        </div>
+            {/* Sales report results */}
+            {isSalesLoading && !salesReport ? (
+                <div className="grid gap-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <SkeletonCard className="min-h-28" />
+                        <SkeletonCard className="min-h-28" />
                     </div>
-                )}
-                {!salesReport && (
-                    <p className="mt-6 rounded-xl border border-navy-100 bg-navy-50/20 p-4 text-sm font-medium text-navy-400">
-                        Select a date range and run the report.
-                    </p>
-                )}
-            </div>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <Skeleton className="h-56 w-full rounded-lg" />
+                        <Skeleton className="h-56 w-full rounded-lg" />
+                    </div>
+                </div>
+            ) : null}
+            {salesReport ? (
+                <>
+                    <StaggerGroup as="section" className="grid gap-4 sm:grid-cols-2">
+                        <StaggerItem>
+                            <StatCard
+                                label={t("sales.totalSales")}
+                                value={toNumber(salesReport.total_sales)}
+                                formatValue={formatIdrValue}
+                            />
+                        </StaggerItem>
+                        <StaggerItem>
+                            <StatCard
+                                label={t("sales.saleCount")}
+                                value={salesReport.sale_count}
+                                formatValue={formatCountValue}
+                            />
+                        </StaggerItem>
+                    </StaggerGroup>
+                    <section className="grid gap-4 lg:grid-cols-2">
+                        <BreakdownCard
+                            title={t("sales.byType")}
+                            rows={salesReport.by_type}
+                            labelFor={saleTypeLabel}
+                            emptyTitle={t("sales.breakdownEmpty")}
+                            valueLabel={t("sales.amount")}
+                        />
+                        <BreakdownCard
+                            title={t("sales.byPaymentMethod")}
+                            rows={salesReport.by_payment_method}
+                            labelFor={paymentMethodLabel}
+                            emptyTitle={t("sales.breakdownEmpty")}
+                            valueLabel={t("sales.amount")}
+                            color={CHART_SERIES[1]}
+                        />
+                    </section>
+                </>
+            ) : null}
 
-            {/* Shift report */}
-            <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                <h2 className="mb-4 flex items-center gap-2 border-b border-navy-50 pb-3 text-lg font-bold text-navy-900 font-display">
-                    <Icon name="history" className="text-teal-700" />
-                    <span>Shift settlement</span>
-                </h2>
-                <div className="max-w-md">
+            {/* Shift settlement */}
+            <Card padding="lg">
+                <h2 className="type-section">{t("shift.title")}</h2>
+                <p className="mt-0.5 text-xs text-ink-faint">{t("shift.subtitle")}</p>
+                <div className="mt-4 max-w-md">
                     <SearchableSelect
-                        label="Shift"
+                        label={t("shift.select")}
                         value={selectedShift}
                         onChange={(val) => void runShiftReport(String(val))}
                         options={shifts.map((shift) => ({
                             value: shift.id,
-                            label: `Shift #${shift.id} · ${shift.status}${shift.opened_at ? ` · ${formatDateID(shift.opened_at)}` : ""}`,
+                            label: [
+                                t("shift.optionLabel", { id: shift.id }),
+                                t(`shift.status.${shift.status}`),
+                                shift.opened_at ? formatDateID(shift.opened_at) : null,
+                            ]
+                                .filter(Boolean)
+                                .join(" · "),
                         }))}
-                        placeholder="Select shift"
+                        placeholder={t("shift.selectPlaceholder")}
                     />
                 </div>
 
                 {shifts.length === 0 ? (
-                    <p className="mt-4 rounded-xl border border-navy-100 bg-navy-50/20 p-4 text-sm font-medium text-navy-400">
-                        No shifts are available for settlement reporting yet.
-                    </p>
+                    <EmptyState
+                        compact
+                        icon="history"
+                        title={t("shift.empty")}
+                        description={t("shift.emptyHint")}
+                    />
                 ) : null}
 
-                {shiftReport && (
-                    <div className="mt-6 grid gap-1.5 rounded-xl border border-navy-100 bg-navy-50/30 p-5 text-sm">
-                        <SettlementRow label="Opening float" value={formatCurrency(shiftReport.opening_float)} />
-                        <SettlementRow label="Cash sales" value={formatCurrency(shiftReport.cash_sales)} />
-                        <SettlementRow label="Non-cash sales" value={formatCurrency(shiftReport.non_cash_sales)} />
-                        <SettlementRow label="Expected cash" value={formatCurrency(shiftReport.expected_cash)} />
-                        <SettlementRow label="Counted cash" value={formatCurrency(shiftReport.counted_cash)} />
-                        <div className="mt-1 flex justify-between border-t border-navy-100 pt-2 font-bold">
-                            <span>Variance</span>
+                {isShiftLoading && !shiftReport ? (
+                    <Card inset className="mt-5">
+                        <Skeleton className="h-40 w-full" />
+                    </Card>
+                ) : null}
+                {shiftReport ? (
+                    <Card inset className="mt-5 grid gap-1.5 text-sm">
+                        <SettlementRow
+                            label={t("shift.openingFloat")}
+                            value={formatCurrency(shiftReport.opening_float)}
+                        />
+                        <SettlementRow
+                            label={t("shift.cashSales")}
+                            value={formatCurrency(shiftReport.cash_sales)}
+                        />
+                        <SettlementRow
+                            label={t("shift.nonCashSales")}
+                            value={formatCurrency(shiftReport.non_cash_sales)}
+                        />
+                        <SettlementRow
+                            label={t("shift.expectedCash")}
+                            value={formatCurrency(shiftReport.expected_cash)}
+                        />
+                        <SettlementRow
+                            label={t("shift.countedCash")}
+                            value={formatCurrency(shiftReport.counted_cash)}
+                        />
+                        <div className="mt-1 flex justify-between border-t border-line pt-2 font-bold text-ink">
+                            <span>{t("shift.variance")}</span>
                             <span
                                 className={
-                                    toNumber(shiftReport.cash_variance) === 0
-                                        ? "text-navy-900"
-                                        : toNumber(shiftReport.cash_variance) > 0
-                                          ? "text-emerald-700"
-                                          : "text-rose-700"
+                                    variance === 0
+                                        ? "text-ink"
+                                        : variance > 0
+                                          ? "text-success-strong"
+                                          : "text-error-strong"
                                 }
                             >
-                                {toNumber(shiftReport.cash_variance) > 0 ? "+" : ""}
+                                {variance > 0 ? "+" : ""}
                                 {formatCurrency(shiftReport.cash_variance)}
                             </span>
                         </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-}
-
-function SummaryCard({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-xl border border-navy-100 bg-navy-50/30 p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-navy-500 font-display">{label}</p>
-            <p className="mt-2 text-2xl font-bold text-navy-900">{value}</p>
-        </div>
-    )
-}
-
-function BreakdownTable({ title, rows }: { title: string; rows: Record<string, string> }) {
-    const entries = Object.entries(rows)
-    return (
-        <div className="rounded-xl border border-navy-100 p-5">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-navy-500 font-display">{title}</p>
-            {entries.length === 0 ? (
-                <p className="text-sm text-navy-400">No data.</p>
-            ) : (
-                <div className="grid gap-1.5 text-sm">
-                    {entries.map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                            <span className="capitalize text-navy-600">{key}</span>
-                            <span className="font-semibold text-navy-900">{formatCurrency(value)}</span>
-                        </div>
-                    ))}
-                </div>
-            )}
+                    </Card>
+                ) : null}
+            </Card>
         </div>
     )
 }
@@ -239,8 +380,8 @@ function BreakdownTable({ title, rows }: { title: string; rows: Record<string, s
 function SettlementRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex justify-between">
-            <span className="text-navy-500">{label}</span>
-            <span className="font-medium text-navy-700">{value}</span>
+            <span className="text-ink-muted">{label}</span>
+            <span className="font-medium text-ink-secondary tabular-nums">{value}</span>
         </div>
     )
 }
