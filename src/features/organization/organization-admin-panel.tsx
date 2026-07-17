@@ -137,9 +137,11 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
 
                 <div className="grid gap-2">
                     {membershipsLoading ? (
-                        <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                            Loading members...
-                        </p>
+                        <div className="grid gap-2" aria-hidden="true">
+                            {Array.from({ length: 3 }).map((_, row) => (
+                                <div key={row} className="h-14 animate-pulse rounded-xl bg-navy-100" />
+                            ))}
+                        </div>
                     ) : memberships.length > 0 ? (
                         memberships.map((membership) => (
                             <div
@@ -180,9 +182,11 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
 
                 <div className="grid gap-2">
                     {rolesLoading ? (
-                        <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                            Loading roles...
-                        </p>
+                        <div className="grid gap-2" aria-hidden="true">
+                            {Array.from({ length: 3 }).map((_, row) => (
+                                <div key={row} className="h-14 animate-pulse rounded-xl bg-navy-100" />
+                            ))}
+                        </div>
                     ) : (
                         roles.map((role) => (
                             <div

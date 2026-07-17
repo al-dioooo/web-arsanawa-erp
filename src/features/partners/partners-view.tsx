@@ -229,9 +229,11 @@ export function PartnersView() {
 
                     <div className="grid gap-2">
                         {isLoading ? (
-                            <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                                Loading partners...
-                            </p>
+                            <div className="grid gap-2" aria-hidden="true">
+                                {Array.from({ length: 4 }).map((_, row) => (
+                                    <div key={row} className="h-16 animate-pulse rounded-xl bg-navy-100" />
+                                ))}
+                            </div>
                         ) : partners.length > 0 ? (
                             partners.map((partner) => (
                                 <button

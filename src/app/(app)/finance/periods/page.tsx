@@ -65,13 +65,14 @@ export default function PeriodsPage() {
             </FilterBar>
 
             <DataTable columns={["Period Name", "Start Date", "End Date", "Closed At", "Status", "Actions"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Loading periods...
-                        </td>
-                    </tr>
-                )}
+                {isLoading &&
+                    Array.from({ length: 4 }).map((_, row) => (
+                        <tr key={row} aria-hidden="true">
+                            {Array.from({ length: 6 }).map((__, cell) => (
+                                <td key={cell} className="px-6 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                            ))}
+                        </tr>
+                    ))}
                 {!isLoading && periods.length === 0 && (
                     <tr>
                         <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
