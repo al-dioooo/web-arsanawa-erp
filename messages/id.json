@@ -73,6 +73,42 @@
         "posDescription": "Penjualan kasir, pesanan katering, dan shift.",
         "defaultDescription": "Ruang kerja untuk {module}."
     },
+    "home": {
+        "greeting": "Hi {name},",
+        "manageModules": "Kelola Modul",
+        "viewAll": "Lihat semua",
+        "widgetError": "Data tidak dapat dimuat",
+        "transactionsCount": "{count} transaksi",
+        "statCards": {
+            "arOutstanding": "Piutang Usaha (AR)",
+            "apOutstanding": "Hutang Usaha (AP)",
+            "todaySales": "Penjualan Hari Ini",
+            "stockValue": "Nilai Stok"
+        },
+        "chart": {
+            "title": "Pemasukan & Pengeluaran",
+            "subtitle": "Bulan ini",
+            "income": "Pemasukan",
+            "expense": "Pengeluaran",
+            "average": "Rata-rata"
+        },
+        "needsAttention": {
+            "title": "Perlu Tindakan",
+            "pendingApprovals": "Persetujuan menunggu",
+            "draftInvoices": "Faktur draf",
+            "draftBills": "Tagihan draf",
+            "unsettledMovements": "Pergerakan stok belum selesai",
+            "expiringLots": "Lot stok segera kedaluwarsa",
+            "openShifts": "Shift masih terbuka",
+            "allClear": "Semua beres",
+            "allClearHint": "Tidak ada yang perlu ditindaklanjuti saat ini."
+        },
+        "recentActivity": {
+            "title": "Aktivitas Terbaru",
+            "empty": "Belum ada aktivitas",
+            "emptyHint": "Faktur dan tagihan terbaru akan muncul di sini."
+        }
+    },
     "platform": {
         "eyebrow": "Platform",
         "companySettings": "Pengaturan Perusahaan",

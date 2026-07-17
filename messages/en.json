@@ -73,6 +73,42 @@
         "posDescription": "Counter sales, catering orders, and shifts.",
         "defaultDescription": "Workspace for {module}."
     },
+    "home": {
+        "greeting": "Hi {name},",
+        "manageModules": "Manage Modules",
+        "viewAll": "View all",
+        "widgetError": "Couldn't load data",
+        "transactionsCount": "{count} transactions",
+        "statCards": {
+            "arOutstanding": "AR Outstanding",
+            "apOutstanding": "AP Outstanding",
+            "todaySales": "Today's Sales",
+            "stockValue": "Stock Value"
+        },
+        "chart": {
+            "title": "Income & Expense",
+            "subtitle": "This month",
+            "income": "Income",
+            "expense": "Expense",
+            "average": "Average"
+        },
+        "needsAttention": {
+            "title": "Needs Attention",
+            "pendingApprovals": "Pending approvals",
+            "draftInvoices": "Draft invoices",
+            "draftBills": "Draft bills",
+            "unsettledMovements": "Unsettled stock movements",
+            "expiringLots": "Lots expiring soon",
+            "openShifts": "Open shifts",
+            "allClear": "All clear",
+            "allClearHint": "Nothing needs your attention right now."
+        },
+        "recentActivity": {
+            "title": "Recent Activity",
+            "empty": "No activity yet",
+            "emptyHint": "Recent invoices and bills will appear here."
+        }
+    },
     "platform": {
         "eyebrow": "Platform",
         "companySettings": "Company Settings",

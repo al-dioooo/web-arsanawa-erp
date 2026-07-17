@@ -8,7 +8,21 @@ vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))
 
+// The home dashboard (rendered by the `/` route) pulls per-module summaries —
+// keep them idle so this suite exercises only the launcher/entitlement logic.
+vi.mock("@/features/home/home-api", () => ({
+    useInventoryDashboardSummary: () => ({ data: undefined, isLoading: false, isError: false }),
+    usePosDashboardSummary: () => ({ data: undefined, isLoading: false, isError: false }),
+}))
+
+vi.mock("@/features/finance/api", () => ({
+    useFinanceDashboardSummary: () => ({ data: undefined, isLoading: false, isError: false }),
+}))
+
 vi.mock("next-intl", () => ({
+    useFormatter: () => ({
+        dateTime: () => "Kamis, 17 Juli 2026",
+    }),
     useTranslations: () => (key: string, values?: Record<string, string | number>) => {
         const labels: Record<string, string> = {
             "console.eyebrow": "Console",
