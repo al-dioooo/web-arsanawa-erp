@@ -2,17 +2,20 @@
 
 import { useRouter } from "next/navigation"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { useSession } from "@/features/auth/session-provider"
-import { useCreateInvoice, usePartners } from "@/features/finance/api-invoices"
-import { useCOA, useTaxRates, type COAAccount } from "@/features/finance/api"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { SearchableSelect } from "@/components/ui/searchable-select"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Icon } from "@/components/ui/icon"
-import { formatIDR } from "@/lib/format"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Field } from "@/components/ui/field"
+import { Icon } from "@/components/ui/icon"
+import { PageHeader } from "@/components/ui/page-header"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { useSession } from "@/features/auth/session-provider"
+import { useCOA, useTaxRates, type COAAccount } from "@/features/finance/api"
+import { useCreateInvoice, usePartners } from "@/features/finance/api-invoices"
+import { formatIDR } from "@/lib/format"
 
 type InvoiceLineForm = {
     description: string
@@ -33,6 +36,9 @@ type InvoiceForm = {
 export default function NewInvoicePage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
+    const t = useTranslations("finance.invoices.form")
+    const tDetail = useTranslations("finance.detail")
+    const tCommon = useTranslations("common")
 
     // Data sources
     const { data: partners = [] } = usePartners(activeCompanyId, "customer")
@@ -75,7 +81,7 @@ export default function NewInvoicePage() {
     // Select options
     const partnerOptions = partners.map(p => ({ value: String(p.id), label: p.name }))
     const accountOptions = postableAccounts.map(a => ({ value: String(a.id), label: `${a.code} - ${a.name}` }))
-    const taxOptions = [{ value: "", label: "No Tax" }, ...taxRates.filter(t => t.type === 'ppn').map(t => ({ value: String(t.id), label: `${t.name} (${parseFloat(t.rate)}%)` }))]
+    const taxOptions = [{ value: "", label: t("noTax") }, ...taxRates.filter(rate => rate.type === 'ppn').map(rate => ({ value: String(rate.id), label: `${rate.name} (${parseFloat(rate.rate)}%)` }))]
 
     // Calculations
     const calculateTotals = () => {
@@ -87,7 +93,7 @@ export default function NewInvoicePage() {
             subtotal += lineSubtotal
 
             if (line.tax_rate_id) {
-                const taxRate = taxRates.find(t => String(t.id) === line.tax_rate_id)
+                const taxRate = taxRates.find(rate => String(rate.id) === line.tax_rate_id)
                 if (taxRate) {
                     tax_total += lineSubtotal * (parseFloat(taxRate.rate) / 100)
                 }
@@ -107,7 +113,7 @@ export default function NewInvoicePage() {
             const line_subtotal = line.quantity * line.unit_price
             let tax_amount = 0
             if (line.tax_rate_id) {
-                const taxRate = taxRates.find(t => String(t.id) === line.tax_rate_id)
+                const taxRate = taxRates.find(rate => String(rate.id) === line.tax_rate_id)
                 if (taxRate) {
                     tax_amount = line_subtotal * (parseFloat(taxRate.rate) / 100)
                 }
@@ -142,7 +148,7 @@ export default function NewInvoicePage() {
 
         createInvoice.mutate(payload, {
             onSuccess: (res) => {
-                toast.success("Invoice created successfully as Draft")
+                toast.success(t("success"))
                 if (res.data?.invoice?.id) {
                     router.push(`/finance/invoices/${res.data.invoice.id}`)
                 } else {
@@ -150,7 +156,7 @@ export default function NewInvoicePage() {
                 }
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to create invoice")
+                toast.error(err?.message || t("error"))
             }
         })
     }
@@ -158,43 +164,41 @@ export default function NewInvoicePage() {
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-5xl">
             <PageHeader
-                title="Create New Invoice"
-                primaryAction={{
-                    label: createInvoice.isPending ? "Saving..." : "Save Draft",
-                    onClick: handleSubmit(onSubmit),
-                    disabled: createInvoice.isPending
-                }}
+                backHref="/finance/invoices"
+                backLabel={tCommon("back")}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
             />
 
             <div className="grid gap-6">
                 {/* Header Information */}
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
-                    <h2 className="text-lg font-bold text-navy-900 mb-6">Invoice Details</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card padding="lg">
+                    <h2 className="type-section mb-6">{t("detailsTitle")}</h2>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <Controller
                             name="partner_id"
                             control={control}
-                            rules={{ required: "Customer is required" }}
+                            rules={{ required: t("customerRequired") }}
                             render={({ field }) => (
                                 <SearchableSelect
-                                    label="Customer (Partner)"
+                                    label={t("customer")}
                                     options={partnerOptions}
                                     value={field.value}
                                     onChange={field.onChange}
-                                    placeholder="Select customer..."
+                                    placeholder={t("customerPlaceholder")}
                                     error={errors.partner_id?.message}
                                 />
                             )}
                         />
                         <div />
-                        
+
                         <Controller
                             name="invoice_date"
                             control={control}
-                            rules={{ required: "Invoice date is required" }}
+                            rules={{ required: t("invoiceDateRequired") }}
                             render={({ field }) => (
                                 <DatePicker
-                                    label="Invoice Date"
+                                    label={t("invoiceDate")}
                                     value={field.value}
                                     onChange={field.onChange}
                                     error={errors.invoice_date?.message}
@@ -204,10 +208,10 @@ export default function NewInvoicePage() {
                         <Controller
                             name="due_date"
                             control={control}
-                            rules={{ required: "Due date is required" }}
+                            rules={{ required: t("dueDateRequired") }}
                             render={({ field }) => (
                                 <DatePicker
-                                    label="Due Date"
+                                    label={t("dueDate")}
                                     value={field.value}
                                     onChange={field.onChange}
                                     error={errors.due_date?.message}
@@ -215,31 +219,34 @@ export default function NewInvoicePage() {
                             )}
                         />
                     </div>
-                </div>
+                </Card>
 
                 {/* Line Items */}
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
-                    <h2 className="text-lg font-bold text-navy-900 mb-6">Line Items</h2>
-                    
-                    <div className="grid gap-4 mb-6">
+                <Card padding="lg">
+                    <h2 className="type-section mb-6">{t("linesTitle")}</h2>
+
+                    <div className="mb-6 grid gap-4">
                         {fields.map((field, index) => (
-                            <div key={field.id} className="grid grid-cols-12 gap-3 items-start bg-navy-50/50 p-4 rounded-xl border border-navy-100 relative group">
+                            <div
+                                key={field.id}
+                                className="group relative grid grid-cols-12 items-start gap-3 rounded-lg bg-surface-muted p-4"
+                            >
                                 <div className="col-span-12 md:col-span-3">
                                     <Field
-                                        label="Description"
-                                        placeholder="Item description..."
+                                        label={t("lineDescription")}
+                                        placeholder={t("lineDescriptionPlaceholder")}
                                         error={errors.lines?.[index]?.description?.message}
-                                        {...register(`lines.${index}.description` as const, { required: "Required" })}
+                                        {...register(`lines.${index}.description` as const, { required: t("required") })}
                                     />
                                 </div>
                                 <div className="col-span-12 md:col-span-3">
                                     <Controller
                                         name={`lines.${index}.revenue_account_id` as const}
                                         control={control}
-                                        rules={{ required: "Required" }}
+                                        rules={{ required: t("required") }}
                                         render={({ field }) => (
                                             <SearchableSelect
-                                                label="Revenue Account"
+                                                label={t("revenueAccount")}
                                                 options={accountOptions}
                                                 value={field.value}
                                                 onChange={field.onChange}
@@ -250,20 +257,20 @@ export default function NewInvoicePage() {
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
                                     <Field
-                                        label="Qty"
+                                        label={t("qty")}
                                         type="number"
                                         step="0.01"
                                         error={errors.lines?.[index]?.quantity?.message}
-                                        {...register(`lines.${index}.quantity` as const, { required: "Required", valueAsNumber: true })}
+                                        {...register(`lines.${index}.quantity` as const, { required: t("required"), valueAsNumber: true })}
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
                                     <Field
-                                        label="Unit Price"
+                                        label={t("unitPrice")}
                                         type="number"
                                         step="0.01"
                                         error={errors.lines?.[index]?.unit_price?.message}
-                                        {...register(`lines.${index}.unit_price` as const, { required: "Required", valueAsNumber: true })}
+                                        {...register(`lines.${index}.unit_price` as const, { required: t("required"), valueAsNumber: true })}
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
@@ -272,7 +279,7 @@ export default function NewInvoicePage() {
                                         control={control}
                                         render={({ field }) => (
                                             <SearchableSelect
-                                                label="Tax"
+                                                label={t("tax")}
                                                 options={taxOptions}
                                                 value={field.value}
                                                 onChange={field.onChange}
@@ -280,54 +287,60 @@ export default function NewInvoicePage() {
                                         )}
                                     />
                                 </div>
-                                
-                                <button 
-                                    type="button" 
+
+                                <button
+                                    type="button"
                                     onClick={() => remove(index)}
-                                    className="absolute -right-2 -top-2 bg-white text-rose-500 hover:text-white hover:bg-rose-500 border border-navy-100 shadow-sm rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                    aria-label={t("removeLine", { number: index + 1 })}
+                                    className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-pill bg-surface text-error shadow-card opacity-0 transition-all group-hover:opacity-100 hover:bg-error hover:text-white"
                                 >
-                                    <Icon name="close" className="text-xs font-bold" />
+                                    <Icon name="close" size={14} />
                                 </button>
                             </div>
                         ))}
                     </div>
 
-                    <Button 
-                        type="button" 
+                    <Button
+                        type="button"
                         variant="secondary"
-                        className="text-teal-700 bg-teal-50 border-teal-200 hover:bg-teal-100"
                         onClick={() => append({ description: "", revenue_account_id: "", tax_rate_id: "", quantity: 1, unit_price: 0 })}
                     >
-                        <Icon name="add" className="mr-1" /> Add Line Item
+                        <Icon name="add" size={16} className="me-1" /> {t("addLine")}
                     </Button>
-                </div>
+                </Card>
 
                 {/* Footer / Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <Card padding="lg">
                         <Field
-                            label="Notes"
-                            placeholder="Additional notes for the customer..."
+                            label={t("notes")}
+                            placeholder={t("notesPlaceholder")}
                             {...register("notes")}
                         />
-                    </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6 flex flex-col gap-3">
-                        <div className="flex justify-between text-navy-500 font-semibold">
-                            <span>Subtotal</span>
-                            <span>{formatIDR(subtotal)}</span>
+                    </Card>
+                    <Card padding="lg" className="flex flex-col gap-3">
+                        <div className="flex justify-between text-sm font-semibold text-ink-muted">
+                            <span>{tDetail("subtotal")}</span>
+                            <span className="tabular-nums">{formatIDR(subtotal)}</span>
                         </div>
-                        <div className="flex justify-between text-navy-500 font-semibold">
-                            <span>Tax Total</span>
-                            <span>{formatIDR(tax_total)}</span>
+                        <div className="flex justify-between text-sm font-semibold text-ink-muted">
+                            <span>{tDetail("taxTotal")}</span>
+                            <span className="tabular-nums">{formatIDR(tax_total)}</span>
                         </div>
-                        <div className="border-t border-navy-100 my-1" />
-                        <div className="flex justify-between text-navy-900 font-bold text-xl">
-                            <span>Total</span>
-                            <span>{formatIDR(total)}</span>
+                        <div className="my-1 border-t border-line" />
+                        <div className="flex justify-between text-xl font-bold text-ink">
+                            <span>{tDetail("total")}</span>
+                            <span className="tabular-nums">{formatIDR(total)}</span>
                         </div>
-                    </div>
+                    </Card>
                 </div>
-                
+            </div>
+
+            {/* Sticky action footer */}
+            <div className="sticky bottom-0 z-10 mt-6 -mx-2 flex items-center justify-end gap-3 border-t border-line bg-surface/80 px-4 py-4 backdrop-blur">
+                <Button type="submit" size="lg" disabled={createInvoice.isPending}>
+                    {createInvoice.isPending ? t("saving") : t("saveDraft")}
+                </Button>
             </div>
         </form>
     )

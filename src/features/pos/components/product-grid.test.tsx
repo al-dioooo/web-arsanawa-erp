@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import { vi } from "vitest"
 import { ProductGrid } from "@/features/pos/components/product-grid"
+
+vi.mock("next-intl", () => ({
+    useTranslations: () => (key: string) => key,
+}))
 import type { Category, InventoryProduct } from "@/features/inventory/inventory-types"
 
 const categories: Category[] = [
@@ -58,7 +62,7 @@ describe("ProductGrid", () => {
         )
 
         const tile = screen.getByRole("button", { name: /Rice Bowl/i })
-        expect(screen.getByText("No price")).toBeInTheDocument()
+        expect(screen.getByText("noPrice")).toBeInTheDocument()
         expect(tile).toBeDisabled()
 
         fireEvent.click(tile)

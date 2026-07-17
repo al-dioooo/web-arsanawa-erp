@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { NextIntlClientProvider } from "next-intl"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import messages from "../../../messages/en.json"
 import { ApiKeysView } from "@/features/organization/api-keys-view"
 import { useSession } from "@/features/auth/session-provider"
 import {
@@ -142,7 +144,11 @@ describe("ApiKeysView", () => {
     })
 
     it("creates, rotates, and revokes external API keys", async () => {
-        render(<ApiKeysView />)
+        render(
+            <NextIntlClientProvider locale="en" messages={messages}>
+                <ApiKeysView />
+            </NextIntlClientProvider>,
+        )
 
         expect(screen.getByRole("heading", { name: "API Keys" })).toBeInTheDocument()
         expect(screen.getByText("Landing Page")).toBeInTheDocument()

@@ -38,13 +38,13 @@ function filterItems(query: string): SearchItem[] {
 // ── Group accent colours ──────────────────────────────────────────────────────
 
 const GROUP_ACCENT: Record<string, string> = {
-    "Quick Actions":      "text-teal-700",
-    "Console":            "text-teal-700",
-    "Finance":            "text-amber-600",
-    "Finance — Reports":  "text-amber-600",
-    "Finance — Settings": "text-amber-600",
-    "Inventory":          "text-orange-500",
-    "Organization":       "text-navy-500",
+    "Quick Actions":      "text-brand-ink",
+    "Console":            "text-brand-ink",
+    "Finance":            "text-accent",
+    "Finance — Reports":  "text-accent",
+    "Finance — Settings": "text-accent",
+    "Inventory":          "text-accent",
+    "Organization":       "text-ink-muted",
 }
 
 // ── Result row ────────────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
                                 <div className="px-3 pb-1 pt-2">
                                     <p className={cn(
                                         "text-[10px] font-bold uppercase tracking-widest font-display",
-                                        GROUP_ACCENT[group] ?? "text-navy-400"
+                                        GROUP_ACCENT[group] ?? "text-ink-faint"
                                     )}>
                                         {group}
                                     </p>

@@ -1,11 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
-import { PageHeaderShell } from "@/components/ui/page-header-shell"
+import { PageHeader } from "@/components/ui/page-header"
+import { Skeleton } from "@/components/ui/skeleton"
 import { StatusPill } from "@/components/ui/status-pill"
 import { canManageOrganization } from "@/features/auth/access"
 import { useSession } from "@/features/auth/session-provider"
@@ -24,6 +28,8 @@ type SecretState = {
 }
 
 export function ApiKeysView() {
+    const t = useTranslations("organization.apiKeys")
+    const orgT = useTranslations("organization")
     const { activeCompanyId, organizationContext, user } = useSession()
     const canManage = canManageOrganization(organizationContext?.membership, user)
     const apiKeys = useExternalApiKeys(activeCompanyId)
@@ -50,9 +56,9 @@ export function ApiKeysView() {
 
             setSecret({ label: result.api_key.name, value: result.plain_text_key })
             setForm({ name: "", source_channel: "Landing Page", expires_at: "" })
-            toast.success("API key created.")
+            toast.success(t("created"))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to create API key.")
+            toast.error(caught instanceof Error ? caught.message : t("createError"))
         }
     }
 
@@ -60,9 +66,9 @@ export function ApiKeysView() {
         try {
             const result = await rotateKey.mutateAsync(apiKey.id)
             setSecret({ label: result.api_key.name, value: result.plain_text_key })
-            toast.success("API key rotated.")
+            toast.success(t("rotated"))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to rotate API key.")
+            toast.error(caught instanceof Error ? caught.message : t("rotateError"))
         }
     }
 
@@ -72,70 +78,74 @@ export function ApiKeysView() {
             if (secret?.label === apiKey.name) {
                 setSecret(null)
             }
-            toast.success("API key revoked.")
+            toast.success(t("revoked"))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to revoke API key.")
+            toast.error(caught instanceof Error ? caught.message : t("revokeError"))
         }
     }
 
     if (!activeCompanyId || !organizationContext?.company) {
         return (
-            <section className="rounded-2xl border border-navy-100 bg-white p-8 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-navy-100 text-navy-500">
-                    <Icon name="key" className="text-2xl" />
-                </div>
-                <h1 className="mt-4 text-2xl font-brand font-bold text-navy-900">API Keys</h1>
-                <p className="mt-2 text-sm text-navy-500">Select an organization before managing external access keys.</p>
-            </section>
+            <div className="grid gap-6">
+                <PageHeader eyebrow={orgT("eyebrow")} title={t("title")} className="mb-0" />
+                <Card as="section" padding="lg">
+                    <EmptyState icon="key" title={t("title")} description={t("selectOrganization")} />
+                </Card>
+            </div>
         )
     }
 
     if (!canManage) {
         return (
-            <section className="rounded-2xl border border-navy-100 bg-white p-8 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                    <Icon name="lock" className="text-2xl" />
-                </div>
-                <h1 className="mt-4 text-2xl font-brand font-bold text-navy-900">API Keys</h1>
-                <p className="mt-2 text-sm text-navy-500">Your account cannot manage external API keys for this organization.</p>
-            </section>
+            <div className="grid gap-6">
+                <PageHeader eyebrow={orgT("eyebrow")} title={t("title")} className="mb-0" />
+                <Card as="section" padding="lg">
+                    <EmptyState icon="lock" title={t("title")} description={t("cannotManage")} />
+                </Card>
+            </div>
         )
     }
 
     return (
         <div className="grid gap-6">
-            <PageHeaderShell
-                eyebrow="Organization"
-                title="API Keys"
-                subtitle="Create and rotate company-scoped keys for landing pages and external integrations."
-            >
-                <StatusPill tone="green">{organizationContext.company.name}</StatusPill>
-            </PageHeaderShell>
+            <PageHeader
+                eyebrow={orgT("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                status={<StatusPill tone="green">{organizationContext.company.name}</StatusPill>}
+                className="mb-0"
+            />
 
             {secret ? (
-                <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6">
+                <Card as="section" padding="lg" className="bg-warning-soft">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                            <p className="text-sm font-bold text-navy-900">New secret for {secret.label}</p>
-                            <p className="mt-1 text-xs text-navy-500">This value is shown once. Rotate the key if it is lost.</p>
+                            <p className="text-sm font-bold text-ink">
+                                {t("secretTitle", { name: secret.label })}
+                            </p>
+                            <p className="mt-1 text-xs text-ink-muted">{t("secretHint")}</p>
                         </div>
-                        <code className="break-all rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-navy-900">
+                        <code className="break-all rounded-md bg-surface px-3 py-2 text-xs font-semibold text-ink shadow-card">
                             {secret.value}
                         </code>
                     </div>
-                </section>
+                </Card>
             ) : null}
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
-                <div className="rounded-2xl border border-navy-100 bg-white p-6">
+                <Card padding="lg">
                     <div className="mb-4 flex items-center justify-between gap-3">
-                        <h2 className="text-lg font-bold text-navy-900 font-display">Active Keys</h2>
+                        <h2 className="type-section">{t("activeKeys")}</h2>
                         <StatusPill tone="neutral">{apiKeys.data?.length ?? 0}</StatusPill>
                     </div>
 
                     <div className="grid gap-3">
                         {apiKeys.isLoading ? (
-                            <p className="py-6 text-center text-sm text-navy-500">Loading API keys...</p>
+                            <div className="grid gap-3" aria-hidden="true">
+                                {Array.from({ length: 3 }).map((_, row) => (
+                                    <Skeleton key={row} className="h-24 rounded-md" />
+                                ))}
+                            </div>
                         ) : apiKeys.data && apiKeys.data.length > 0 ? (
                             apiKeys.data.map((apiKey) => (
                                 <ApiKeyRow
@@ -147,23 +157,23 @@ export function ApiKeysView() {
                                 />
                             ))
                         ) : (
-                            <p className="py-6 text-center text-sm text-navy-500">No API keys created yet.</p>
+                            <EmptyState compact icon="key" title={t("empty")} />
                         )}
                     </div>
-                </div>
+                </Card>
 
-                <form onSubmit={submit} className="rounded-2xl border border-navy-100 bg-white p-6">
-                    <h2 className="text-lg font-bold text-navy-900 font-display">Create Key</h2>
+                <Card as="form" padding="lg" onSubmit={submit}>
+                    <h2 className="type-section">{t("createTitle")}</h2>
                     <div className="mt-4 grid gap-4">
                         <Field
-                            label="Key name"
+                            label={t("name")}
                             value={form.name}
                             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                             placeholder="SEKALORI Landing Page"
                             required
                         />
                         <Field
-                            label="Source channel"
+                            label={t("sourceChannel")}
                             value={form.source_channel}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, source_channel: event.target.value }))
@@ -171,7 +181,7 @@ export function ApiKeysView() {
                             required
                         />
                         <Field
-                            label="Expires at"
+                            label={t("expiresAt")}
                             type="datetime-local"
                             value={form.expires_at}
                             onChange={(event) =>
@@ -185,9 +195,9 @@ export function ApiKeysView() {
                         className="mt-6 w-full"
                         disabled={createKey.isPending}
                     >
-                        Create API Key
+                        {t("submit")}
                     </Button>
-                </form>
+                </Card>
             </section>
         </div>
     )
@@ -204,21 +214,26 @@ function ApiKeyRow({
     onRevoke: () => void
     isBusy: boolean
 }) {
+    const t = useTranslations("organization.apiKeys")
+
     return (
-        <article className="rounded-xl border border-navy-100 bg-navy-50/20 p-4">
+        <Card as="article" inset padding="sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-bold text-navy-900">{apiKey.name}</h3>
+                        <h3 className="text-sm font-bold text-ink">{apiKey.name}</h3>
                         <StatusPill tone={apiKey.revoked ? "neutral" : "green"}>
-                            {apiKey.revoked ? "Revoked" : "Active"}
+                            {apiKey.revoked ? t("statusRevoked") : t("statusActive")}
                         </StatusPill>
                     </div>
-                    <div className="mt-2 grid gap-1 text-xs text-navy-500">
-                        <span>Prefix: <strong className="font-semibold text-navy-700">{apiKey.token_prefix}</strong></span>
-                        <span>Source: {apiKey.source_channel}</span>
-                        <span>Expires: {compactDateTime(apiKey.expires_at)}</span>
-                        <span>Last used: {compactDateTime(apiKey.last_used_at)}</span>
+                    <div className="mt-2 grid gap-1 text-xs text-ink-muted">
+                        <span>
+                            {t("prefix")}:{" "}
+                            <strong className="font-semibold text-ink-secondary">{apiKey.token_prefix}</strong>
+                        </span>
+                        <span>{t("source")}: {apiKey.source_channel}</span>
+                        <span>{t("expires")}: {compactDateTime(apiKey.expires_at)}</span>
+                        <span>{t("lastUsed")}: {compactDateTime(apiKey.last_used_at)}</span>
                     </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -228,10 +243,10 @@ function ApiKeyRow({
                         size="sm"
                         onClick={onRotate}
                         disabled={isBusy || apiKey.revoked}
-                        aria-label={`Rotate ${apiKey.name}`}
+                        aria-label={t("rotateAria", { name: apiKey.name })}
                     >
                         <Icon name="restart_alt" className="text-base" />
-                        Rotate
+                        {t("rotate")}
                     </Button>
                     <Button
                         type="button"
@@ -239,13 +254,13 @@ function ApiKeyRow({
                         size="sm"
                         onClick={onRevoke}
                         disabled={isBusy || apiKey.revoked}
-                        aria-label={`Revoke ${apiKey.name}`}
+                        aria-label={t("revokeAria", { name: apiKey.name })}
                     >
                         <Icon name="delete" className="text-base" />
-                        Revoke
+                        {t("revoke")}
                     </Button>
                 </div>
             </div>
-        </article>
+        </Card>
     )
 }

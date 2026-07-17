@@ -2,20 +2,26 @@
 
 import { useRouter } from "next/navigation"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { useSession } from "@/features/auth/session-provider"
-import { useCreateBill } from "@/features/finance/api-bills"
-import { usePartners } from "@/features/finance/api-invoices"
-import { useCOA, useTaxRates, type COAAccount } from "@/features/finance/api"
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
 import { Field } from "@/components/ui/field"
+import { fieldControlClassName } from "@/components/ui/form-control"
+import { Icon } from "@/components/ui/icon"
 import { Input } from "@/components/ui/input"
 import { InputDate } from "@/components/ui/input-date"
-import { SelectDescription } from "@/components/ui/select-description"
+import { PageHeader } from "@/components/ui/page-header"
 import { SearchableSelect } from "@/components/ui/searchable-select"
-import { Icon } from "@/components/ui/icon"
+import { SelectDescription } from "@/components/ui/select-description"
+import { useSession } from "@/features/auth/session-provider"
+import { useCOA, useTaxRates, type COAAccount } from "@/features/finance/api"
+import { useCreateBill } from "@/features/finance/api-bills"
+import { usePartners } from "@/features/finance/api-invoices"
 import { formatIDR } from "@/lib/format"
-import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 type BillForm = {
     partner_id: string
@@ -34,6 +40,9 @@ type BillForm = {
 export default function NewBillPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
+    const t = useTranslations("finance.bills.form")
+    const tDetail = useTranslations("finance.detail")
+    const tCommon = useTranslations("common")
 
     // Data dependencies
     const { data: partners = [] } = usePartners(activeCompanyId, "supplier")
@@ -85,7 +94,7 @@ export default function NewBillPage() {
         subtotal += lineSub
 
         if (line.tax_rate_id) {
-            const tax = taxRates.find(t => t.id === parseInt(line.tax_rate_id))
+            const tax = taxRates.find(rate => rate.id === parseInt(line.tax_rate_id))
             if (tax) {
                 const taxAmt = lineSub * (parseFloat(tax.rate) / 100)
                 if (tax.type === 'ppn') {
@@ -101,11 +110,11 @@ export default function NewBillPage() {
 
     const onSubmit = (data: BillForm) => {
         if (!data.partner_id) {
-            toast.error("Please select a vendor")
+            toast.error(t("vendorMissing"))
             return
         }
         if (data.lines.some(l => !l.expense_account_id)) {
-            toast.error("All lines must have an expense account selected")
+            toast.error(t("accountsMissing"))
             return
         }
 
@@ -114,9 +123,9 @@ export default function NewBillPage() {
             const lineSub = (l.quantity || 0) * (l.unit_price || 0)
             let tax_amount = 0
             let withholding_amount = 0
-            
+
             if (l.tax_rate_id) {
-                const tax = taxRates.find(t => t.id === parseInt(l.tax_rate_id))
+                const tax = taxRates.find(rate => rate.id === parseInt(l.tax_rate_id))
                 if (tax) {
                     const taxAmt = lineSub * (parseFloat(tax.rate) / 100)
                     if (tax.type === 'ppn') tax_amount = taxAmt
@@ -155,237 +164,239 @@ export default function NewBillPage() {
 
         createBill.mutate(payload, {
             onSuccess: (res) => {
-                toast.success("Bill created successfully")
+                toast.success(t("success"))
                 router.push(`/finance/bills/${res.data.bill.id}`)
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to create bill")
+                toast.error(err?.message || t("error"))
             }
         })
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-6xl pb-20">
+        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-6xl pb-10">
             <PageHeader
-                title="New Bill"
-                primaryAction={{
-                    label: createBill.isPending ? "Creating..." : "Create Bill",
-                    onClick: () => {},
-                    disabled: createBill.isPending
-                }}
+                backHref="/finance/bills"
+                backLabel={tCommon("back")}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
-                    <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
-                        <Icon name="storefront" /> Vendor Information
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <Card padding="lg" className="md:col-span-2">
+                    <h2 className="type-section mb-4 flex items-center gap-2">
+                        <Icon name="storefront" size={18} className="text-ink-faint" /> {t("vendorTitle")}
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Field label="Vendor" error={errors.partner_id?.message}>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <Field label={t("vendor")} error={errors.partner_id?.message}>
                             <Controller
                                 name="partner_id"
                                 control={control}
-                                rules={{ required: "Vendor is required" }}
+                                rules={{ required: t("vendorRequired") }}
                                 render={({ field }) => (
                                     <SearchableSelect
                                         value={field.value}
                                         onChange={(val) => field.onChange(String(val))}
                                         options={partners.map(p => ({ label: p.name, value: String(p.id) }))}
-                                        placeholder="Select a vendor..."
+                                        placeholder={t("vendorPlaceholder")}
                                     />
                                 )}
                             />
                         </Field>
                     </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
-                    <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
-                        <Icon name="calendar_today" /> Dates
+                <Card padding="lg">
+                    <h2 className="type-section mb-4 flex items-center gap-2">
+                        <Icon name="calendar_today" size={18} className="text-ink-faint" /> {t("datesTitle")}
                     </h2>
                     <div className="grid grid-cols-1 gap-4">
                         <InputDate
-                            label="Bill Date"
+                            label={t("billDate")}
                             error={errors.bill_date?.message}
-                            {...register("bill_date", { required: "Bill date is required" })}
+                            {...register("bill_date", { required: t("billDateRequired") })}
                         />
                         <InputDate
-                            label="Due Date"
+                            label={t("dueDate")}
                             error={errors.due_date?.message}
-                            {...register("due_date", { required: "Due date is required" })}
+                            {...register("due_date", { required: t("dueDateRequired") })}
                         />
                     </div>
-                </div>
+                </Card>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6 mb-6 overflow-x-auto">
-                <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
-                    <Icon name="receipt_long" /> Line Items
-                </h2>
-                
-                <table className="w-full min-w-[800px] text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-navy-200 text-sm text-navy-500">
-                            <th className="pb-3 font-semibold w-1/4">Description</th>
-                            <th className="pb-3 font-semibold px-2 w-1/4">Expense Account</th>
-                            <th className="pb-3 font-semibold px-2 w-24">Qty</th>
-                            <th className="pb-3 font-semibold px-2 w-32">Unit Price</th>
-                            <th className="pb-3 font-semibold px-2 w-32">Tax Rate</th>
-                            <th className="pb-3 font-semibold text-right w-32">Amount</th>
-                            <th className="pb-3 w-10"></th>
+            <DataTable
+                className="mb-6"
+                minWidth={800}
+                toolbar={
+                    <h2 className="type-section flex items-center gap-2">
+                        <Icon name="receipt_long" size={18} className="text-ink-faint" /> {t("linesTitle")}
+                    </h2>
+                }
+                columns={[
+                    { label: t("lineDescription"), className: "w-1/4" },
+                    { label: t("expenseAccount"), className: "w-1/4" },
+                    { label: t("qty"), className: "w-24" },
+                    { label: t("unitPrice"), className: "w-32" },
+                    { label: t("taxRate"), className: "w-32" },
+                    { label: t("amount"), align: "end", className: "w-32" },
+                    { label: "", className: "w-10" },
+                ]}
+                footer={
+                    <div className="p-4">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => append({ description: "", expense_account_id: "", quantity: 1, unit_price: 0, tax_rate_id: "" })}
+                        >
+                            <Icon name="add" size={16} className="me-1" /> {t("addLine")}
+                        </Button>
+                    </div>
+                }
+            >
+                {fields.map((field, index) => {
+                    const line = watchedLines[index]
+                    const lineSub = (line?.quantity || 0) * (line?.unit_price || 0)
+                    let lineAmt = lineSub
+
+                    if (line?.tax_rate_id) {
+                        const tax = taxRates.find(rate => rate.id === parseInt(line.tax_rate_id!))
+                        if (tax) {
+                            const taxAmt = lineSub * (parseFloat(tax.rate) / 100)
+                            if (tax.type === 'ppn') lineAmt += taxAmt
+                            if (tax.type === 'pph') lineAmt -= taxAmt
+                        }
+                    }
+
+                    return (
+                        <tr key={field.id} className="group">
+                            <td className="py-3">
+                                <Input
+                                    label={t("lineDescriptionLabel", { number: index + 1 })}
+                                    hideLabel
+                                    type="text"
+                                    placeholder={t("lineDescriptionPlaceholder")}
+                                    error={errors.lines?.[index]?.description?.message}
+                                    {...register(`lines.${index}.description` as const, { required: t("required") })}
+                                />
+                            </td>
+                            <td className="py-3">
+                                <Controller
+                                    name={`lines.${index}.expense_account_id` as const}
+                                    control={control}
+                                    rules={{ required: t("required") }}
+                                    render={({ field: { value, onChange } }) => (
+                                        <SearchableSelect
+                                            value={value}
+                                            onChange={(val) => onChange(String(val))}
+                                            options={postableAccounts.map(a => ({ label: `${a.code} - ${a.name}`, value: String(a.id) }))}
+                                            placeholder={t("accountPlaceholder")}
+                                            error={errors.lines?.[index]?.expense_account_id?.message}
+                                        />
+                                    )}
+                                />
+                            </td>
+                            <td className="py-3">
+                                <Input
+                                    label={t("lineQtyLabel", { number: index + 1 })}
+                                    hideLabel
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    className="text-end"
+                                    error={errors.lines?.[index]?.quantity?.message}
+                                    {...register(`lines.${index}.quantity` as const, { valueAsNumber: true, required: t("required") })}
+                                />
+                            </td>
+                            <td className="py-3">
+                                <Input
+                                    label={t("lineUnitPriceLabel", { number: index + 1 })}
+                                    hideLabel
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    className="text-end"
+                                    error={errors.lines?.[index]?.unit_price?.message}
+                                    {...register(`lines.${index}.unit_price` as const, { valueAsNumber: true, required: t("required") })}
+                                />
+                            </td>
+                            <td className="py-3">
+                                <SelectDescription
+                                    label={t("lineTaxLabel", { number: index + 1 })}
+                                    hideLabel
+                                    options={[
+                                        { value: "", label: t("noTax"), description: t("noTaxDescription") },
+                                        ...taxRates.map(rate => ({
+                                            value: rate.id,
+                                            label: `${rate.name} (${parseFloat(rate.rate)}%)`,
+                                            description: t("taxRateDescription", { type: rate.type.toUpperCase() }),
+                                        })),
+                                    ]}
+                                    {...register(`lines.${index}.tax_rate_id` as const)}
+                                />
+                            </td>
+                            <td className="py-3 text-end font-medium text-ink tabular-nums">
+                                {formatIDR(lineAmt)}
+                            </td>
+                            <td className="py-3 text-end">
+                                <button
+                                    type="button"
+                                    onClick={() => remove(index)}
+                                    aria-label={t("removeLine", { number: index + 1 })}
+                                    className="p-2 text-ink-faint opacity-0 transition-colors group-hover:opacity-100 hover:text-error"
+                                    tabIndex={-1}
+                                >
+                                    <Icon name="delete" size={18} />
+                                </button>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {fields.map((field, index) => {
-                            const line = watchedLines[index]
-                            const lineSub = (line?.quantity || 0) * (line?.unit_price || 0)
-                            let lineAmt = lineSub
+                    )
+                })}
+            </DataTable>
 
-                            if (line?.tax_rate_id) {
-                                const tax = taxRates.find(t => t.id === parseInt(line.tax_rate_id!))
-                                if (tax) {
-                                    const taxAmt = lineSub * (parseFloat(tax.rate) / 100)
-                                    if (tax.type === 'ppn') lineAmt += taxAmt
-                                    if (tax.type === 'pph') lineAmt -= taxAmt
-                                }
-                            }
-
-                            return (
-                                <tr key={field.id} className="border-b border-navy-50 last:border-0 group">
-                                    <td className="py-3 pr-2">
-                                        <Input
-                                            label={`Line ${index + 1} description`}
-                                            hideLabel
-                                            type="text"
-                                            placeholder="Item description..."
-                                            error={errors.lines?.[index]?.description?.message}
-                                            {...register(`lines.${index}.description` as const, { required: "Required" })}
-                                        />
-                                    </td>
-                                    <td className="py-3 px-2">
-                                        <Controller
-                                            name={`lines.${index}.expense_account_id` as const}
-                                            control={control}
-                                            rules={{ required: "Required" }}
-                                            render={({ field: { value, onChange } }) => (
-                                                <SearchableSelect
-                                                    value={value}
-                                                    onChange={(val) => onChange(String(val))}
-                                                    options={postableAccounts.map(a => ({ label: `${a.code} - ${a.name}`, value: String(a.id) }))}
-                                                    placeholder="Account..."
-                                                    error={errors.lines?.[index]?.expense_account_id?.message}
-                                                />
-                                            )}
-                                        />
-                                    </td>
-                                    <td className="py-3 px-2">
-                                        <Input
-                                            label={`Line ${index + 1} quantity`}
-                                            hideLabel
-                                            type="number"
-                                            min="0"
-                                            step="any"
-                                            className="text-right"
-                                            error={errors.lines?.[index]?.quantity?.message}
-                                            {...register(`lines.${index}.quantity` as const, { valueAsNumber: true, required: "Required" })}
-                                        />
-                                    </td>
-                                    <td className="py-3 px-2">
-                                        <Input
-                                            label={`Line ${index + 1} unit price`}
-                                            hideLabel
-                                            type="number"
-                                            min="0"
-                                            step="any"
-                                            className="text-right"
-                                            error={errors.lines?.[index]?.unit_price?.message}
-                                            {...register(`lines.${index}.unit_price` as const, { valueAsNumber: true, required: "Required" })}
-                                        />
-                                    </td>
-                                    <td className="py-3 px-2">
-                                        <SelectDescription
-                                            label={`Line ${index + 1} tax rate`}
-                                            hideLabel
-                                            options={[
-                                                { value: "", label: "No Tax", description: "Do not apply tax to this line." },
-                                                ...taxRates.map(t => ({
-                                                    value: t.id,
-                                                    label: `${t.name} (${parseFloat(t.rate)}%)`,
-                                                    description: `${t.type.toUpperCase()} tax rate`,
-                                                })),
-                                            ]}
-                                            {...register(`lines.${index}.tax_rate_id` as const)}
-                                        />
-                                    </td>
-                                    <td className="py-3 pl-2 text-right font-medium text-navy-900">
-                                        {formatIDR(lineAmt)}
-                                    </td>
-                                    <td className="py-3 pl-2 text-right">
-                                        <button
-                                            type="button"
-                                            onClick={() => remove(index)}
-                                            className="p-2 text-navy-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                                            tabIndex={-1}
-                                        >
-                                            <Icon name="delete" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
-                <div className="mt-4">
-                    <Button 
-                        type="button" 
-                        variant="secondary" 
-                        onClick={() => append({ description: "", expense_account_id: "", quantity: 1, unit_price: 0, tax_rate_id: "" })}
-                        className="text-sm font-semibold h-9 px-4 rounded-lg"
-                    >
-                        + Add Line
-                    </Button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
-                    <Field label="Notes / Memo">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <Card padding="lg">
+                    <Field label={t("notes")}>
                         <textarea
                             rows={4}
-                            className="w-full p-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30 resize-none"
-                            placeholder="Add any details for internal use..."
+                            className={cn(fieldControlClassName, "resize-none py-2.5")}
+                            placeholder={t("notesPlaceholder")}
                             {...register("notes")}
                         ></textarea>
                     </Field>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6 flex flex-col justify-center">
-                    <div className="flex justify-between text-navy-500 mb-3">
-                        <span className="font-semibold">Subtotal</span>
-                        <span>{formatIDR(subtotal)}</span>
+                <Card padding="lg" className="flex flex-col justify-center gap-3">
+                    <div className="flex justify-between text-sm font-semibold text-ink-muted">
+                        <span>{tDetail("subtotal")}</span>
+                        <span className="tabular-nums">{formatIDR(subtotal)}</span>
                     </div>
                     {tax_total > 0 && (
-                        <div className="flex justify-between text-navy-500 mb-3">
-                            <span className="font-semibold">PPN (Value Added Tax)</span>
-                            <span className="text-teal-600">+{formatIDR(tax_total)}</span>
+                        <div className="flex justify-between text-sm font-semibold text-ink-muted">
+                            <span>{tDetail("ppn")}</span>
+                            <span className="text-brand-ink tabular-nums">+{formatIDR(tax_total)}</span>
                         </div>
                     )}
                     {withholding_total > 0 && (
-                        <div className="flex justify-between text-navy-500 mb-3">
-                            <span className="font-semibold">PPh (Withholding Tax)</span>
-                            <span className="text-rose-600">-{formatIDR(withholding_total)}</span>
+                        <div className="flex justify-between text-sm font-semibold text-ink-muted">
+                            <span>{tDetail("pph")}</span>
+                            <span className="text-error-strong tabular-nums">-{formatIDR(withholding_total)}</span>
                         </div>
                     )}
-                    <div className="border-t border-navy-100 my-4" />
-                    <div className="flex justify-between text-navy-900">
-                        <span className="text-xl font-bold">Total</span>
-                        <span className="text-2xl font-bold">{formatIDR(total)}</span>
+                    <div className="my-1 border-t border-line" />
+                    <div className="flex items-center justify-between text-ink">
+                        <span className="text-xl font-bold">{tDetail("total")}</span>
+                        <span className="text-2xl font-bold tabular-nums">{formatIDR(total)}</span>
                     </div>
-                </div>
+                </Card>
             </div>
-            
-            {/* Hidden submit button since PageHeader triggers form submit indirectly via native form behavior when it's inside */}
-            <button type="submit" className="hidden" />
+
+            {/* Sticky action footer */}
+            <div className="sticky bottom-0 z-10 mt-6 flex items-center justify-end gap-3 border-t border-line bg-surface/80 px-4 py-4 backdrop-blur">
+                <Button type="submit" size="lg" disabled={createBill.isPending}>
+                    {createBill.isPending ? t("creating") : t("create")}
+                </Button>
+            </div>
         </form>
     )
 }

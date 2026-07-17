@@ -1,11 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { TableStateRow } from "@/features/finance/components/table-state-row"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import { useTranslations } from "next-intl"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { Field } from "@/components/ui/field"
+import { Modal } from "@/components/ui/modal"
+import { PageHeader } from "@/components/ui/page-header"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import {
     useCreateTaxRate,
@@ -13,13 +21,6 @@ import {
     useTaxRates,
     useUpdateTaxRate,
 } from "@/features/finance/api"
-import { EnterTransition } from "@/components/ui/enter"
-import { Icon } from "@/components/ui/icon"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { SearchableSelect } from "@/components/ui/searchable-select"
-import { useForm, Controller } from "react-hook-form"
-import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 type TaxRateFormData = {
@@ -28,92 +29,112 @@ type TaxRateFormData = {
     rate: string
 }
 
+const TABS = ["ppn", "pph"] as const
+
 export default function TaxRatesPage() {
+    const t = useTranslations("finance.taxRates")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const { data: taxRates = [], isLoading, isError, error, refetch } = useTaxRates(activeCompanyId)
     const updateTaxRate = useUpdateTaxRate()
     const deleteTaxRate = useDeleteTaxRate()
+    const [confirm, confirmDialog] = useConfirm()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<"ppn" | "pph">("ppn")
 
     const filteredRates = taxRates.filter(rate => rate.type === activeTab)
 
+    const handleDelete = async (rate: (typeof taxRates)[number]) => {
+        const ok = await confirm({
+            title: t("deleteConfirm.title", { name: rate.name }),
+            message: t("deleteConfirm.message"),
+            confirmLabel: tCommon("delete"),
+            cancelLabel: tCommon("cancel"),
+            danger: true,
+        })
+        if (ok) deleteTaxRate.mutate(rate.id)
+    }
+
     return (
         <div className="w-full">
             <PageHeader
-                title="Tax Rates"
-                primaryAction={{
-                    label: "+ New Tax Rate",
-                    onClick: () => setIsDrawerOpen(true)
-                }}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                actions={
+                    <Button size="lg" onClick={() => setIsDrawerOpen(true)}>
+                        {t("new")}
+                    </Button>
+                }
             />
 
-            <FilterBar>
-                <div className="flex-1 text-sm text-navy-500">
-                    Manage tax rates used for generating invoices and bills.
-                </div>
-            </FilterBar>
-
-            <div className="mb-4 border-b border-navy-100 flex gap-4">
-                <button
-                    onClick={() => setActiveTab("ppn")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        activeTab === "ppn" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    PPN (Value Added Tax)
-                </button>
-                <button
-                    onClick={() => setActiveTab("pph")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        activeTab === "pph" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    PPh (Income Tax)
-                </button>
+            <div className="mb-4 flex gap-4 border-b border-line">
+                {TABS.map(tab => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        className={cn(
+                            "cursor-pointer border-b-2 px-1 py-2 text-sm font-semibold transition-colors",
+                            activeTab === tab
+                                ? "border-brand text-brand-ink"
+                                : "border-transparent text-ink-muted hover:text-ink"
+                        )}
+                    >
+                        {t(`tabs.${tab}`)}
+                    </button>
+                ))}
             </div>
 
-            <DataTable columns={["Tax Name", "Type", "Rate (%)", "Status", "Actions"]}>
+            <DataTable
+                columns={[
+                    t("table.name"),
+                    t("table.type"),
+                    t("table.rate"),
+                    t("table.status"),
+                    t("table.actions"),
+                ]}
+            >
                 <TableStateRow
                     isLoading={isLoading}
                     isError={isError}
                     error={error}
                     count={filteredRates.length}
                     columns={5}
-                    emptyMessage={`No ${activeTab.toUpperCase()} tax rates found.`}
+                    emptyMessage={t("empty", { type: activeTab.toUpperCase() })}
                     onRetry={() => refetch()}
                 />
                 {filteredRates.map((rate) => (
-                    <tr key={rate.id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-navy-900">{rate.name}</td>
-                        <td className="px-6 py-4 text-navy-700 uppercase font-mono text-sm">{rate.type}</td>
-                        <td className="px-6 py-4 text-navy-900 font-bold">{parseFloat(rate.rate).toString()}%</td>
-                        <td className="px-6 py-4">
+                    <tr key={rate.id}>
+                        <td className="font-semibold text-ink">{rate.name}</td>
+                        <td className="font-mono text-sm uppercase text-ink-secondary">{rate.type}</td>
+                        <td className="font-bold text-ink">{parseFloat(rate.rate).toString()}%</td>
+                        <td>
                             <StatusBadge status={rate.is_active ? 'active' : 'inactive'} />
                         </td>
-                        <td className="px-6 py-4">
+                        <td>
                             <div className="flex flex-wrap gap-2">
-                                <button
+                                <Button
                                     type="button"
+                                    size="sm"
+                                    variant="secondary"
                                     onClick={() =>
                                         updateTaxRate.mutate({
                                             id: rate.id,
                                             data: { is_active: !rate.is_active },
                                         })
                                     }
-                                    className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-bold text-navy-700 transition-colors hover:bg-navy-100 cursor-pointer"
                                 >
-                                    {rate.is_active ? "Deactivate" : "Activate"}
-                                </button>
-                                <button
+                                    {rate.is_active ? t("deactivate") : t("activate")}
+                                </Button>
+                                <Button
                                     type="button"
-                                    onClick={() => deleteTaxRate.mutate(rate.id)}
-                                    className="rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 cursor-pointer"
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => void handleDelete(rate)}
                                 >
-                                    Delete
-                                </button>
+                                    {tCommon("delete")}
+                                </Button>
                             </div>
                         </td>
                     </tr>
@@ -121,18 +142,22 @@ export default function TaxRatesPage() {
             </DataTable>
 
             {isDrawerOpen && (
-                <TaxRateDrawer 
-                    onClose={() => setIsDrawerOpen(false)} 
+                <TaxRateDrawer
+                    onClose={() => setIsDrawerOpen(false)}
                 />
             )}
+            {confirmDialog}
         </div>
     )
 }
 
 function TaxRateDrawer({ onClose }: { onClose: () => void }) {
+    const t = useTranslations("finance.taxRates.drawer")
+    const tToast = useTranslations("finance.taxRates.toast")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const createTaxRate = useCreateTaxRate()
-    
+
     const { register, handleSubmit, control, formState: { errors } } = useForm<TaxRateFormData>({
         defaultValues: {
             name: "",
@@ -152,70 +177,68 @@ function TaxRateDrawer({ onClose }: { onClose: () => void }) {
             is_active: true
         }, {
             onSuccess: () => {
-                toast.success("Tax rate created successfully")
+                toast.success(tToast("created"))
                 onClose()
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to create tax rate")
+                toast.error(err?.message || tToast("createFailed"))
             }
         })
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
-                    <h2 className="text-lg font-bold text-navy-900">New Tax Rate</h2>
-                    <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
-                        <Icon name="close" />
-                    </button>
-                </div>
-                
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-                    <Field
-                        label="Tax Name"
-                        placeholder="e.g. PPN 11%, PPh 23"
-                        {...register("name", { required: "Name is required" })}
-                        error={errors.name?.message}
+        <Modal
+            open
+            onClose={onClose}
+            variant="drawer"
+            size="md"
+            title={t("title")}
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>{tCommon("cancel")}</Button>
+                    <Button onClick={handleSubmit(onSubmit)} disabled={createTaxRate.isPending}>
+                        {createTaxRate.isPending ? t("saving") : t("save")}
+                    </Button>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                <Field
+                    label={t("name")}
+                    placeholder={t("namePlaceholder")}
+                    {...register("name", { required: t("nameRequired") })}
+                    error={errors.name?.message}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <Controller
+                        name="type"
+                        control={control}
+                        render={({ field }) => (
+                            <SearchableSelect
+                                label={t("type")}
+                                options={[
+                                    { value: "ppn", label: "PPN" },
+                                    { value: "pph", label: "PPh" },
+                                ]}
+                                value={field.value}
+                                onChange={field.onChange}
+                            />
+                        )}
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Controller
-                            name="type"
-                            control={control}
-                            render={({ field }) => (
-                                <SearchableSelect
-                                    label="Tax Type"
-                                    options={[
-                                        { value: "ppn", label: "PPN" },
-                                        { value: "pph", label: "PPh" },
-                                    ]}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                />
-                            )}
-                        />
-                        
-                        <Field
-                            label="Rate (%)"
-                            type="number"
-                            step="0.01"
-                            {...register("rate", { 
-                                required: "Rate is required",
-                                min: { value: 0, message: "Rate cannot be negative" }
-                            })}
-                            error={errors.rate?.message}
-                        />
-                    </div>
-                </form>
-
-                <div className="p-6 border-t border-navy-100 bg-navy-50/50 flex gap-3 justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit(onSubmit)} disabled={createTaxRate.isPending} className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                        {createTaxRate.isPending ? "Saving..." : "Save Tax Rate"}
-                    </Button>
+                    <Field
+                        label={t("rate")}
+                        type="number"
+                        step="0.01"
+                        {...register("rate", {
+                            required: t("rateRequired"),
+                            min: { value: 0, message: t("rateMin") }
+                        })}
+                        error={errors.rate?.message}
+                    />
                 </div>
-            </EnterTransition>
-        </div>
+            </form>
+        </Modal>
     )
 }

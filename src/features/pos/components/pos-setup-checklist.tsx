@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Icon } from "@/components/ui/icon"
 
 type PosSetupChecklistProps = {
@@ -9,20 +10,21 @@ type PosSetupChecklistProps = {
 }
 
 export function PosSetupChecklist({ hasBranch, hasRegister, hasOpenShift }: PosSetupChecklistProps) {
+    const t = useTranslations("pos.register.checklist")
     const items = [
-        { label: "Branch selected", done: hasBranch },
-        { label: "Active register selected", done: hasRegister },
-        { label: "Shift open for selected register", done: hasOpenShift },
+        { key: "branch", label: t("branch"), done: hasBranch },
+        { key: "register", label: t("register"), done: hasRegister },
+        { key: "shift", label: t("shift"), done: hasOpenShift },
     ]
 
     if (items.every((item) => item.done)) return null
 
     return (
-        <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-4 text-sm">
-            <p className="mb-2 font-bold text-orange-900">Register setup required</p>
+        <div className="rounded-md bg-warning-soft p-4 text-sm">
+            <p className="mb-2 font-bold text-warning-strong">{t("title")}</p>
             <div className="grid gap-1.5">
                 {items.map((item) => (
-                    <div key={item.label} className="flex items-center gap-2 font-medium text-orange-900">
+                    <div key={item.key} className="flex items-center gap-2 font-medium text-warning-strong">
                         <Icon name={item.done ? "check" : "radio_button_unchecked"} size={16} />
                         <span>{item.label}</span>
                     </div>

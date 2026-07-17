@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { useSession } from "@/features/auth/session-provider"
 
 export function CompanyCreateForm() {
+    const t = useTranslations("organization.createCompany")
     const { createCompany, fieldErrors, isLoading } = useSession()
     const [form, setForm] = useState({
         name: "",
@@ -30,21 +32,21 @@ export function CompanyCreateForm() {
         <form onSubmit={submit} className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
                 <Field
-                    label="Company name"
+                    label={t("name")}
                     value={form.name}
                     error={fieldErrors?.name?.[0]}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                     required
                 />
                 <Field
-                    label="Slug"
+                    label={t("slug")}
                     value={form.slug}
                     error={fieldErrors?.slug?.[0]}
                     onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
                     placeholder="sekalori"
                 />
                 <Field
-                    label="Legal name"
+                    label={t("legalName")}
                     value={form.legal_name}
                     error={fieldErrors?.legal_name?.[0]}
                     onChange={(event) =>
@@ -52,7 +54,7 @@ export function CompanyCreateForm() {
                     }
                 />
                 <Field
-                    label="Tax identifier"
+                    label={t("taxIdentifier")}
                     value={form.tax_identifier}
                     error={fieldErrors?.tax_identifier?.[0]}
                     onChange={(event) =>
@@ -60,19 +62,19 @@ export function CompanyCreateForm() {
                     }
                 />
                 <Field
-                    label="Primary branch"
+                    label={t("primaryBranch")}
                     value={form.primary_branch_name}
                     error={fieldErrors?.primary_branch_name?.[0]}
                     onChange={(event) =>
                         setForm((current) => ({ ...current, primary_branch_name: event.target.value }))
                     }
-                    placeholder="Head Office"
+                    placeholder={t("primaryBranchPlaceholder")}
                 />
             </div>
 
-            <div className="flex justify-end mt-4">
-                <Button type="submit" size="xl" disabled={isLoading} className="cursor-pointer">
-                    {isLoading ? "Creating..." : "Create company"}
+            <div className="mt-4 flex justify-end">
+                <Button type="submit" size="xl" disabled={isLoading}>
+                    {isLoading ? t("creating") : t("submit")}
                 </Button>
             </div>
         </form>

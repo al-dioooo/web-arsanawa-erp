@@ -1,13 +1,16 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 import { DataTable } from "@/components/ui/data-table"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import {
     addVariant,
     deleteVariant,
@@ -16,7 +19,6 @@ import {
     syncProductTags,
     updateVariant,
 } from "@/features/inventory/inventory-api"
-import { inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import type { InventoryProduct, ProductVariant } from "@/features/inventory/inventory-types"
 import type { Branch } from "@/lib/types"
 
@@ -41,6 +43,9 @@ export function ProductVariantManager({
     branches: Branch[]
     onChanged?: () => void
 }) {
+    const t = useTranslations("inventory.master.variantManager")
+    const statusT = useTranslations("inventory.master.status")
+    const commonT = useTranslations("common")
     const [product, setProduct] = useState<InventoryProduct | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [isMutating, setIsMutating] = useState(false)
@@ -58,11 +63,11 @@ export function ProductVariantManager({
             setProduct(response.data.product)
             setTags((response.data.product.tags ?? []).map((tag) => tag.name))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load product variants.")
+            toast.error(caught instanceof Error ? caught.message : t("toast.loadError"))
         } finally {
             setIsLoading(false)
         }
-    }, [productId, requestOptions])
+    }, [productId, requestOptions, t])
 
     useEffect(() => {
         let active = true
@@ -82,7 +87,7 @@ export function ProductVariantManager({
             await loadProduct()
             onChanged?.()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Something went wrong.")
+            toast.error(caught instanceof Error ? caught.message : t("toast.error"))
         } finally {
             setIsMutating(false)
         }
@@ -98,7 +103,7 @@ export function ProductVariantManager({
                     name: addForm.name.trim() || null,
                     barcode: addForm.barcode.trim() || null,
                 }),
-            "Variant added.",
+            t("toast.added"),
         )
         setAddForm(emptyVariantForm)
     }
@@ -116,7 +121,7 @@ export function ProductVariantManager({
                     name: editForm.name.trim() || null,
                     barcode: editForm.barcode.trim() || null,
                 }),
-            "Variant updated.",
+            t("toast.updated"),
         )
         setEditingVariantId(null)
     }
@@ -124,19 +129,20 @@ export function ProductVariantManager({
     async function toggleVariantActive(variant: ProductVariant) {
         await runMutation(
             () => updateVariant(requestOptions, productId, variant.id, { is_active: !variant.is_active }),
-            variant.is_active ? "Variant deactivated." : "Variant activated.",
+            variant.is_active ? t("toast.deactivated") : t("toast.activated"),
         )
     }
 
     async function removeVariant(variant: ProductVariant) {
         const ok = await confirm({
-            title: `Delete variant “${variant.sku}”?`,
-            message: "This permanently removes the variant along with its prices, stock lots, and movements.",
-            confirmLabel: "Delete",
+            title: t("deleteTitle", { sku: variant.sku }),
+            message: t("deleteMessage"),
+            confirmLabel: commonT("delete"),
+            cancelLabel: commonT("cancel"),
             danger: true,
         })
         if (!ok) return
-        await runMutation(() => deleteVariant(requestOptions, productId, variant.id), "Variant deleted.")
+        await runMutation(() => deleteVariant(requestOptions, productId, variant.id), t("toast.deleted"))
     }
 
     function addTag() {
@@ -150,7 +156,7 @@ export function ProductVariantManager({
     }
 
     async function saveTags() {
-        await runMutation(() => syncProductTags(requestOptions, productId, tags), "Tags saved.")
+        await runMutation(() => syncProductTags(requestOptions, productId, tags), t("toast.tagsSaved"))
     }
 
     function variantAvailability(variant: ProductVariant, branchId: number): boolean {
@@ -170,7 +176,7 @@ export function ProductVariantManager({
                     // exclusivity flag instead of silently resetting it.
                     is_exclusive: existing?.is_exclusive ?? false,
                 }),
-            next ? "Variant made available." : "Variant hidden for branch.",
+            next ? t("toast.available") : t("toast.hidden"),
         )
     }
 
@@ -180,178 +186,175 @@ export function ProductVariantManager({
         <div className="grid gap-6">
             {confirmDialog}
 
-            <section className={`grid gap-4 p-5 ${inventorySurfaceClass}`}>
+            <Card as="section" className="grid gap-4">
                 <div>
-                    <h3 className="text-sm font-bold text-navy-950">Variants</h3>
-                    <p className="text-xs text-navy-500">
-                        Sellable SKUs for this product. Pricing and POS sales key off variants.
-                    </p>
+                    <h3 className="text-sm font-bold text-ink">{t("title")}</h3>
+                    <p className="text-xs text-ink-muted">{t("subtitle")}</p>
                 </div>
 
-                <DataTable columns={["SKU", "Name", "Barcode", "Status", "Actions"]}>
-                    {isLoading && variants.length === 0 ? (
-                        Array.from({ length: 3 }).map((_, row) => (
-                            <tr key={row} aria-hidden="true">
-                                {Array.from({ length: 5 }).map((__, cell) => (
-                                    <td key={cell} className="px-5 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
-                                ))}
+                <DataTable
+                    columns={[
+                        t("columns.sku"),
+                        t("columns.name"),
+                        t("columns.barcode"),
+                        t("columns.status"),
+                        t("columns.actions"),
+                    ]}
+                >
+                    <TableStateRow
+                        isLoading={isLoading && variants.length === 0}
+                        count={variants.length}
+                        columns={5}
+                        skeletonRows={3}
+                        emptyMessage={t("empty")}
+                    />
+                    {variants.map((variant) =>
+                        editingVariantId === variant.id ? (
+                            <tr key={variant.id}>
+                                <td>
+                                    <Field
+                                        label={t("editSku")}
+                                        hideLabel
+                                        value={editForm.sku}
+                                        onChange={(event) => setEditForm((current) => ({ ...current, sku: event.target.value }))}
+                                        required
+                                    />
+                                </td>
+                                <td>
+                                    <Field
+                                        label={t("editName")}
+                                        hideLabel
+                                        value={editForm.name}
+                                        onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
+                                    />
+                                </td>
+                                <td>
+                                    <Field
+                                        label={t("editBarcode")}
+                                        hideLabel
+                                        value={editForm.barcode}
+                                        onChange={(event) => setEditForm((current) => ({ ...current, barcode: event.target.value }))}
+                                    />
+                                </td>
+                                <td>
+                                    <StatusPill tone={variant.is_active ? "green" : "neutral"}>
+                                        {variant.is_active ? statusT("active") : statusT("inactive")}
+                                    </StatusPill>
+                                </td>
+                                <td>
+                                    <div className="flex items-center gap-1.5">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            disabled={isMutating || !editForm.sku.trim()}
+                                            onClick={() => void saveEditVariant(variant.id)}
+                                        >
+                                            {commonT("save")}
+                                        </Button>
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => setEditingVariantId(null)}>
+                                            {commonT("cancel")}
+                                        </Button>
+                                    </div>
+                                </td>
                             </tr>
-                        ))
-                    ) : variants.length === 0 ? (
-                        <tr>
-                            <td colSpan={5} className="px-5 py-6 text-center text-sm text-navy-400">
-                                No variants yet. Add one below to make this product sellable.
-                            </td>
-                        </tr>
-                    ) : (
-                        variants.map((variant) =>
-                            editingVariantId === variant.id ? (
-                                <tr key={variant.id} className="border-t border-navy-50">
-                                    <td className="px-5 py-3">
-                                        <Field
-                                            label="Edit SKU"
-                                            hideLabel
-                                            value={editForm.sku}
-                                            onChange={(event) => setEditForm((current) => ({ ...current, sku: event.target.value }))}
-                                            required
-                                        />
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <Field
-                                            label="Edit variant name"
-                                            hideLabel
-                                            value={editForm.name}
-                                            onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
-                                        />
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <Field
-                                            label="Edit barcode"
-                                            hideLabel
-                                            value={editForm.barcode}
-                                            onChange={(event) => setEditForm((current) => ({ ...current, barcode: event.target.value }))}
-                                        />
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <StatusPill tone={variant.is_active ? "green" : "neutral"}>
-                                            {variant.is_active ? "Active" : "Inactive"}
-                                        </StatusPill>
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                disabled={isMutating || !editForm.sku.trim()}
-                                                onClick={() => void saveEditVariant(variant.id)}
-                                            >
-                                                Save
-                                            </Button>
-                                            <Button type="button" variant="ghost" size="sm" onClick={() => setEditingVariantId(null)}>
-                                                Cancel
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                <tr key={variant.id} className="border-t border-navy-50">
-                                    <td className="px-5 py-3 font-semibold text-navy-950">{variant.sku}</td>
-                                    <td className="px-5 py-3 text-navy-700">{variant.name || "—"}</td>
-                                    <td className="px-5 py-3 text-navy-500">{variant.barcode || "—"}</td>
-                                    <td className="px-5 py-3">
-                                        <StatusPill tone={variant.is_active ? "green" : "neutral"}>
-                                            {variant.is_active ? "Active" : "Inactive"}
-                                        </StatusPill>
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                aria-label={`Edit variant ${variant.sku}`}
-                                                disabled={isMutating}
-                                                onClick={() => startEditVariant(variant)}
-                                            >
-                                                <Icon name="edit" size={16} />
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                disabled={isMutating}
-                                                onClick={() => void toggleVariantActive(variant)}
-                                            >
-                                                {variant.is_active ? "Deactivate" : "Activate"}
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                aria-label={`Delete variant ${variant.sku}`}
-                                                disabled={isMutating}
-                                                onClick={() => void removeVariant(variant)}
-                                            >
-                                                <Icon name="delete" size={16} />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ),
-                        )
+                        ) : (
+                            <tr key={variant.id}>
+                                <td className="font-semibold text-ink">{variant.sku}</td>
+                                <td className="text-ink-secondary">{variant.name || "—"}</td>
+                                <td className="text-ink-muted">{variant.barcode || "—"}</td>
+                                <td>
+                                    <StatusPill tone={variant.is_active ? "green" : "neutral"}>
+                                        {variant.is_active ? statusT("active") : statusT("inactive")}
+                                    </StatusPill>
+                                </td>
+                                <td>
+                                    <div className="flex items-center gap-1.5">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label={t("editAria", { sku: variant.sku })}
+                                            disabled={isMutating}
+                                            onClick={() => startEditVariant(variant)}
+                                        >
+                                            <Icon name="edit" size={16} />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            disabled={isMutating}
+                                            onClick={() => void toggleVariantActive(variant)}
+                                        >
+                                            {variant.is_active ? t("deactivate") : t("activate")}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label={t("deleteAria", { sku: variant.sku })}
+                                            disabled={isMutating}
+                                            onClick={() => void removeVariant(variant)}
+                                        >
+                                            <Icon name="delete" size={16} />
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ),
                     )}
                 </DataTable>
 
-                <form onSubmit={submitAddVariant} className="grid items-end gap-3 border-t border-navy-50 pt-4 sm:grid-cols-4">
+                <form onSubmit={submitAddVariant} className="grid items-end gap-3 border-t border-line pt-4 sm:grid-cols-4">
                     <Field
-                        label="New variant SKU"
+                        label={t("newSku")}
                         value={addForm.sku}
                         onChange={(event) => setAddForm((current) => ({ ...current, sku: event.target.value }))}
                         required
                     />
                     <Field
-                        label="Variant name"
+                        label={t("newName")}
                         value={addForm.name}
                         onChange={(event) => setAddForm((current) => ({ ...current, name: event.target.value }))}
                     />
                     <Field
-                        label="Barcode"
+                        label={t("newBarcode")}
                         value={addForm.barcode}
                         onChange={(event) => setAddForm((current) => ({ ...current, barcode: event.target.value }))}
                     />
-                    <Button type="submit" disabled={isMutating} className="bg-teal-700 text-white hover:bg-teal-800">
-                        Add variant
+                    <Button type="submit" disabled={isMutating}>
+                        {t("add")}
                     </Button>
                 </form>
-            </section>
+            </Card>
 
-            <section className={`grid gap-4 p-5 ${inventorySurfaceClass}`}>
+            <Card as="section" className="grid gap-4">
                 <div>
-                    <h3 className="text-sm font-bold text-navy-950">Tags</h3>
-                    <p className="text-xs text-navy-500">Labels for grouping and filtering products.</p>
+                    <h3 className="text-sm font-bold text-ink">{t("tags.title")}</h3>
+                    <p className="text-xs text-ink-muted">{t("tags.subtitle")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {tags.map((tag) => (
                         <span
                             key={tag}
-                            className="inline-flex items-center gap-1 rounded-full border border-teal-100 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700"
+                            className="inline-flex items-center gap-1 rounded-pill bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand-ink"
                         >
                             {tag}
                             <button
                                 type="button"
-                                aria-label={`Remove tag ${tag}`}
-                                className="text-teal-500 hover:text-teal-900"
+                                aria-label={t("tags.removeAria", { tag })}
+                                className="text-brand-ink/70 transition-colors hover:text-brand-ink"
                                 onClick={() => setTags((current) => current.filter((entry) => entry !== tag))}
                             >
                                 <Icon name="close" size={12} />
                             </button>
                         </span>
                     ))}
-                    {tags.length === 0 && <span className="text-xs text-navy-400">No tags.</span>}
+                    {tags.length === 0 && <span className="text-xs text-ink-muted">{t("tags.empty")}</span>}
                 </div>
                 <div className="grid items-end gap-3 sm:grid-cols-[1fr_auto_auto]">
                     <Field
-                        label="Add tag"
+                        label={t("tags.addLabel")}
                         value={tagInput}
                         onChange={(event) => setTagInput(event.target.value)}
                         onKeyDown={(event) => {
@@ -362,52 +365,48 @@ export function ProductVariantManager({
                         }}
                     />
                     <Button type="button" variant="outline" onClick={addTag}>
-                        Add
+                        {t("tags.addButton")}
                     </Button>
-                    <Button type="button" disabled={isMutating} onClick={() => void saveTags()} className="bg-teal-700 text-white hover:bg-teal-800">
-                        Save tags
+                    <Button type="button" disabled={isMutating} onClick={() => void saveTags()}>
+                        {t("tags.save")}
                     </Button>
                 </div>
-            </section>
+            </Card>
 
             {branches.length > 0 && (
-                <section className={`grid gap-4 p-5 ${inventorySurfaceClass}`}>
+                <Card as="section" className="grid gap-4">
                     <div>
-                        <h3 className="text-sm font-bold text-navy-950">Branch availability</h3>
-                        <p className="text-xs text-navy-500">
-                            Variants are available everywhere unless switched off for a branch.
-                        </p>
+                        <h3 className="text-sm font-bold text-ink">{t("availability.title")}</h3>
+                        <p className="text-xs text-ink-muted">{t("availability.subtitle")}</p>
                     </div>
-                    <DataTable columns={["Variant", ...branches.map((branch) => branch.name)]}>
-                        {variants.length === 0 ? (
-                            <tr>
-                                <td colSpan={branches.length + 1} className="px-5 py-6 text-center text-sm text-navy-400">
-                                    Add a variant to manage availability.
-                                </td>
+                    <DataTable columns={[t("availability.variantColumn"), ...branches.map((branch) => branch.name)]}>
+                        <TableStateRow
+                            isLoading={false}
+                            count={variants.length}
+                            columns={branches.length + 1}
+                            emptyMessage={t("availability.empty")}
+                        />
+                        {variants.map((variant) => (
+                            <tr key={variant.id}>
+                                <td className="font-semibold text-ink">{variant.sku}</td>
+                                {branches.map((branch) => (
+                                    <td key={branch.id}>
+                                        <label className="flex items-center gap-2 text-xs font-semibold text-ink-secondary">
+                                            <input
+                                                type="checkbox"
+                                                aria-label={t("availability.availableAria", { sku: variant.sku, branch: branch.name })}
+                                                checked={variantAvailability(variant, branch.id)}
+                                                disabled={isMutating}
+                                                onChange={() => void toggleAvailability(variant, branch.id)}
+                                            />
+                                            {t("availability.available")}
+                                        </label>
+                                    </td>
+                                ))}
                             </tr>
-                        ) : (
-                            variants.map((variant) => (
-                                <tr key={variant.id} className="border-t border-navy-50">
-                                    <td className="px-5 py-3 font-semibold text-navy-950">{variant.sku}</td>
-                                    {branches.map((branch) => (
-                                        <td key={branch.id} className="px-5 py-3">
-                                            <label className="flex items-center gap-2 text-xs font-semibold text-navy-700">
-                                                <input
-                                                    type="checkbox"
-                                                    aria-label={`${variant.sku} available at ${branch.name}`}
-                                                    checked={variantAvailability(variant, branch.id)}
-                                                    disabled={isMutating}
-                                                    onChange={() => void toggleAvailability(variant, branch.id)}
-                                                />
-                                                Available
-                                            </label>
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
-                        )}
+                        ))}
                     </DataTable>
-                </section>
+                </Card>
             )}
         </div>
     )

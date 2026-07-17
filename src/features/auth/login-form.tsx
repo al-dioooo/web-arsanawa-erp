@@ -3,12 +3,14 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Field } from "@/components/ui/field"
 import { useSession } from "@/features/auth/session-provider"
 
 export function LoginForm() {
     const router = useRouter()
+    const t = useTranslations("auth.login")
     const { login, isLoading, error, fieldErrors, clearError } = useSession()
     const [form, setForm] = useState({ login: "", password: "" })
 
@@ -25,13 +27,13 @@ export function LoginForm() {
     return (
         <form onSubmit={submit} className="grid gap-5">
             {error ? (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+                <div className="rounded-lg bg-error-soft px-4 py-3 text-sm font-medium text-error-strong">
                     {error}
                 </div>
             ) : null}
 
             <Field
-                label="Email or username"
+                label={t("loginField")}
                 name="login"
                 autoComplete="username"
                 value={form.login}
@@ -41,7 +43,7 @@ export function LoginForm() {
             />
 
             <Field
-                label="Password"
+                label={t("password")}
                 name="password"
                 type="password"
                 autoComplete="current-password"
@@ -54,14 +56,14 @@ export function LoginForm() {
             <div className="flex items-center justify-between">
                 <Link
                     href="/forgot-password"
-                    className="text-xs font-semibold text-teal-700 hover:text-teal-900 transition-colors"
+                    className="text-xs font-semibold text-brand-ink hover:text-brand-hover transition-colors"
                 >
-                    Forgot password?
+                    {t("forgotPassword")}
                 </Link>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full h-11 bg-teal-700 hover:bg-teal-900 text-white font-semibold rounded-lg">
-                {isLoading ? "Signing in..." : "Sign in"}
+            <Button type="submit" size="xl" disabled={isLoading} className="w-full">
+                {isLoading ? t("submitting") : t("submit")}
             </Button>
         </form>
     )

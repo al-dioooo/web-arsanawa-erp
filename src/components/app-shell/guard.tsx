@@ -2,13 +2,16 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
 import { canManageEntitlements } from "@/features/auth/access"
 import { getModuleByPath } from "@/lib/modules/registry"
-import { Icon } from "@/components/ui/icon"
+import { buttonVariants } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 
 export function EntitlementGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const t = useTranslations()
     const { modules, organizationContext, user } = useSession()
 
     const activeModule = getModuleByPath(pathname)
@@ -19,41 +22,39 @@ export function EntitlementGuard({ children }: { children: React.ReactNode }) {
             const canManageModules = canManageEntitlements(organizationContext?.membership, user)
 
             return (
-                <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-500 mb-6">
-                        <Icon name="block" className="text-3xl" />
-                    </div>
-                    <h2 className="text-2xl font-brand font-bold text-navy-900">
-                        Module Not Entitled
-                    </h2>
-                    <p className="mt-2 max-w-md text-sm text-navy-500 font-body leading-relaxed">
-                        The <strong className="text-navy-700 font-semibold">{activeModule.label}</strong> module is not currently enabled for this company context.
-                    </p>
-
-                    {canManageModules ? (
-                        <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                            <Link
-                                href="/organization/modules"
-                                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-teal-700 hover:bg-teal-900 px-5 text-sm font-semibold text-white transition-all cursor-pointer"
-                            >
-                                Go to Module Manager
+                <EmptyState
+                    icon="block"
+                    className="px-4 py-20"
+                    title={t("shell.guard.title")}
+                    description={t.rich("shell.guard.description", {
+                        module: activeModule.label,
+                        strong: (chunks) => (
+                            <strong className="font-semibold text-ink-secondary">{chunks}</strong>
+                        ),
+                    })}
+                    action={
+                        canManageModules ? (
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <Link
+                                    href="/organization/modules"
+                                    className={buttonVariants({ size: "lg" })}
+                                >
+                                    {t("shell.guard.goToModuleManager")}
+                                </Link>
+                                <Link
+                                    href="/"
+                                    className={buttonVariants({ variant: "secondary", size: "lg" })}
+                                >
+                                    {t("shell.guard.backToApps")}
+                                </Link>
+                            </div>
+                        ) : (
+                            <Link href="/" className={buttonVariants({ size: "lg" })}>
+                                {t("shell.guard.backToEnabledApps")}
                             </Link>
-                            <Link
-                                href="/"
-                                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-navy-200 bg-white hover:bg-navy-50 px-5 text-sm font-semibold text-navy-700 transition-all cursor-pointer"
-                            >
-                                Back to Apps
-                            </Link>
-                        </div>
-                    ) : (
-                        <Link
-                            href="/"
-                            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-teal-700 hover:bg-teal-900 px-5 text-sm font-semibold text-white transition-all cursor-pointer"
-                        >
-                            Back to Enabled Apps
-                        </Link>
-                    )}
-                </div>
+                        )
+                    }
+                />
             )
         }
     }

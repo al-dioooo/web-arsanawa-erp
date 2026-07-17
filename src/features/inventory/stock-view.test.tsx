@@ -37,6 +37,51 @@ vi.mock("sonner", () => ({
     },
 }))
 
+// Dictionary-backed next-intl mock: keeps assertions readable and returns a
+// stable translator per namespace so effects keyed on t-derived strings
+// don't re-run every render.
+vi.mock("next-intl", () => {
+    const labels: Record<string, string> = {
+        "inventory.stock.overview.title": "Stock Overview",
+        "inventory.nav.stockLots": "Stock Lots",
+        "inventory.nav.movements": "Movement Ledger",
+        "inventory.nav.newReceipt": "New Receipt",
+        "inventory.nav.newIssue": "New Issue",
+        "inventory.nav.newAdjustment": "New Adjustment",
+        "inventory.nav.newTransfer": "New Transfer",
+        "inventory.stock.movements.movementNumber": "Movement #{id}",
+        "inventory.stock.missingContext":
+            "Select an active company, branch, and Product Unit before recording stock.",
+        "inventory.stock.receipt.title": "New Receipt",
+        "inventory.stock.receipt.quantity": "Quantity",
+        "inventory.stock.receipt.unitCost": "Unit Cost (IDR)",
+        "inventory.stock.receipt.submit": "Record Receipt",
+        "inventory.stock.receipt.success": "Stock receipt recorded successfully.",
+        "inventory.stock.issue.quantity": "Issue quantity",
+        "inventory.stock.issue.submit": "Record Issue",
+        "inventory.stock.issue.success": "Stock issue recorded successfully.",
+        "inventory.stock.adjustment.quantity": "Adjustment quantity",
+        "inventory.stock.adjustment.submit": "Record Adjustment",
+        "inventory.stock.adjustment.success": "Stock adjustment recorded successfully.",
+        "inventory.stock.transfer.quantity": "Transfer quantity",
+        "inventory.stock.transfer.submit": "Record Transfer",
+        "inventory.stock.transfer.success": "Stock transfer recorded successfully.",
+    }
+    const cache = new Map<string | undefined, (key: string, values?: Record<string, string | number>) => string>()
+    return {
+        useTranslations: (namespace?: string) => {
+            if (!cache.has(namespace)) {
+                cache.set(namespace, (key: string, values?: Record<string, string | number>) => {
+                    const fullKey = namespace ? `${namespace}.${key}` : key
+                    const template = labels[fullKey] ?? fullKey
+                    return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values?.[token] ?? ""))
+                })
+            }
+            return cache.get(namespace)!
+        },
+    }
+})
+
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))

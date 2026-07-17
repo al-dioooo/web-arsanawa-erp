@@ -3,6 +3,10 @@ import { vi } from "vitest"
 import { PaymentDialog } from "@/features/pos/components/payment-dialog"
 import type { Sale } from "@/features/pos/pos-types"
 
+vi.mock("next-intl", () => ({
+    useTranslations: () => (key: string) => key,
+}))
+
 function sale(overrides: Partial<Sale> = {}): Sale {
     return {
         id: 1,
@@ -56,10 +60,10 @@ describe("PaymentDialog", () => {
             />,
         )
 
-        fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "200" } })
-        expect(screen.getByText(/Change due:/)).toBeInTheDocument()
+        fireEvent.change(screen.getByLabelText("amount"), { target: { value: "200" } })
+        expect(screen.getByText("changeDue")).toBeInTheDocument()
 
-        fireEvent.click(screen.getByRole("button", { name: "Add payment" }))
+        fireEvent.click(screen.getByRole("button", { name: "addPayment" }))
 
         expect(onAddPayment).toHaveBeenCalledWith({
             method: "cash",
@@ -82,12 +86,12 @@ describe("PaymentDialog", () => {
             />,
         )
 
-        fireEvent.change(screen.getByLabelText("Method"), { target: { value: "card" } })
-        fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "25" } })
-        fireEvent.click(screen.getByRole("button", { name: "Add payment" }))
+        fireEvent.change(screen.getByLabelText("method"), { target: { value: "card" } })
+        fireEvent.change(screen.getByLabelText("amount"), { target: { value: "25" } })
+        fireEvent.click(screen.getByRole("button", { name: "addPayment" }))
 
         expect(onAddPayment).not.toHaveBeenCalled()
-        expect(screen.getByText("Non-cash payments cannot exceed the balance due.")).toBeInTheDocument()
+        expect(screen.getByText("nonCashError")).toBeInTheDocument()
     })
 
     it("allows confirmed catering orders to complete with a balance due", () => {
@@ -108,7 +112,7 @@ describe("PaymentDialog", () => {
             />,
         )
 
-        fireEvent.click(screen.getByRole("button", { name: "Complete sale" }))
+        fireEvent.click(screen.getByRole("button", { name: "completeSale" }))
 
         expect(onComplete).toHaveBeenCalledTimes(1)
     })
@@ -141,7 +145,7 @@ describe("PaymentDialog", () => {
             />,
         )
 
-        expect(screen.queryByRole("button", { name: "Add payment" })).not.toBeInTheDocument()
-        expect(screen.getByRole("button", { name: "Complete sale" })).toBeEnabled()
+        expect(screen.queryByRole("button", { name: "addPayment" })).not.toBeInTheDocument()
+        expect(screen.getByRole("button", { name: "completeSale" })).toBeEnabled()
     })
 })

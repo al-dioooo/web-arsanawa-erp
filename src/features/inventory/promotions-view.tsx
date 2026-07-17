@@ -1,12 +1,16 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field, SelectField } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { StatusPill } from "@/components/ui/status-pill"
+import { Tab, TabList, TabPanel, Tabs } from "@/components/ui/tabs"
 import { Icon } from "@/components/ui/icon"
 import { useConfirm } from "@/components/ui/confirm-dialog"
 import { useSession } from "@/features/auth/session-provider"
@@ -36,28 +40,39 @@ function today(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
+function readableError(caught: unknown, fallback: string): string {
+    return caught instanceof Error && caught.message ? caught.message : fallback
+}
+
 type DiscountTargetType = "variant" | "product" | "category"
 
 type DiscountTargetRow = { target_type: DiscountTargetType; target_id: string }
 type DiscountDependencyRow = { product_variant_id: string; required_quantity: string }
 type DiscountGiveawayRow = { product_variant_id: string; giveaway_quantity: string }
 
+type PromotionsTranslator = (key: string, values?: Record<string, string | number>) => string
+
 /** Compact "2 targets · 1 giveaway" summary for a discount card, or null. */
-function discountConfigSummary(discount: Discount): string | null {
+function discountConfigSummary(discount: Discount, t: PromotionsTranslator): string | null {
     const parts: string[] = []
     if (discount.targets?.length) {
-        parts.push(`${discount.targets.length} ${discount.targets.length === 1 ? "target" : "targets"}`)
+        const count = discount.targets.length
+        parts.push(t(count === 1 ? "summary.target" : "summary.targets", { count }))
     }
     if (discount.dependencies?.length) {
-        parts.push(`${discount.dependencies.length} ${discount.dependencies.length === 1 ? "dependency" : "dependencies"}`)
+        const count = discount.dependencies.length
+        parts.push(t(count === 1 ? "summary.dependency" : "summary.dependencies", { count }))
     }
     if (discount.giveaways?.length) {
-        parts.push(`${discount.giveaways.length} ${discount.giveaways.length === 1 ? "giveaway" : "giveaways"}`)
+        const count = discount.giveaways.length
+        parts.push(t(count === 1 ? "summary.giveaway" : "summary.giveaways", { count }))
     }
     return parts.length > 0 ? parts.join(" · ") : null
 }
 
 export function PromotionsView() {
+    const t = useTranslations("inventory.promotions")
+    const rootT = useTranslations()
     const { token, activeCompanyId, organizationContext } = useSession()
     const [discounts, setDiscounts] = useState<Discount[]>([])
     const [rewards, setRewards] = useState<Reward[]>([])
@@ -128,6 +143,14 @@ export function PromotionsView() {
         return categoryOptions
     }
 
+    function targetPlaceholderFor(targetType: DiscountTargetType): string {
+        if (targetType === "variant") return t("form.selectVariant")
+        if (targetType === "product") return t("form.selectProduct")
+        return t("form.selectCategory")
+    }
+
+    const loadErrorFallback = t("loadError")
+
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
 
@@ -140,11 +163,11 @@ export function PromotionsView() {
             setDiscounts(loaded.discounts)
             setRewards(loaded.rewards)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load promotions.")
+            toast.error(readableError(caught, loadErrorFallback))
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions])
+    }, [loadErrorFallback, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -170,7 +193,7 @@ export function PromotionsView() {
             discountForm.dependencies.some((dependency) => dependency.product_variant_id === "") ||
             discountForm.giveaways.some((giveaway) => giveaway.product_variant_id === "")
         ) {
-            toast.error("Complete or remove the empty target, dependency, and giveaway rows first.")
+            toast.error(t("toasts.incompleteRows"))
             return
         }
 
@@ -203,7 +226,7 @@ export function PromotionsView() {
                 ...(dependencies.length > 0 ? { dependencies } : {}),
                 ...(giveaways.length > 0 ? { giveaways } : {}),
             })
-            toast.success("Discount campaign created successfully.")
+            toast.success(t("toasts.discountCreated"))
             setDiscountForm({
                 name: "",
                 calculation_type: "percentage",
@@ -218,7 +241,7 @@ export function PromotionsView() {
             })
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Failed to create discount.")
+            toast.error(readableError(caught, t("toasts.discountCreateFailed")))
         } finally {
             setIsLoading(false)
         }
@@ -228,9 +251,10 @@ export function PromotionsView() {
         if (!requestOptions) return
 
         const ok = await confirm({
-            title: `Delete “${discount.name}”?`,
-            message: "This permanently removes the campaign and its product targets. This can't be undone.",
-            confirmLabel: "Delete",
+            title: t("deleteConfirm.title", { name: discount.name }),
+            message: t("deleteConfirm.discountMessage"),
+            confirmLabel: rootT("common.delete"),
+            cancelLabel: rootT("common.cancel"),
             danger: true,
         })
         if (!ok) return
@@ -239,10 +263,10 @@ export function PromotionsView() {
 
         try {
             await deleteDiscount(requestOptions, discount.id)
-            toast.success("Discount deleted.")
+            toast.success(t("toasts.discountDeleted"))
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Failed to delete discount.")
+            toast.error(readableError(caught, t("toasts.discountDeleteFailed")))
         } finally {
             setIsLoading(false)
         }
@@ -252,9 +276,10 @@ export function PromotionsView() {
         if (!requestOptions) return
 
         const ok = await confirm({
-            title: `Delete “${reward.name}”?`,
-            message: "This permanently removes the loyalty reward. This can't be undone.",
-            confirmLabel: "Delete",
+            title: t("deleteConfirm.title", { name: reward.name }),
+            message: t("deleteConfirm.rewardMessage"),
+            confirmLabel: rootT("common.delete"),
+            cancelLabel: rootT("common.cancel"),
             danger: true,
         })
         if (!ok) return
@@ -263,10 +288,10 @@ export function PromotionsView() {
 
         try {
             await deleteReward(requestOptions, reward.id)
-            toast.success("Reward deleted.")
+            toast.success(t("toasts.rewardDeleted"))
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Failed to delete reward.")
+            toast.error(readableError(caught, t("toasts.rewardDeleteFailed")))
         } finally {
             setIsLoading(false)
         }
@@ -289,7 +314,7 @@ export function PromotionsView() {
                 effective_to: rewardForm.effective_to || null,
                 is_active: true,
             })
-            toast.success("Loyalty reward created successfully.")
+            toast.success(t("toasts.rewardCreated"))
             setRewardForm({
                 name: "",
                 calculation_type: "percentage",
@@ -301,7 +326,7 @@ export function PromotionsView() {
             })
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Failed to create reward.")
+            toast.error(readableError(caught, t("toasts.rewardCreateFailed")))
         } finally {
             setIsLoading(false)
         }
@@ -311,102 +336,106 @@ export function PromotionsView() {
         <div className="grid gap-6">
             {confirmDialog}
             <InventoryPageHeader
-                title="Promotions & Rewards"
-                description="Manage discount campaigns, product bundle promotions, and customer loyalty rewards."
+                title={t("title")}
+                description={t("subtitle")}
                 isCompanyScoped={Boolean(activeCompanyId)}
             />
 
             {/* Main Grid Layout */}
-            <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+            <div className="grid items-start gap-6 xl:grid-cols-[1fr_380px]">
                 {/* Left Side: Side-by-side lists */}
                 <div className="grid gap-6 md:grid-cols-2">
                     {/* Discounts List */}
-                    <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4">
-                        <h2 className="text-lg font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-3">
-                            <Icon name="percent" className="text-teal-700" />
-                            <span>Discount Campaigns ({discounts.length})</span>
+                    <Card padding="lg" className="flex flex-col gap-4">
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name="percent" className="text-brand-ink" />
+                            <span>{t("discounts.heading", { count: discounts.length })}</span>
                         </h2>
 
-                        <div className="grid gap-3 overflow-y-auto max-h-[600px] pr-1">
+                        <div className="grid max-h-150 gap-3 overflow-y-auto pe-1">
                             {discounts.map((discount) => {
-                                const configSummary = discountConfigSummary(discount)
+                                const configSummary = discountConfigSummary(discount, t)
                                 return (
-                                <article key={discount.id} className="rounded-xl border border-navy-100 bg-navy-50/10 p-4 flex flex-col gap-2">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <h3 className="text-sm font-bold text-navy-900 truncate">{discount.name}</h3>
-                                        <div className="flex shrink-0 items-center gap-1">
-                                            <StatusPill tone={discount.is_active ? "green" : "neutral"}>
-                                                {discount.is_active ? "Active" : "Inactive"}
-                                            </StatusPill>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                aria-label={`Delete discount ${discount.name}`}
-                                                onClick={() => void handleDeleteDiscount(discount)}
-                                            >
-                                                <Icon name="delete" size={14} />
-                                            </Button>
+                                    <Card as="article" inset padding="sm" key={discount.id} className="flex flex-col gap-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <h3 className="truncate text-sm font-bold text-ink">{discount.name}</h3>
+                                            <div className="flex shrink-0 items-center gap-1">
+                                                <StatusPill tone={discount.is_active ? "green" : "neutral"}>
+                                                    {discount.is_active ? t("card.active") : t("card.inactive")}
+                                                </StatusPill>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    aria-label={t("deleteDiscountAria", { name: discount.name })}
+                                                    onClick={() => void handleDeleteDiscount(discount)}
+                                                >
+                                                    <Icon name="delete" size={14} />
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="text-xs text-navy-600 font-semibold mt-1">
-                                        Value: <span className="text-teal-700">{numberLabel(discount.value)}</span>
-                                        {discount.calculation_type === "percentage" ? "%" : " IDR"}
-                                    </div>
+                                        <div className="mt-1 text-xs font-semibold text-ink-secondary">
+                                            {t("card.value")}{" "}
+                                            <span className="text-brand-ink">{numberLabel(discount.value)}</span>
+                                            {discount.calculation_type === "percentage" ? "%" : " IDR"}
+                                        </div>
 
-                                    <p className="text-[10px] text-navy-450 font-medium">
-                                        Scope: {discount.branch_id ? `Branch ID: ${discount.branch_id}` : "Company-wide"}
-                                    </p>
-
-                                    {discount.min_quantity && (
-                                        <p className="text-[10px] text-navy-450 font-medium">
-                                            Min Qty: {discount.min_quantity}
+                                        <p className="text-xs font-medium text-ink-muted">
+                                            {discount.branch_id
+                                                ? t("card.branchScope", { id: discount.branch_id })
+                                                : t("card.companyWide")}
                                         </p>
-                                    )}
 
-                                    {configSummary && (
-                                        <p className="text-[10px] text-navy-450 font-medium">
-                                            {configSummary}
-                                        </p>
-                                    )}
+                                        {discount.min_quantity && (
+                                            <p className="text-xs font-medium text-ink-muted">
+                                                {t("card.minQty", { value: discount.min_quantity })}
+                                            </p>
+                                        )}
 
-                                    <div className="text-[10px] text-navy-400 font-medium border-t border-navy-100/50 pt-1.5 mt-1">
-                                        Validity: {discount.effective_from ?? "Immediate"} to {discount.effective_to ?? "Open"}
-                                    </div>
-                                </article>
+                                        {configSummary && (
+                                            <p className="text-xs font-medium text-ink-muted">
+                                                {configSummary}
+                                            </p>
+                                        )}
+
+                                        <div className="mt-1 border-t border-line pt-1.5 text-xs font-medium text-ink-faint">
+                                            {t("card.validity", {
+                                                from: discount.effective_from ?? t("card.immediate"),
+                                                to: discount.effective_to ?? t("card.open"),
+                                            })}
+                                        </div>
+                                    </Card>
                                 )
                             })}
 
                             {discounts.length === 0 && (
-                                <div className="rounded-xl border border-dashed border-navy-200 bg-navy-50/20 p-6 text-center text-xs font-semibold text-navy-450">
-                                    No active discounts found.
-                                </div>
+                                <EmptyState compact icon="percent" title={t("discounts.empty")} />
                             )}
                         </div>
-                    </div>
+                    </Card>
 
                     {/* Rewards List */}
-                    <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4">
-                        <h2 className="text-lg font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-3">
-                            <Icon name="card_membership" className="text-teal-700" />
-                            <span>Loyalty Rewards ({rewards.length})</span>
+                    <Card padding="lg" className="flex flex-col gap-4">
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name="card_membership" className="text-brand-ink" />
+                            <span>{t("rewards.heading", { count: rewards.length })}</span>
                         </h2>
 
-                        <div className="grid gap-3 overflow-y-auto max-h-[600px] pr-1">
+                        <div className="grid max-h-150 gap-3 overflow-y-auto pe-1">
                             {rewards.map((reward) => (
-                                <article key={reward.id} className="rounded-xl border border-navy-100 bg-navy-50/10 p-4 flex flex-col gap-2">
+                                <Card as="article" inset padding="sm" key={reward.id} className="flex flex-col gap-2">
                                     <div className="flex items-center justify-between gap-3">
-                                        <h3 className="text-sm font-bold text-navy-900 truncate">{reward.name}</h3>
+                                        <h3 className="truncate text-sm font-bold text-ink">{reward.name}</h3>
                                         <div className="flex shrink-0 items-center gap-1">
                                             <StatusPill tone={reward.is_active ? "green" : "neutral"}>
-                                                {reward.is_active ? "Active" : "Inactive"}
+                                                {reward.is_active ? t("card.active") : t("card.inactive")}
                                             </StatusPill>
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Delete reward ${reward.name}`}
+                                                aria-label={t("deleteRewardAria", { name: reward.name })}
                                                 onClick={() => void handleDeleteReward(reward)}
                                             >
                                                 <Icon name="delete" size={14} />
@@ -414,483 +443,475 @@ export function PromotionsView() {
                                         </div>
                                     </div>
 
-                                    <div className="text-xs text-navy-600 font-semibold mt-1">
-                                        Benefit: <span className="text-teal-700">{numberLabel(reward.value)}</span>
+                                    <div className="mt-1 text-xs font-semibold text-ink-secondary">
+                                        {t("card.benefit")}{" "}
+                                        <span className="text-brand-ink">{numberLabel(reward.value)}</span>
                                         {reward.calculation_type === "percentage" ? "%" : " IDR"}
                                     </div>
 
-                                    <p className="text-[10px] text-navy-450 font-medium">
-                                        Scope: {reward.branch_id ? `Branch ID: ${reward.branch_id}` : "Company-wide"}
+                                    <p className="text-xs font-medium text-ink-muted">
+                                        {reward.branch_id
+                                            ? t("card.branchScope", { id: reward.branch_id })
+                                            : t("card.companyWide")}
                                     </p>
 
                                     {reward.min_quantity && (
-                                        <p className="text-[10px] text-navy-450 font-medium">
-                                            Min Purchase Qty: {reward.min_quantity}
+                                        <p className="text-xs font-medium text-ink-muted">
+                                            {t("card.minPurchaseQty", { value: reward.min_quantity })}
                                         </p>
                                     )}
 
-                                    <div className="text-[10px] text-navy-400 font-medium border-t border-navy-100/50 pt-1.5 mt-1">
-                                        Validity: {reward.effective_from ?? "Immediate"} to {reward.effective_to ?? "Open"}
+                                    <div className="mt-1 border-t border-line pt-1.5 text-xs font-medium text-ink-faint">
+                                        {t("card.validity", {
+                                            from: reward.effective_from ?? t("card.immediate"),
+                                            to: reward.effective_to ?? t("card.open"),
+                                        })}
                                     </div>
-                                </article>
+                                </Card>
                             ))}
 
                             {rewards.length === 0 && (
-                                <div className="rounded-xl border border-dashed border-navy-200 bg-navy-50/20 p-6 text-center text-xs font-semibold text-navy-450">
-                                    No active rewards found.
-                                </div>
+                                <EmptyState compact icon="card_membership" title={t("rewards.empty")} />
                             )}
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Right Side: Tabbed Create Form */}
-                <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4 self-start">
-                    <div className="flex border-b border-navy-50">
-                        <button
-                            onClick={() => setFormTab("discount")}
-                            className={`flex-1 pb-3 text-sm font-bold text-center border-b-2 cursor-pointer transition-colors ${ formTab === "discount" ? "border-teal-700 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-950" }`}
-                        >
-                            Add Discount
-                        </button>
-                        <button
-                            onClick={() => setFormTab("reward")}
-                            className={`flex-1 pb-3 text-sm font-bold text-center border-b-2 cursor-pointer transition-colors ${ formTab === "reward" ? "border-teal-700 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-950" }`}
-                        >
-                            Add Reward
-                        </button>
-                    </div>
+                <Card padding="lg" className="flex flex-col gap-4 self-start">
+                    <Tabs value={formTab} onValueChange={(value) => setFormTab(value as "discount" | "reward")}>
+                        <TabList>
+                            <Tab value="discount">{t("tabs.addDiscount")}</Tab>
+                            <Tab value="reward">{t("tabs.addReward")}</Tab>
+                        </TabList>
 
-                    {formTab === "discount" ? (
-                        <form onSubmit={handleCreateDiscount} className="grid gap-3.5">
-                            <Field
-                                label="Campaign Name"
-                                value={discountForm.name}
-                                onChange={(event) =>
-                                    setDiscountForm((current) => ({ ...current, name: event.target.value }))
-                                }
-                                placeholder="e.g. End Year Mega Sale"
-                                required
-                            />
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <SelectField
-                                    label="Calc Type"
-                                    value={discountForm.calculation_type}
-                                    onChange={(event) =>
-                                        setDiscountForm((current) => ({
-                                            ...current,
-                                            calculation_type: event.target.value as "percentage" | "amount",
-                                        }))
-                                    }
-                                    required
-                                >
-                                    <option value="percentage">Percentage (%)</option>
-                                    <option value="amount">Fixed Amount (IDR)</option>
-                                </SelectField>
-
-                                <Field
-                                    label="Value"
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={discountForm.value}
-                                    onChange={(event) =>
-                                        setDiscountForm((current) => ({ ...current, value: event.target.value }))
-                                    }
-                                    placeholder={discountForm.calculation_type === "percentage" ? "10" : "15000"}
-                                    required
-                                />
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <SearchableSelect
-                                    label="Branch scope"
-                                    value={discountForm.branch_id}
-                                    onChange={(val) =>
-                                        setDiscountForm((current) => ({ ...current, branch_id: String(val) }))
-                                    }
-                                    options={branches.map((branch) => ({
-                                        value: branch.id,
-                                        label: branch.name
-                                    }))}
-                                    placeholder="Company-wide"
-                                />
-
-                                <Field
-                                    label="Min Qty Requirement"
-                                    type="number"
-                                    min="1"
-                                    value={discountForm.min_quantity}
-                                    onChange={(event) =>
-                                        setDiscountForm((current) => ({ ...current, min_quantity: event.target.value }))
-                                    }
-                                    placeholder="e.g. 5 (Optional)"
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-navy-700">Applies to</span>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        aria-label="Add target"
-                                        onClick={() =>
-                                            setDiscountForm((current) => ({
-                                                ...current,
-                                                targets: [...current.targets, { target_type: "variant", target_id: "" }],
-                                            }))
+                        <TabPanel value="discount" className="pt-4">
+                            {formTab === "discount" && (
+                                <form onSubmit={handleCreateDiscount} className="grid gap-3.5">
+                                    <Field
+                                        label={t("form.campaignName")}
+                                        value={discountForm.name}
+                                        onChange={(event) =>
+                                            setDiscountForm((current) => ({ ...current, name: event.target.value }))
                                         }
-                                    >
-                                        <Icon name="add" size={14} />
-                                        <span>Add</span>
-                                    </Button>
-                                </div>
-                                {discountForm.targets.map((target, index) => (
-                                    <div key={index} className="grid grid-cols-[104px_1fr_auto] items-end gap-2">
+                                        placeholder={t("form.campaignNamePlaceholder")}
+                                        required
+                                    />
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
                                         <SelectField
-                                            label={`Target ${index + 1} type`}
-                                            hideLabel
-                                            value={target.target_type}
+                                            label={t("form.calcType")}
+                                            value={discountForm.calculation_type}
                                             onChange={(event) =>
                                                 setDiscountForm((current) => ({
                                                     ...current,
-                                                    targets: current.targets.map((row, rowIndex) =>
-                                                        rowIndex === index
-                                                            ? {
-                                                                  target_type: event.target.value as DiscountTargetType,
-                                                                  target_id: "",
-                                                              }
-                                                            : row
-                                                    ),
+                                                    calculation_type: event.target.value as "percentage" | "amount",
                                                 }))
                                             }
+                                            required
                                         >
-                                            <option value="variant">Variant</option>
-                                            <option value="product">Product</option>
-                                            <option value="category">Category</option>
+                                            <option value="percentage">{t("form.percentage")}</option>
+                                            <option value="amount">{t("form.amount")}</option>
                                         </SelectField>
-                                        <SearchableSelect
-                                            label={`Target ${index + 1}`}
-                                            value={target.target_id}
-                                            onChange={(val) =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    targets: current.targets.map((row, rowIndex) =>
-                                                        rowIndex === index ? { ...row, target_id: String(val) } : row
-                                                    ),
-                                                }))
-                                            }
-                                            options={targetOptionsFor(target.target_type)}
-                                            placeholder={`Select ${target.target_type}`}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            className="mb-2"
-                                            aria-label={`Remove target ${index + 1}`}
-                                            onClick={() =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    targets: current.targets.filter((_, rowIndex) => rowIndex !== index),
-                                                }))
-                                            }
-                                        >
-                                            <Icon name="close" size={14} />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-navy-700">Requires (buy-X)</span>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        aria-label="Add dependency"
-                                        onClick={() =>
-                                            setDiscountForm((current) => ({
-                                                ...current,
-                                                dependencies: [
-                                                    ...current.dependencies,
-                                                    { product_variant_id: "", required_quantity: "1" },
-                                                ],
-                                            }))
-                                        }
-                                    >
-                                        <Icon name="add" size={14} />
-                                        <span>Add</span>
-                                    </Button>
-                                </div>
-                                {discountForm.dependencies.map((dependency, index) => (
-                                    <div key={index} className="grid grid-cols-[1fr_88px_auto] items-end gap-2">
-                                        <SearchableSelect
-                                            label={`Dependency ${index + 1} variant`}
-                                            value={dependency.product_variant_id}
-                                            onChange={(val) =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    dependencies: current.dependencies.map((row, rowIndex) =>
-                                                        rowIndex === index
-                                                            ? { ...row, product_variant_id: String(val) }
-                                                            : row
-                                                    ),
-                                                }))
-                                            }
-                                            options={variantOptions}
-                                            placeholder="Select variant"
-                                        />
                                         <Field
-                                            label="Required quantity"
-                                            hideLabel
+                                            label={t("form.value")}
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={discountForm.value}
+                                            onChange={(event) =>
+                                                setDiscountForm((current) => ({ ...current, value: event.target.value }))
+                                            }
+                                            placeholder={discountForm.calculation_type === "percentage" ? "10" : "15000"}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <SearchableSelect
+                                            label={t("form.branchScope")}
+                                            value={discountForm.branch_id}
+                                            onChange={(val) =>
+                                                setDiscountForm((current) => ({ ...current, branch_id: String(val) }))
+                                            }
+                                            options={branches.map((branch) => ({
+                                                value: branch.id,
+                                                label: branch.name
+                                            }))}
+                                            placeholder={t("form.companyWidePlaceholder")}
+                                        />
+
+                                        <Field
+                                            label={t("form.minQty")}
                                             type="number"
                                             min="1"
-                                            required
-                                            value={dependency.required_quantity}
+                                            value={discountForm.min_quantity}
                                             onChange={(event) =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    dependencies: current.dependencies.map((row, rowIndex) =>
-                                                        rowIndex === index
-                                                            ? { ...row, required_quantity: event.target.value }
-                                                            : row
-                                                    ),
-                                                }))
+                                                setDiscountForm((current) => ({ ...current, min_quantity: event.target.value }))
                                             }
-                                            placeholder="Qty"
+                                            placeholder={t("form.minQtyPlaceholderDiscount")}
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            className="mb-2"
-                                            aria-label={`Remove dependency ${index + 1}`}
-                                            onClick={() =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    dependencies: current.dependencies.filter(
-                                                        (_, rowIndex) => rowIndex !== index
-                                                    ),
-                                                }))
-                                            }
-                                        >
-                                            <Icon name="close" size={14} />
-                                        </Button>
                                     </div>
-                                ))}
-                            </div>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-navy-700">Giveaways (get-Y)</span>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        aria-label="Add giveaway"
-                                        onClick={() =>
-                                            setDiscountForm((current) => ({
-                                                ...current,
-                                                giveaways: [
-                                                    ...current.giveaways,
-                                                    { product_variant_id: "", giveaway_quantity: "1" },
-                                                ],
-                                            }))
-                                        }
-                                    >
-                                        <Icon name="add" size={14} />
-                                        <span>Add</span>
-                                    </Button>
-                                </div>
-                                {discountForm.giveaways.map((giveaway, index) => (
-                                    <div key={index} className="grid grid-cols-[1fr_88px_auto] items-end gap-2">
-                                        <SearchableSelect
-                                            label={`Giveaway ${index + 1} variant`}
-                                            value={giveaway.product_variant_id}
+                                    <div className="grid gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-ink-secondary">{t("form.appliesTo")}</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={t("form.addTarget")}
+                                                onClick={() =>
+                                                    setDiscountForm((current) => ({
+                                                        ...current,
+                                                        targets: [...current.targets, { target_type: "variant", target_id: "" }],
+                                                    }))
+                                                }
+                                            >
+                                                <Icon name="add" size={14} />
+                                                <span>{t("form.add")}</span>
+                                            </Button>
+                                        </div>
+                                        {discountForm.targets.map((target, index) => (
+                                            <div key={index} className="grid grid-cols-[104px_1fr_auto] items-end gap-2">
+                                                <SelectField
+                                                    label={t("form.targetType", { index: index + 1 })}
+                                                    hideLabel
+                                                    value={target.target_type}
+                                                    onChange={(event) =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            targets: current.targets.map((row, rowIndex) =>
+                                                                rowIndex === index
+                                                                    ? {
+                                                                          target_type: event.target.value as DiscountTargetType,
+                                                                          target_id: "",
+                                                                      }
+                                                                    : row
+                                                            ),
+                                                        }))
+                                                    }
+                                                >
+                                                    <option value="variant">{t("form.targetTypes.variant")}</option>
+                                                    <option value="product">{t("form.targetTypes.product")}</option>
+                                                    <option value="category">{t("form.targetTypes.category")}</option>
+                                                </SelectField>
+                                                <SearchableSelect
+                                                    label={t("form.target", { index: index + 1 })}
+                                                    value={target.target_id}
+                                                    onChange={(val) =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            targets: current.targets.map((row, rowIndex) =>
+                                                                rowIndex === index ? { ...row, target_id: String(val) } : row
+                                                            ),
+                                                        }))
+                                                    }
+                                                    options={targetOptionsFor(target.target_type)}
+                                                    placeholder={targetPlaceholderFor(target.target_type)}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="mb-2"
+                                                    aria-label={t("form.removeTarget", { index: index + 1 })}
+                                                    onClick={() =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            targets: current.targets.filter((_, rowIndex) => rowIndex !== index),
+                                                        }))
+                                                    }
+                                                >
+                                                    <Icon name="close" size={14} />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-ink-secondary">{t("form.requires")}</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={t("form.addDependency")}
+                                                onClick={() =>
+                                                    setDiscountForm((current) => ({
+                                                        ...current,
+                                                        dependencies: [
+                                                            ...current.dependencies,
+                                                            { product_variant_id: "", required_quantity: "1" },
+                                                        ],
+                                                    }))
+                                                }
+                                            >
+                                                <Icon name="add" size={14} />
+                                                <span>{t("form.add")}</span>
+                                            </Button>
+                                        </div>
+                                        {discountForm.dependencies.map((dependency, index) => (
+                                            <div key={index} className="grid grid-cols-[1fr_88px_auto] items-end gap-2">
+                                                <SearchableSelect
+                                                    label={t("form.dependencyVariant", { index: index + 1 })}
+                                                    value={dependency.product_variant_id}
+                                                    onChange={(val) =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            dependencies: current.dependencies.map((row, rowIndex) =>
+                                                                rowIndex === index
+                                                                    ? { ...row, product_variant_id: String(val) }
+                                                                    : row
+                                                            ),
+                                                        }))
+                                                    }
+                                                    options={variantOptions}
+                                                    placeholder={t("form.selectVariant")}
+                                                />
+                                                <Field
+                                                    label={t("form.requiredQuantity")}
+                                                    hideLabel
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={dependency.required_quantity}
+                                                    onChange={(event) =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            dependencies: current.dependencies.map((row, rowIndex) =>
+                                                                rowIndex === index
+                                                                    ? { ...row, required_quantity: event.target.value }
+                                                                    : row
+                                                            ),
+                                                        }))
+                                                    }
+                                                    placeholder={t("form.qtyPlaceholder")}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="mb-2"
+                                                    aria-label={t("form.removeDependency", { index: index + 1 })}
+                                                    onClick={() =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            dependencies: current.dependencies.filter(
+                                                                (_, rowIndex) => rowIndex !== index
+                                                            ),
+                                                        }))
+                                                    }
+                                                >
+                                                    <Icon name="close" size={14} />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-ink-secondary">{t("form.giveaways")}</span>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label={t("form.addGiveaway")}
+                                                onClick={() =>
+                                                    setDiscountForm((current) => ({
+                                                        ...current,
+                                                        giveaways: [
+                                                            ...current.giveaways,
+                                                            { product_variant_id: "", giveaway_quantity: "1" },
+                                                        ],
+                                                    }))
+                                                }
+                                            >
+                                                <Icon name="add" size={14} />
+                                                <span>{t("form.add")}</span>
+                                            </Button>
+                                        </div>
+                                        {discountForm.giveaways.map((giveaway, index) => (
+                                            <div key={index} className="grid grid-cols-[1fr_88px_auto] items-end gap-2">
+                                                <SearchableSelect
+                                                    label={t("form.giveawayVariant", { index: index + 1 })}
+                                                    value={giveaway.product_variant_id}
+                                                    onChange={(val) =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            giveaways: current.giveaways.map((row, rowIndex) =>
+                                                                rowIndex === index
+                                                                    ? { ...row, product_variant_id: String(val) }
+                                                                    : row
+                                                            ),
+                                                        }))
+                                                    }
+                                                    options={variantOptions}
+                                                    placeholder={t("form.selectVariant")}
+                                                />
+                                                <Field
+                                                    label={t("form.giveawayQuantity")}
+                                                    hideLabel
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={giveaway.giveaway_quantity}
+                                                    onChange={(event) =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            giveaways: current.giveaways.map((row, rowIndex) =>
+                                                                rowIndex === index
+                                                                    ? { ...row, giveaway_quantity: event.target.value }
+                                                                    : row
+                                                            ),
+                                                        }))
+                                                    }
+                                                    placeholder={t("form.qtyPlaceholder")}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="mb-2"
+                                                    aria-label={t("form.removeGiveaway", { index: index + 1 })}
+                                                    onClick={() =>
+                                                        setDiscountForm((current) => ({
+                                                            ...current,
+                                                            giveaways: current.giveaways.filter(
+                                                                (_, rowIndex) => rowIndex !== index
+                                                            ),
+                                                        }))
+                                                    }
+                                                >
+                                                    <Icon name="close" size={14} />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <DatePicker
+                                            label={t("form.effectiveFrom")}
+                                            value={discountForm.effective_from}
                                             onChange={(val) =>
-                                                setDiscountForm((current) => ({
+                                                setDiscountForm((current) => ({ ...current, effective_from: val }))
+                                            }
+                                            required
+                                        />
+                                        <DatePicker
+                                            label={t("form.effectiveTo")}
+                                            value={discountForm.effective_to}
+                                            onChange={(val) =>
+                                                setDiscountForm((current) => ({ ...current, effective_to: val }))
+                                            }
+                                            placeholder={t("form.optional")}
+                                        />
+                                    </div>
+
+                                    <Button type="submit" size="xl" disabled={isLoading} className="mt-2 w-full">
+                                        {t("form.submitDiscount")}
+                                    </Button>
+                                </form>
+                            )}
+                        </TabPanel>
+
+                        <TabPanel value="reward" className="pt-4">
+                            {formTab === "reward" && (
+                                <form onSubmit={handleCreateReward} className="grid gap-3.5">
+                                    <Field
+                                        label={t("form.rewardName")}
+                                        value={rewardForm.name}
+                                        onChange={(event) =>
+                                            setRewardForm((current) => ({ ...current, name: event.target.value }))
+                                        }
+                                        placeholder={t("form.rewardNamePlaceholder")}
+                                        required
+                                    />
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <SelectField
+                                            label={t("form.calcType")}
+                                            value={rewardForm.calculation_type}
+                                            onChange={(event) =>
+                                                setRewardForm((current) => ({
                                                     ...current,
-                                                    giveaways: current.giveaways.map((row, rowIndex) =>
-                                                        rowIndex === index
-                                                            ? { ...row, product_variant_id: String(val) }
-                                                            : row
-                                                    ),
+                                                    calculation_type: event.target.value as "percentage" | "amount",
                                                 }))
                                             }
-                                            options={variantOptions}
-                                            placeholder="Select variant"
-                                        />
+                                            required
+                                        >
+                                            <option value="percentage">{t("form.percentage")}</option>
+                                            <option value="amount">{t("form.amount")}</option>
+                                        </SelectField>
+
                                         <Field
-                                            label="Giveaway quantity"
-                                            hideLabel
+                                            label={t("form.value")}
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={rewardForm.value}
+                                            onChange={(event) =>
+                                                setRewardForm((current) => ({ ...current, value: event.target.value }))
+                                            }
+                                            placeholder={rewardForm.calculation_type === "percentage" ? "5" : "10000"}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <SearchableSelect
+                                            label={t("form.branchScope")}
+                                            value={rewardForm.branch_id}
+                                            onChange={(val) =>
+                                                setRewardForm((current) => ({ ...current, branch_id: String(val) }))
+                                            }
+                                            options={branches.map((branch) => ({
+                                                value: branch.id,
+                                                label: branch.name
+                                            }))}
+                                            placeholder={t("form.companyWidePlaceholder")}
+                                        />
+
+                                        <Field
+                                            label={t("form.minQty")}
                                             type="number"
                                             min="1"
-                                            required
-                                            value={giveaway.giveaway_quantity}
+                                            value={rewardForm.min_quantity}
                                             onChange={(event) =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    giveaways: current.giveaways.map((row, rowIndex) =>
-                                                        rowIndex === index
-                                                            ? { ...row, giveaway_quantity: event.target.value }
-                                                            : row
-                                                    ),
-                                                }))
+                                                setRewardForm((current) => ({ ...current, min_quantity: event.target.value }))
                                             }
-                                            placeholder="Qty"
+                                            placeholder={t("form.minQtyPlaceholderReward")}
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            className="mb-2"
-                                            aria-label={`Remove giveaway ${index + 1}`}
-                                            onClick={() =>
-                                                setDiscountForm((current) => ({
-                                                    ...current,
-                                                    giveaways: current.giveaways.filter(
-                                                        (_, rowIndex) => rowIndex !== index
-                                                    ),
-                                                }))
-                                            }
-                                        >
-                                            <Icon name="close" size={14} />
-                                        </Button>
                                     </div>
-                                ))}
-                            </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <DatePicker
-                                    label="Effective From"
-                                    value={discountForm.effective_from}
-                                    onChange={(val) =>
-                                        setDiscountForm((current) => ({ ...current, effective_from: val }))
-                                    }
-                                    required
-                                />
-                                <DatePicker
-                                    label="Effective To"
-                                    value={discountForm.effective_to}
-                                    onChange={(val) =>
-                                        setDiscountForm((current) => ({ ...current, effective_to: val }))
-                                    }
-                                    placeholder="Optional"
-                                />
-                            </div>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <DatePicker
+                                            label={t("form.effectiveFrom")}
+                                            value={rewardForm.effective_from}
+                                            onChange={(val) =>
+                                                setRewardForm((current) => ({ ...current, effective_from: val }))
+                                            }
+                                            required
+                                        />
+                                        <DatePicker
+                                            label={t("form.effectiveTo")}
+                                            value={rewardForm.effective_to}
+                                            onChange={(val) =>
+                                                setRewardForm((current) => ({ ...current, effective_to: val }))
+                                            }
+                                            placeholder={t("form.optional")}
+                                        />
+                                    </div>
 
-                            <Button
-                                type="submit"
-                                size="xl"
-                                disabled={isLoading}
-                                className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
-                            >
-                                Create Discount
-                            </Button>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleCreateReward} className="grid gap-3.5">
-                            <Field
-                                label="Reward Name"
-                                value={rewardForm.name}
-                                onChange={(event) =>
-                                    setRewardForm((current) => ({ ...current, name: event.target.value }))
-                                }
-                                placeholder="e.g. Premium Member Reward"
-                                required
-                            />
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <SelectField
-                                    label="Calc Type"
-                                    value={rewardForm.calculation_type}
-                                    onChange={(event) =>
-                                        setRewardForm((current) => ({
-                                            ...current,
-                                            calculation_type: event.target.value as "percentage" | "amount",
-                                        }))
-                                    }
-                                    required
-                                >
-                                    <option value="percentage">Percentage (%)</option>
-                                    <option value="amount">Fixed Amount (IDR)</option>
-                                </SelectField>
-
-                                <Field
-                                    label="Value"
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={rewardForm.value}
-                                    onChange={(event) =>
-                                        setRewardForm((current) => ({ ...current, value: event.target.value }))
-                                    }
-                                    placeholder={rewardForm.calculation_type === "percentage" ? "5" : "10000"}
-                                    required
-                                />
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <SearchableSelect
-                                    label="Branch scope"
-                                    value={rewardForm.branch_id}
-                                    onChange={(val) =>
-                                        setRewardForm((current) => ({ ...current, branch_id: String(val) }))
-                                    }
-                                    options={branches.map((branch) => ({
-                                        value: branch.id,
-                                        label: branch.name
-                                    }))}
-                                    placeholder="Company-wide"
-                                />
-
-                                <Field
-                                    label="Min Qty Requirement"
-                                    type="number"
-                                    min="1"
-                                    value={rewardForm.min_quantity}
-                                    onChange={(event) =>
-                                        setRewardForm((current) => ({ ...current, min_quantity: event.target.value }))
-                                    }
-                                    placeholder="e.g. 2 (Optional)"
-                                />
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <DatePicker
-                                    label="Effective From"
-                                    value={rewardForm.effective_from}
-                                    onChange={(val) =>
-                                        setRewardForm((current) => ({ ...current, effective_from: val }))
-                                    }
-                                    required
-                                />
-                                <DatePicker
-                                    label="Effective To"
-                                    value={rewardForm.effective_to}
-                                    onChange={(val) =>
-                                        setRewardForm((current) => ({ ...current, effective_to: val }))
-                                    }
-                                    placeholder="Optional"
-                                />
-                            </div>
-
-                            <Button
-                                type="submit"
-                                size="xl"
-                                disabled={isLoading}
-                                className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
-                            >
-                                Create Reward
-                            </Button>
-                        </form>
-                    )}
-                </div>
+                                    <Button type="submit" size="xl" disabled={isLoading} className="mt-2 w-full">
+                                        {t("form.submitReward")}
+                                    </Button>
+                                </form>
+                            )}
+                        </TabPanel>
+                    </Tabs>
+                </Card>
             </div>
         </div>
     )

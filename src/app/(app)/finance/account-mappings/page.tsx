@@ -1,24 +1,27 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
 import { useSession } from "@/features/auth/session-provider"
 import { useAccountMappings, useUpdateAccountMappings, useCOA, type COAAccount } from "@/features/finance/api"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
 const MAPPING_KEYS = [
-    { key: "ar_account", label: "Accounts Receivable (Piutang Usaha)", description: "Default account for customer invoices" },
-    { key: "ap_account", label: "Accounts Payable (Hutang Usaha)", description: "Default account for vendor bills" },
-    { key: "ppn_in_account", label: "PPN In (Pajak Masukan)", description: "Account for input VAT on purchases" },
-    { key: "ppn_out_account", label: "PPN Out (Pajak Keluaran)", description: "Account for output VAT on sales" },
-    { key: "retained_earnings", label: "Retained Earnings (Laba Ditahan)", description: "Account for closing year-end profit/loss" },
-    { key: "cash_discount", label: "Cash Discount (Diskon Tunai)", description: "Account for early payment discounts" }
-]
+    "ar_account",
+    "ap_account",
+    "ppn_in_account",
+    "ppn_out_account",
+    "retained_earnings",
+    "cash_discount",
+] as const
 
 export default function AccountMappingsPage() {
+    const t = useTranslations("finance.accountMappings")
     const { activeCompanyId } = useSession()
     const { data: mappings = [], isLoading: isLoadingMappings } = useAccountMappings(activeCompanyId)
     const { data: accounts = [], isLoading: isLoadingAccounts } = useCOA(activeCompanyId)
@@ -49,10 +52,10 @@ export default function AccountMappingsPage() {
 
         updateMappings.mutate(payload, {
             onSuccess: () => {
-                toast.success("Account mappings saved successfully")
+                toast.success(t("saveSuccess"))
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to save account mappings")
+                toast.error(err?.message || t("saveError"))
             }
         })
     }
@@ -62,66 +65,61 @@ export default function AccountMappingsPage() {
     // Flatten tree and filter postable accounts for dropdowns
     const postableAccounts = flattenAccounts(accounts).filter(a => a.is_postable)
     const accountOptions = [
-        { value: "", label: "-- Select Account --" },
+        { value: "", label: t("selectAccount") },
         ...postableAccounts.map(a => ({ value: String(a.id), label: `${a.code} - ${a.name}` }))
     ]
 
     return (
         <div className="w-full max-w-4xl">
             <PageHeader
-                title="Account Mappings"
+                title={t("title")}
+                subtitle={t("subtitle")}
                 primaryAction={{
-                    label: updateMappings.isPending ? "Saving..." : "Save Mappings",
+                    label: updateMappings.isPending ? t("saving") : t("save"),
                     onClick: handleSave,
                     disabled: isLoading || updateMappings.isPending
                 }}
             />
 
-            <FilterBar>
-                <div className="flex-1 text-sm text-navy-500">
-                    Map standard system transactions to your specific chart of accounts.
-                </div>
-            </FilterBar>
-
-            <div className="bg-white rounded-xl border border-navy-100 shadow-sm p-6">
+            <Card padding="lg">
                 {isLoading ? (
                     <div className="flex flex-col gap-6" aria-hidden="true">
                         {Array.from({ length: 4 }).map((_, row) => (
-                            <div key={row} className="h-12 animate-pulse rounded-lg bg-navy-100" />
+                            <Skeleton key={row} className="h-12 rounded-lg" />
                         ))}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        {MAPPING_KEYS.map((item) => (
-                            <div key={item.key} className="flex items-start gap-8 py-3 border-b border-navy-50 last:border-0 last:pb-0">
+                        {MAPPING_KEYS.map((key) => (
+                            <div key={key} className="flex items-start gap-8 border-b border-line py-3 last:border-0 last:pb-0">
                                 <div className="w-1/2">
-                                    <h3 className="font-semibold text-navy-900">{item.label}</h3>
-                                    <p className="text-sm text-navy-500 mt-1">{item.description}</p>
-                                    <div className="mt-1 text-xs font-mono text-navy-400 bg-navy-50 inline-block px-1.5 py-0.5 rounded">
-                                        {item.key}
+                                    <h3 className="font-semibold text-ink">{t(`fields.${key}.label`)}</h3>
+                                    <p className="mt-1 text-sm text-ink-muted">{t(`fields.${key}.description`)}</p>
+                                    <div className="mt-1 inline-block rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs text-ink-faint">
+                                        {key}
                                     </div>
                                 </div>
                                 <div className="w-1/2">
                                     <SearchableSelect
-                                        value={formState[item.key] || ""}
-                                        onChange={(val) => setFormState(prev => ({ ...prev, [item.key]: String(val) }))}
+                                        value={formState[key] || ""}
+                                        onChange={(val) => setFormState(prev => ({ ...prev, [key]: String(val) }))}
                                         options={accountOptions}
-                                        placeholder="Select a postable account..."
+                                        placeholder={t("selectPlaceholder")}
                                     />
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
-            </div>
-            
+            </Card>
+
             <div className="mt-6 flex justify-end">
-                <Button 
-                    onClick={handleSave} 
+                <Button
+                    onClick={handleSave}
                     disabled={isLoading || updateMappings.isPending}
-                    className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm px-8"
+                    className="px-8"
                 >
-                    {updateMappings.isPending ? "Saving..." : "Save Mappings"}
+                    {updateMappings.isPending ? t("saving") : t("save")}
                 </Button>
             </div>
         </div>

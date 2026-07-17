@@ -18,6 +18,10 @@ describe("finance layout components", () => {
         expect(screen.getByRole("heading", { name: "Bills" })).toHaveClass("type-page-title")
         expect(screen.getByRole("banner")).toHaveClass("mb-6", "flex", "flex-col", "gap-4")
         expect(screen.getByRole("banner")).not.toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white")
+
+        const primaryButton = screen.getByRole("button", { name: "New Bill" })
+        expect(primaryButton).toHaveClass("bg-brand")
+        expect(primaryButton).not.toHaveClass("bg-teal-700")
     })
 
     it("renders filter controls in a design-system surface card", () => {

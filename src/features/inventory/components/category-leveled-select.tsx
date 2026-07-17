@@ -61,7 +61,7 @@ export function CategoryLeveledSelect({
     }, [])
 
     return (
-        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-navy-700", className)}>
+        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-ink-secondary", className)}>
             <span className={fieldLabelClassName}>{label}</span>
             <div className="relative">
                 <input
@@ -74,12 +74,12 @@ export function CategoryLeveledSelect({
                     onChange={(event) => setSearchQuery(event.target.value)}
                     className={cn(fieldControlClassName, "w-full pr-10 cursor-pointer")}
                 />
-                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-navy-500">
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-ink-muted">
                     <Icon name="arrow_drop_down" size={20} />
                 </span>
 
                 {isOpen ? (
-                    <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-md border border-navy-100 bg-white p-1 text-sm text-navy-900 shadow-lg outline-none">
+                    <div className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-md bg-surface-raised p-1 text-sm text-ink shadow-card-hover outline-none">
                         {emptyLabel ? (
                             <button
                                 type="button"
@@ -90,12 +90,12 @@ export function CategoryLeveledSelect({
                                     setSearchQuery("")
                                 }}
                                 className={cn(
-                                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition-colors hover:bg-navy-50",
-                                    value === "" ? "bg-teal-50 text-teal-700" : "text-navy-700",
+                                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-left font-semibold transition-colors hover:bg-surface-muted",
+                                    value === "" ? "bg-brand-soft text-brand-ink" : "text-ink-secondary",
                                 )}
                             >
                                 <span>{emptyLabel}</span>
-                                {value === "" ? <Icon name="check" size={16} className="text-teal-700" /> : null}
+                                {value === "" ? <Icon name="check" size={16} className="text-brand-ink" /> : null}
                             </button>
                         ) : null}
 
@@ -117,27 +117,27 @@ export function CategoryLeveledSelect({
                                     }}
                                     className={cn(
                                         "group flex w-full items-center justify-between rounded-md py-2 pr-3 text-left transition-colors",
-                                        selected ? "bg-teal-50 text-teal-700" : "text-navy-800 hover:bg-navy-50",
+                                        selected ? "bg-brand-soft text-brand-ink" : "text-ink-secondary hover:bg-surface-muted",
                                         disabled ? "cursor-not-allowed opacity-55 hover:bg-transparent" : "cursor-pointer",
                                     )}
                                     style={{ paddingLeft: `${12 + option.depth * 22}px` }}
                                 >
                                     <span className="flex min-w-0 items-center gap-2">
                                         {option.depth > 0 ? (
-                                            <span className="h-5 w-px shrink-0 bg-navy-100" aria-hidden="true" />
+                                            <span className="h-5 w-px shrink-0 bg-line" aria-hidden="true" />
                                         ) : null}
                                         <span className="min-w-0">
                                             <span className="block truncate font-semibold">{option.category.name}</span>
                                             {option.parentBreadcrumb ? (
-                                                <span className="block truncate text-[11px] font-medium text-navy-400">
+                                                <span className="block truncate text-[11px] font-medium text-ink-faint">
                                                     {option.parentBreadcrumb}
                                                 </span>
                                             ) : null}
                                         </span>
                                     </span>
-                                    {selected ? <Icon name="check" size={16} className="shrink-0 text-teal-700" /> : null}
+                                    {selected ? <Icon name="check" size={16} className="shrink-0 text-brand-ink" /> : null}
                                     {disabled ? (
-                                        <span className="ml-3 shrink-0 rounded-full bg-navy-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy-400">
+                                        <span className="ml-3 shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-faint">
                                             Parent
                                         </span>
                                     ) : null}
@@ -146,7 +146,7 @@ export function CategoryLeveledSelect({
                         })}
 
                         {filteredOptions.length === 0 ? (
-                            <div className="px-3 py-2 text-sm italic text-navy-400">No categories found</div>
+                            <div className="px-3 py-2 text-sm italic text-ink-muted">No categories found</div>
                         ) : null}
                     </div>
                 ) : null}

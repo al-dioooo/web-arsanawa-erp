@@ -12,6 +12,51 @@ vi.mock("sonner", () => ({
     toast: { success: vi.fn(), error: vi.fn() },
 }))
 
+// Dictionary-backed next-intl mock: keeps assertions readable and returns a
+// stable translator per namespace so effects keyed on t-derived strings
+// don't re-run every render.
+vi.mock("next-intl", () => {
+    const labels: Record<string, string> = {
+        "inventory.promotions.title": "Promotions & Rewards",
+        "inventory.promotions.summary.target": "{count} target",
+        "inventory.promotions.summary.targets": "{count} targets",
+        "inventory.promotions.summary.dependency": "{count} dependency",
+        "inventory.promotions.summary.dependencies": "{count} dependencies",
+        "inventory.promotions.summary.giveaway": "{count} giveaway",
+        "inventory.promotions.summary.giveaways": "{count} giveaways",
+        "inventory.promotions.deleteDiscountAria": "Delete discount {name}",
+        "inventory.promotions.deleteRewardAria": "Delete reward {name}",
+        "inventory.promotions.tabs.addDiscount": "Add Discount",
+        "inventory.promotions.tabs.addReward": "Add Reward",
+        "inventory.promotions.form.campaignName": "Campaign Name",
+        "inventory.promotions.form.value": "Value",
+        "inventory.promotions.form.addTarget": "Add target",
+        "inventory.promotions.form.targetType": "Target {index} type",
+        "inventory.promotions.form.target": "Target {index}",
+        "inventory.promotions.form.addDependency": "Add dependency",
+        "inventory.promotions.form.addGiveaway": "Add giveaway",
+        "inventory.promotions.form.giveawayVariant": "Giveaway {index} variant",
+        "inventory.promotions.form.giveawayQuantity": "Giveaway quantity",
+        "inventory.promotions.form.submitDiscount": "Create Discount",
+        "inventory.promotions.form.submitReward": "Create Reward",
+        "common.delete": "Delete",
+        "common.cancel": "Cancel",
+    }
+    const cache = new Map<string | undefined, (key: string, values?: Record<string, string | number>) => string>()
+    return {
+        useTranslations: (namespace?: string) => {
+            if (!cache.has(namespace)) {
+                cache.set(namespace, (key: string, values?: Record<string, string | number>) => {
+                    const fullKey = namespace ? `${namespace}.${key}` : key
+                    const template = labels[fullKey] ?? fullKey
+                    return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values?.[token] ?? ""))
+                })
+            }
+            return cache.get(namespace)!
+        },
+    }
+})
+
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))

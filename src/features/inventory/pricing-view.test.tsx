@@ -11,6 +11,29 @@ vi.mock("sonner", () => ({
     toast: { success: vi.fn(), error: vi.fn() },
 }))
 
+// Dictionary-backed next-intl mock: keeps assertions readable and returns a
+// stable translator per namespace so effects keyed on t-derived strings
+// don't re-run every render.
+vi.mock("next-intl", () => {
+    const labels: Record<string, string> = {
+        "inventory.pricing.title": "Pricing Management",
+        "inventory.pricing.table.notPriced": "Not priced",
+    }
+    const cache = new Map<string | undefined, (key: string, values?: Record<string, string | number>) => string>()
+    return {
+        useTranslations: (namespace?: string) => {
+            if (!cache.has(namespace)) {
+                cache.set(namespace, (key: string, values?: Record<string, string | number>) => {
+                    const fullKey = namespace ? `${namespace}.${key}` : key
+                    const template = labels[fullKey] ?? fullKey
+                    return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values?.[token] ?? ""))
+                })
+            }
+            return cache.get(namespace)!
+        },
+    }
+})
+
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))

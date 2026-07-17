@@ -88,7 +88,7 @@ export function ModuleLauncher() {
                 onClick={() => setIsOpen(!isOpen)}
                 aria-haspopup="dialog"
                 aria-expanded={isOpen}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-navy-500 hover:bg-navy-100 hover:text-navy-900 transition-all duration-150 outline-none cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted hover:text-ink transition-all duration-150 outline-none cursor-pointer"
                 title={t("launcher.button")}
                 aria-label={t("launcher.button")}
             >
@@ -96,7 +96,7 @@ export function ModuleLauncher() {
             </button>
 
             {isOpen && (
-                <EnterTransition role="dialog" aria-label={t("launcher.button")} duration={0.2} className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-navy-100 bg-white p-4">
+                <EnterTransition role="dialog" aria-label={t("launcher.button")} duration={0.2} className="absolute right-0 top-12 z-50 w-80 rounded-lg bg-surface-raised p-4 shadow-card-hover">
                     {moduleTiles.length > 0 && (
                         <div>
                             <LauncherSection title={t("launcher.applications")} tiles={moduleTiles} pathname={pathname} />
@@ -123,7 +123,7 @@ function LauncherSection({
     return (
         <div>
             <div className="mb-3 px-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-navy-500 font-display">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink-muted font-display">
                     {title}
                 </h3>
             </div>
@@ -134,10 +134,10 @@ function LauncherSection({
                         <Link
                             key={tile.key}
                             href={tile.route}
-                            className={`flex flex-col items-center justify-center rounded-xl p-3 text-center transition-all duration-150 group outline-none ${active ? "bg-navy-100/50" : "hover:bg-navy-50"}`}
+                            className={`flex flex-col items-center justify-center rounded-xl p-3 text-center transition-all duration-150 group outline-none ${active ? "bg-surface-muted" : "hover:bg-surface-muted/70"}`}
                         >
                             <div
-                                className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-150 group-hover:scale-105 group-active:scale-95"
+                                className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-150 motion-safe:group-hover:scale-105 motion-safe:group-active:scale-95"
                                 style={{
                                     backgroundColor: `${tile.accentColor}15`,
                                     color: tile.accentColor,
@@ -145,7 +145,7 @@ function LauncherSection({
                             >
                                 <Icon name={tile.icon} className="text-2xl" />
                             </div>
-                            <span className="mt-2 text-xs font-semibold text-navy-700 group-hover:text-navy-900 truncate w-full px-1">
+                            <span className="mt-2 text-xs font-semibold text-ink-secondary group-hover:text-ink truncate w-full px-1">
                                 {tile.label}
                             </span>
                         </Link>

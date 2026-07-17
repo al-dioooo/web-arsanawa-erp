@@ -30,7 +30,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next-intl", () => ({
     useLocale: () => "id",
-    useTranslations: () => (key: string) => {
+    useTranslations: () => {
         const labels: Record<string, string> = {
             "finance.nav.bills": "Bills",
             "finance.nav.transactions": "Transactions",
@@ -46,7 +46,11 @@ vi.mock("next-intl", () => ({
             "inventory.nav.newTransfer": "New Transfer",
         }
 
-        return labels[key] ?? key
+        const translate = (key: string) => labels[key] ?? key
+
+        return Object.assign(translate, {
+            rich: (key: string) => labels[key] ?? key,
+        })
     },
 }))
 
@@ -569,7 +573,7 @@ describe("AppShell", () => {
                 </AppShell>,
             )
 
-            expect(screen.getByText("Module Not Entitled")).toBeInTheDocument()
+            expect(screen.getByText("shell.guard.title")).toBeInTheDocument()
             expect(screen.queryByText("Inventory dashboard")).not.toBeInTheDocument()
         })
 

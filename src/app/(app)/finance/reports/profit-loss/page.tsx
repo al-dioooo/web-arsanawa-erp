@@ -1,14 +1,18 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { ExportButtons } from "@/features/finance/components/export-buttons"
 import { useSession } from "@/features/auth/session-provider"
 import { usePeriods } from "@/features/finance/api"
 import { useTrialBalance, type TrialBalanceItem } from "@/features/finance/api-journals"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Icon } from "@/components/ui/icon"
 import { SelectDescription } from "@/components/ui/select-description"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatIDR } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -46,6 +50,7 @@ type PLSection = {
 }
 
 export default function ProfitLossPage() {
+    const t = useTranslations("finance.profitLoss")
     const { activeCompanyId } = useSession()
     const { data: periods = [] } = usePeriods(activeCompanyId)
     const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null)
@@ -54,6 +59,10 @@ export default function ProfitLossPage() {
     const { data: trialBalance = [], isLoading } = useTrialBalance(activeCompanyId, periodId)
 
     const selectedPeriod = periods.find(p => p.id === periodId)
+
+    const revenueLabel = t("sections.revenue")
+    const cogsLabel = t("sections.cogs")
+    const opexLabel = t("sections.opex")
 
     const { sections, grossProfit, operatingProfit } = useMemo(() => {
         const revenue = trialBalance.filter(i => classifyAccount(i) === 'revenue')
@@ -68,43 +77,40 @@ export default function ProfitLossPage() {
         const operating = gross - totalOpex
 
         const sections: PLSection[] = [
-            { label: 'Revenue', items: revenue, total: totalRevenue, color: 'text-teal-700', sign: 1 },
-            { label: 'Cost of Sales', items: cogs, total: totalCOGS, color: 'text-rose-600', sign: -1 },
-            { label: 'Operating Expenses', items: opex, total: totalOpex, color: 'text-orange-600', sign: -1 },
+            { label: revenueLabel, items: revenue, total: totalRevenue, color: 'text-brand-ink', sign: 1 },
+            { label: cogsLabel, items: cogs, total: totalCOGS, color: 'text-error-strong', sign: -1 },
+            // Raw orange is the sanctioned brand accent shade.
+            { label: opexLabel, items: opex, total: totalOpex, color: 'text-orange-700', sign: -1 },
         ]
 
         return { sections, grossProfit: gross, operatingProfit: operating }
-    }, [trialBalance])
+    }, [trialBalance, revenueLabel, cogsLabel, opexLabel])
 
     return (
         <div className="w-full max-w-5xl">
             <PageHeader
-                title="Income Statement"
-                subtitle="Laporan Laba Rugi"
+                title={t("title")}
+                subtitle={t("subtitle")}
             />
 
             <FilterBar>
-                <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex items-center gap-2">
-                        <Icon name="calendar_month" className="text-navy-400 text-base" />
-                        <label className="text-sm font-semibold text-navy-600">Accounting Period:</label>
-                    </div>
+                <div className="flex flex-wrap items-center gap-4">
                     <SelectDescription
-                        label="Accounting Period"
+                        label={t("period.label")}
                         value={periodId ?? ''}
                         onChange={e => setSelectedPeriodId(Number(e.target.value) || null)}
                         options={[
-                            { value: "", label: "Select a period", description: "Choose the accounting period for this report." },
+                            { value: "", label: t("period.placeholder"), description: t("period.placeholderDesc") },
                             ...periods.map(p => ({
                                 value: p.id,
                                 label: p.name,
-                                description: `Status: ${p.status}`,
+                                description: t("period.statusDesc", { status: p.status }),
                             })),
                         ]}
                     />
                     {selectedPeriod && (
-                        <span className="text-sm text-navy-400">
-                            {selectedPeriod.start_date} – {selectedPeriod.end_date}
+                        <span className="text-sm text-ink-muted">
+                            {selectedPeriod.start_date} &ndash; {selectedPeriod.end_date}
                         </span>
                     )}
                     <div className="w-full sm:ml-auto sm:w-auto">
@@ -119,65 +125,70 @@ export default function ProfitLossPage() {
             </FilterBar>
 
             {!periodId ? (
-                <div className="bg-white rounded-2xl border border-navy-100 shadow-sm p-12 text-center">
-                    <Icon name="bar_chart" className="text-5xl text-navy-200 mb-3" />
-                    <p className="font-semibold text-navy-700 text-lg">Select an accounting period</p>
-                    <p className="text-sm text-navy-400 mt-2">The Income Statement will be calculated from all posted journal entries in the selected period.</p>
-                </div>
+                <Card padding="lg">
+                    <EmptyState
+                        icon="bar_chart"
+                        title={t("selectPeriodTitle")}
+                        description={t("selectPeriodHint")}
+                    />
+                </Card>
             ) : isLoading ? (
                 <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-white rounded-2xl border border-navy-100 shadow-sm p-6">
-                            <div className="h-5 w-32 bg-navy-100 animate-pulse rounded mb-4" />
+                        <Card key={i} padding="lg" aria-hidden="true">
+                            <Skeleton className="mb-4 h-5 w-32" />
                             {[...Array(3)].map((__, j) => (
                                 <div key={j} className="flex justify-between py-2">
-                                    <div className="h-4 w-48 bg-navy-50 animate-pulse rounded" />
-                                    <div className="h-4 w-24 bg-navy-50 animate-pulse rounded" />
+                                    <Skeleton className="h-4 w-48" />
+                                    <Skeleton className="h-4 w-24" />
                                 </div>
                             ))}
-                        </div>
+                        </Card>
                     ))}
                 </div>
             ) : (
                 <div className="space-y-4">
                     {/* Revenue Section */}
-                    <PLSectionCard section={sections[0]} />
+                    <PLSectionCard section={sections[0]} emptyLabel={t("sectionEmpty")} />
 
                     {/* Cost of Sales Section */}
-                    <PLSectionCard section={sections[1]} />
+                    <PLSectionCard section={sections[1]} emptyLabel={t("sectionEmpty")} />
 
                     {/* Gross Profit Subtotal */}
                     <SubtotalCard
-                        label="Gross Profit"
-                        labelID="Laba Kotor"
+                        label={t("grossProfit")}
+                        sublabel={t("grossProfitAlt")}
                         value={grossProfit}
                         highlight
                     />
 
                     {/* Operating Expenses Section */}
-                    <PLSectionCard section={sections[2]} />
+                    <PLSectionCard section={sections[2]} emptyLabel={t("sectionEmpty")} />
 
                     {/* Net Operating Profit */}
                     <SubtotalCard
-                        label="Net Operating Profit"
-                        labelID="Laba Usaha"
+                        label={t("netOperatingProfit")}
+                        sublabel={t("netOperatingProfitAlt")}
                         value={operatingProfit}
                         highlight
                         large
                     />
 
                     {trialBalance.length === 0 && (
-                        <div className="bg-navy-50 rounded-2xl p-8 text-center">
-                            <Icon name="info" className="text-3xl text-navy-300 mb-2" />
-                            <p className="font-semibold text-navy-600">No posted data found for this period.</p>
-                            <p className="text-sm text-navy-400 mt-1">Post journal entries or invoices/bills to see the Income Statement.</p>
-                        </div>
+                        <Card padding="lg" inset>
+                            <EmptyState
+                                compact
+                                icon="info"
+                                title={t("noData")}
+                                description={t("noDataHint")}
+                            />
+                        </Card>
                     )}
 
                     {/* Footer note */}
-                    <div className="text-xs text-navy-400 text-center pt-2 flex items-center justify-center gap-1.5">
-                        <Icon name="info" className="text-base" />
-                        Figures computed from Trial Balance for period: <span className="font-semibold">{selectedPeriod?.name}</span>
+                    <div className="flex items-center justify-center gap-1.5 pt-2 text-center text-xs text-ink-muted">
+                        <Icon name="info" size={16} />
+                        {t("footnote", { period: selectedPeriod?.name ?? "" })}
                     </div>
                 </div>
             )}
@@ -185,25 +196,26 @@ export default function ProfitLossPage() {
     )
 }
 
-function PLSectionCard({ section }: { section: PLSection }) {
+function PLSectionCard({ section, emptyLabel }: { section: PLSection; emptyLabel: string }) {
     const [expanded, setExpanded] = useState(true)
 
     return (
-        <div className="bg-white rounded-2xl border border-navy-100 shadow-sm overflow-hidden">
+        <Card padding="none" className="overflow-hidden">
             <button
                 onClick={() => setExpanded(v => !v)}
-                className="w-full flex items-center justify-between px-6 py-4 border-b border-navy-50 hover:bg-navy-50/30 transition-colors cursor-pointer"
+                className="flex w-full cursor-pointer items-center justify-between border-b border-line px-6 py-4 transition-colors hover:bg-surface-muted/60"
             >
-                <span className={cn("font-bold text-base", section.color)}>{section.label}</span>
+                <span className={cn("text-base font-bold", section.color)}>{section.label}</span>
                 <div className="flex items-center gap-4">
-                    <span className={cn("font-bold text-lg", section.color)}>
+                    <span className={cn("text-lg font-bold tabular-nums", section.color)}>
                         {section.sign === -1 && section.total > 0 && '('}
                         {formatIDR(section.total)}
                         {section.sign === -1 && section.total > 0 && ')'}
                     </span>
                     <Icon
                         name={expanded ? "expand_less" : "expand_more"}
-                        className="text-navy-400 text-base"
+                        size={16}
+                        className="text-ink-faint"
                     />
                 </div>
             </button>
@@ -211,28 +223,28 @@ function PLSectionCard({ section }: { section: PLSection }) {
             {expanded && (
                 <div>
                     {section.items.length === 0 ? (
-                        <div className="px-6 py-4 text-sm text-navy-400 italic">No accounts in this category for the selected period.</div>
+                        <div className="px-6 py-4 text-sm text-ink-faint italic">{emptyLabel}</div>
                     ) : (
                         section.items.map(item => {
                             const amount = netAmount(item)
                             return (
                                 <div
                                     key={item.account_id}
-                                    className="flex items-center justify-between px-6 py-3 border-b border-navy-50 last:border-0 hover:bg-navy-50/20 transition-colors"
+                                    className="flex items-center justify-between border-b border-line px-6 py-3 transition-colors last:border-0 hover:bg-surface-muted/40"
                                 >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <span className="text-xs font-mono text-navy-400 flex-shrink-0 w-14">{item.code}</span>
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <span className="w-14 flex-shrink-0 font-mono text-xs text-ink-faint">{item.code}</span>
                                         <Link
                                             href={`/finance/journals/account/${item.account_id}`}
-                                            className="text-sm text-navy-700 hover:text-teal-600 font-medium truncate transition-colors hover:underline decoration-dotted"
+                                            className="truncate text-sm font-medium text-ink-secondary transition-colors hover:text-brand-ink hover:underline decoration-dotted"
                                             onClick={e => e.stopPropagation()}
                                         >
                                             {item.name}
                                         </Link>
                                     </div>
                                     <span className={cn(
-                                        "text-sm font-semibold flex-shrink-0 ml-4",
-                                        amount === 0 ? "text-navy-400" : section.color
+                                        "ml-4 flex-shrink-0 text-sm font-semibold tabular-nums",
+                                        amount === 0 ? "text-ink-faint" : section.color
                                     )}>
                                         {formatIDR(amount)}
                                     </span>
@@ -242,19 +254,19 @@ function PLSectionCard({ section }: { section: PLSection }) {
                     )}
                 </div>
             )}
-        </div>
+        </Card>
     )
 }
 
 function SubtotalCard({
     label,
-    labelID,
+    sublabel,
     value,
     highlight = false,
     large = false,
 }: {
     label: string
-    labelID: string
+    sublabel: string
     value: number
     highlight?: boolean
     large?: boolean
@@ -263,21 +275,21 @@ function SubtotalCard({
 
     return (
         <div className={cn(
-            "rounded-2xl border p-5 flex items-center justify-between",
-            highlight && isPositive ? "bg-teal-50 border-teal-200" : "",
-            highlight && !isPositive ? "bg-rose-50 border-rose-200" : "",
-            !highlight ? "bg-navy-50 border-navy-100" : "",
+            "flex items-center justify-between rounded-lg p-5",
+            highlight && isPositive && "bg-brand-soft",
+            highlight && !isPositive && "bg-error-soft",
+            !highlight && "bg-surface-muted",
         )}>
             <div>
-                <div className={cn("font-bold", large ? "text-lg" : "text-base", isPositive ? "text-navy-900" : "text-rose-700")}>
+                <div className={cn("font-bold", large ? "text-lg" : "text-base", isPositive ? "text-ink" : "text-error-strong")}>
                     {label}
                 </div>
-                <div className="text-xs text-navy-400 mt-0.5">{labelID}</div>
+                <div className="mt-0.5 text-xs text-ink-muted">{sublabel}</div>
             </div>
             <div className={cn(
-                "font-bold",
+                "font-bold tabular-nums",
                 large ? "text-3xl" : "text-xl",
-                isPositive ? (highlight ? "text-teal-700" : "text-navy-900") : "text-rose-700"
+                isPositive ? (highlight ? "text-brand-ink" : "text-ink") : "text-error-strong"
             )}>
                 {!isPositive && "("}
                 {formatIDR(Math.abs(value))}

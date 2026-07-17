@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Field } from "@/components/ui/field"
 import {
     fieldControlClassName,
@@ -139,26 +140,26 @@ export function WhatsAppSettings() {
     }
 
     return (
-        <section className="rounded-2xl border border-navy-100 bg-white p-6">
+        <Card as="section" padding="lg">
             <div className="mb-5 flex items-start gap-3">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+                <span className="flex size-10 items-center justify-center rounded-md bg-brand-soft text-brand-ink">
                     <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9z" />
                         <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
                     </svg>
                 </span>
                 <div>
-                    <h2 className="font-brand text-lg font-bold tracking-tight text-navy-900">{t("title")}</h2>
-                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-navy-500">{t("description")}</p>
+                    <h2 className="type-section">{t("title")}</h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-muted">{t("description")}</p>
                 </div>
             </div>
 
-            <label className="mb-5 flex cursor-pointer items-center gap-3 rounded-xl border border-navy-100 bg-navy-50/60 p-4">
+            <label className="mb-5 flex cursor-pointer items-center gap-3 rounded-md bg-surface-muted p-4">
                 <input
                     type="checkbox"
                     checked={draft.enabled}
                     onChange={(event) => set("enabled", event.target.checked)}
-                    className="size-4 accent-teal-700"
+                    className="size-4 accent-brand"
                 />
                 <span>
                     <span className={fieldLabelClassName}>{t("enabledLabel")}</span>
@@ -183,7 +184,7 @@ export function WhatsAppSettings() {
                                 type="button"
                                 onClick={clearToken}
                                 disabled={upsert.isPending}
-                                className="shrink-0 text-xs font-semibold text-rose-600 underline"
+                                className="shrink-0 cursor-pointer text-xs font-semibold text-error underline"
                             >
                                 {t("clearToken")}
                             </button>
@@ -210,7 +211,7 @@ export function WhatsAppSettings() {
                 <span className={fieldDescriptionClassName}>{t("templateHint")}</span>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 border-t border-navy-100 pt-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="mt-6 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-end sm:justify-between">
                 <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
                     <div className="sm:w-56">
                         <Field
@@ -235,11 +236,11 @@ export function WhatsAppSettings() {
                     onClick={save}
                     disabled={upsert.isPending}
                     size="xl"
-                    className="w-full bg-teal-700 text-white shadow-sm hover:bg-teal-800 sm:w-auto"
+                    className="w-full sm:w-auto"
                 >
                     {upsert.isPending ? t("saving") : t("save")}
                 </Button>
             </div>
-        </section>
+        </Card>
     )
 }

@@ -55,6 +55,20 @@ vi.mock("next-intl", () => ({
             "modules.platformSettings": "Platform Settings",
             "modules.moduleManager": "Module Manager",
             "modules.apiKeys": "API Keys",
+            // ModulesView uses the namespaced organization.modules.* dictionary;
+            // the namespace argument is dropped by this mock, so bare keys land here.
+            "eyebrow": "Module Manager",
+            "title": `${values?.company ?? ""} Modules`,
+            "fallbackTitle": "Select a company context",
+            "subtitle": "Enable or disable core business modules for this company. Enabling a module grants access to authorized memberships.",
+            "availableTitle": "Available Modules",
+            "active": "Active",
+            "disabled": "Disabled",
+            "description": `Manage ${values?.module ?? ""} operations, analytics, and tenant database mappings.`,
+            "enable": "Enable Module",
+            "disable": "Disable Module",
+            "enableAria": `Enable ${values?.module ?? ""} module`,
+            "disableAria": `Disable ${values?.module ?? ""} module`,
         }
 
         return labels[key] ?? key

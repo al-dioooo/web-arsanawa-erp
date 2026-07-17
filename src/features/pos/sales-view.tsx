@@ -3,10 +3,14 @@
 import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { SpreadsheetImportDialog } from "@/components/imports/spreadsheet-import-dialog"
+import { DataTable } from "@/components/ui/data-table"
 import { Icon } from "@/components/ui/icon"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { PosFilterBar, type PosSalesFilters } from "@/features/pos/components/pos-filter-bar"
 import { PosPageHeader } from "@/features/pos/components/pos-page-header"
@@ -29,6 +33,7 @@ import { formatDateID } from "@/lib/format"
 
 export function SalesView() {
     const router = useRouter()
+    const t = useTranslations("pos.sales")
     const { token, activeCompanyId, organizationContext } = useSession()
     const [sales, setSales] = useState<Sale[]>([])
     const [pagination, setPagination] = useState<Pagination | null>(null)
@@ -48,6 +53,7 @@ export function SalesView() {
         return { token, companyId: activeCompanyId }
     }, [token, activeCompanyId])
 
+    const loadErrorFallback = t("loadError")
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
@@ -64,11 +70,11 @@ export function SalesView() {
             setSales(data.sales)
             setPagination(data.pagination)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load sales.")
+            toast.error(caught instanceof Error ? caught.message : loadErrorFallback)
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions, filters, page])
+    }, [requestOptions, filters, page, loadErrorFallback])
 
     useEffect(() => {
         let active = true
@@ -87,7 +93,7 @@ export function SalesView() {
             const updated = await callback()
             setSales((current) => current.map((sale) => (sale.id === updated.id ? updated : sale)))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to update sale.")
+            toast.error(caught instanceof Error ? caught.message : t("updateError"))
         } finally {
             setIsLoading(false)
         }
@@ -96,14 +102,14 @@ export function SalesView() {
     return (
         <div className="grid gap-6">
             <PosPageHeader
-                title="Sales"
-                subtitle="Browse counter sales and catering orders. Open a sale to view its lines, payments, and promotions."
+                title={t("title")}
+                subtitle={t("subtitle")}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
                 actions={requestOptions ? (
                     <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
                         <Icon name="description" size={18} />
-                        Import Orders
+                        {t("import")}
                     </Button>
                 ) : null}
             />
@@ -112,8 +118,8 @@ export function SalesView() {
                 <SpreadsheetImportDialog
                     open={importOpen}
                     onClose={() => setImportOpen(false)}
-                    title="Import Catering Orders"
-                    description="Preview the configured Google Form source or upload a catering order template, then queue confirmed orders."
+                    title={t("importTitle")}
+                    description={t("importDescription")}
                     operations={{
                         downloadTemplate: (format) => downloadPosImportTemplate(requestOptions, format),
                         inspect: (input) => inspectPosImport(requestOptions, input),
@@ -126,113 +132,77 @@ export function SalesView() {
                 />
             ) : null}
 
-            <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                <PosFilterBar
-                    filters={filters}
-                    branches={organizationContext?.branches ?? []}
-                    onChange={(next) => {
-                        setFilters((current) => ({ ...current, ...next }))
-                        setPage(1)
-                    }}
+            <PosFilterBar
+                filters={filters}
+                branches={organizationContext?.branches ?? []}
+                onChange={(next) => {
+                    setFilters((current) => ({ ...current, ...next }))
+                    setPage(1)
+                }}
+            />
+
+            <DataTable
+                columns={[
+                    t("columns.sale"),
+                    t("columns.type"),
+                    t("columns.customer"),
+                    t("columns.date"),
+                    { label: t("columns.total"), align: "end" },
+                    t("columns.status"),
+                    { label: t("columns.actions"), align: "end" },
+                ]}
+                minWidth={760}
+                footer={
+                    pagination && pagination.last_page > 1 ? (
+                        <TablePagination
+                            page={pagination.current_page}
+                            pageSize={pagination.per_page}
+                            total={pagination.total}
+                            onPageChange={(next) => {
+                                if (!isLoading) setPage(next)
+                            }}
+                            label={(info) => t("pageInfo", info)}
+                        />
+                    ) : null
+                }
+            >
+                {sales.map((sale) => (
+                    <tr key={sale.id} className="cursor-pointer">
+                        <td
+                            onClick={() => router.push(`/pos/sales/${sale.id}`)}
+                            className="px-6 py-4 font-bold text-ink"
+                        >
+                            {sale.sale_number ?? `#${sale.id}`}
+                        </td>
+                        <td className="capitalize">{sale.type}</td>
+                        <td>
+                            {sale.customer_name ??
+                                (sale.partner_id ? t("partnerRef", { id: sale.partner_id }) : t("walkIn"))}
+                        </td>
+                        <td>{sale.order_date ? formatDateID(sale.order_date) : "-"}</td>
+                        <td className="px-6 py-4 text-end font-bold text-ink tabular-nums">
+                            {formatCurrency(sale.total)}
+                        </td>
+                        <td>
+                            <StatusPill tone={saleStatusTone(sale.status)}>{sale.status}</StatusPill>
+                        </td>
+                        <td className="text-end">
+                            <SaleLifecycleActions
+                                sale={sale}
+                                isLoading={isLoading}
+                                onCancel={() => void runLifecycle(() => cancelSale(requestOptions!, sale.id))}
+                                onVoid={() => void runLifecycle(() => voidSale(requestOptions!, sale.id))}
+                            />
+                        </td>
+                    </tr>
+                ))}
+                <TableStateRow
+                    isLoading={isLoading && sales.length === 0}
+                    count={sales.length}
+                    columns={7}
+                    emptyMessage={t("empty")}
                 />
-
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[760px] border-separate border-spacing-0 text-left text-sm">
-                        <thead>
-                            <tr className="bg-navy-50/30 text-xs font-bold uppercase tracking-wider text-navy-500">
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Sale</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Type</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Customer</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Date</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display text-right">Total</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Status</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sales.map((sale) => (
-                                <tr
-                                    key={sale.id}
-                                    className="cursor-pointer transition-colors hover:bg-navy-50/20"
-                                >
-                                    <td
-                                        onClick={() => router.push(`/pos/sales/${sale.id}`)}
-                                        className="border-b border-navy-100/50 px-4 py-3 font-bold text-navy-900"
-                                    >
-                                        {sale.sale_number ?? `#${sale.id}`}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 capitalize text-navy-700 font-medium">
-                                        {sale.type}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-navy-700 font-medium">
-                                        {sale.customer_name ?? (sale.partner_id ? `Partner #${sale.partner_id}` : "Walk-in")}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-navy-600 font-medium">
-                                        {sale.order_date ? formatDateID(sale.order_date) : "-"}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-right font-bold text-navy-900">
-                                        {formatCurrency(sale.total)}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3">
-                                        <StatusPill tone={saleStatusTone(sale.status)}>{sale.status}</StatusPill>
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-right">
-                                        <SaleLifecycleActions
-                                            sale={sale}
-                                            isLoading={isLoading}
-                                            onCancel={() => void runLifecycle(() => cancelSale(requestOptions!, sale.id))}
-                                            onVoid={() => void runLifecycle(() => voidSale(requestOptions!, sale.id))}
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                            {isLoading && sales.length === 0
-                                ? Array.from({ length: 4 }).map((_, row) => (
-                                    <tr key={row} aria-hidden="true">
-                                        {Array.from({ length: 7 }).map((__, cell) => (
-                                            <td key={cell} className="px-4 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
-                                        ))}
-                                    </tr>
-                                ))
-                                : sales.length === 0 && (
-                                    <tr>
-                                        <td colSpan={7} className="bg-navy-50/10 py-8 text-center font-medium text-navy-400">No sales found.</td>
-                                    </tr>
-                                )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {pagination && pagination.last_page > 1 && (
-                    <div className="mt-4 flex items-center justify-between border-t border-navy-50 pt-4 text-sm">
-                        <span className="text-navy-500">
-                            Page {pagination.current_page} of {pagination.last_page} · {pagination.total} sales
-                        </span>
-                        <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={page <= 1 || isLoading}
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            >
-                                <Icon name="chevron_left" size={16} />
-                                Prev
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={page >= pagination.last_page || isLoading}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                Next
-                                <Icon name="chevron_right" size={16} />
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </div>
+            </DataTable>
         </div>
     )
 }

@@ -1,20 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Dialog } from "@/components/ui/dialog"
 import { Field, SelectField } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
+import { Modal } from "@/components/ui/modal"
 import { PaymentSummary } from "@/features/pos/components/payment-summary"
 import type { AddPaymentInput, PaymentMethod, Sale } from "@/features/pos/pos-types"
 import { formatCurrency, toNumber } from "@/lib/money"
 
-const METHODS: { value: PaymentMethod; label: string }[] = [
-    { value: "cash", label: "Cash" },
-    { value: "card", label: "Card" },
-    { value: "qris", label: "QRIS" },
-    { value: "transfer", label: "Transfer" },
-]
+const METHODS: PaymentMethod[] = ["cash", "card", "qris", "transfer"]
 
 type PaymentDialogProps = {
     open: boolean
@@ -37,6 +33,8 @@ export function PaymentDialog({
     onComplete,
     allowPaymentEditing = true,
 }: PaymentDialogProps) {
+    const t = useTranslations("pos.register.payment")
+    const rootT = useTranslations()
     const [method, setMethod] = useState<PaymentMethod>("cash")
     const [amount, setAmount] = useState("")
     const [reference, setReference] = useState("")
@@ -51,24 +49,23 @@ export function PaymentDialog({
     const canComplete = sale?.type === "catering" ? sale.status === "confirmed" : fullyPaid
 
     return (
-        <Dialog
+        <Modal
             open={open}
             onClose={onClose}
-            title="Payment"
-            description={sale?.sale_number ? `Sale ${sale.sale_number}` : "Take payment for this sale"}
+            title={t("title")}
+            description={sale?.sale_number ? t("forSale", { number: sale.sale_number }) : t("description")}
             footer={
                 <>
                     <Button type="button" variant="outline" size="xl" onClick={onClose}>
-                        Close
+                        {rootT("common.close")}
                     </Button>
                     <Button
                         type="button"
                         size="xl"
                         disabled={isLoading || !canComplete}
                         onClick={onComplete}
-                        className="bg-teal-700 hover:bg-teal-800 text-white"
                     >
-                        Complete sale
+                        {t("completeSale")}
                     </Button>
                 </>
             }
@@ -82,17 +79,17 @@ export function PaymentDialog({
                             {sale.payments.map((payment) => (
                                 <div
                                     key={payment.id}
-                                    className="flex items-center justify-between rounded-lg border border-navy-100 px-3 py-2 text-sm"
+                                    className="flex items-center justify-between rounded-md bg-surface-muted px-3 py-2 text-sm"
                                 >
-                                    <span className="font-semibold uppercase text-navy-700">{payment.method}</span>
+                                    <span className="font-semibold uppercase text-ink-secondary">{payment.method}</span>
                                     <span className="flex items-center gap-3">
-                                        <span className="font-bold text-navy-900">{formatCurrency(payment.amount)}</span>
+                                        <span className="font-bold text-ink tabular-nums">{formatCurrency(payment.amount)}</span>
                                         {allowPaymentEditing ? (
                                             <button
                                                 type="button"
                                                 disabled={isLoading}
                                                 onClick={() => onRemovePayment(payment.id)}
-                                                className="flex h-7 w-7 items-center justify-center rounded-md text-navy-300 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 cursor-pointer outline-none"
+                                                className="flex h-7 w-7 items-center justify-center rounded-sm text-ink-faint hover:bg-error-soft hover:text-error-strong disabled:opacity-50 cursor-pointer outline-none"
                                             >
                                                 <Icon name="delete" size={16} />
                                             </button>
@@ -105,12 +102,12 @@ export function PaymentDialog({
 
                     {allowPaymentEditing ? (
                         <form
-                            className="grid gap-3 border-t border-navy-50 pt-4"
+                            className="grid gap-3 border-t border-line pt-4"
                             onSubmit={(event) => {
                                 event.preventDefault()
                                 setPaymentError(null)
                                 if (method !== "cash" && tendered > balanceDue) {
-                                    setPaymentError("Non-cash payments cannot exceed the balance due.")
+                                    setPaymentError(t("nonCashError"))
                                     return
                                 }
                                 onAddPayment({
@@ -124,18 +121,18 @@ export function PaymentDialog({
                         >
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <SelectField
-                                    label="Method"
+                                    label={t("method")}
                                     value={method}
                                     onChange={(event) => setMethod(event.target.value as PaymentMethod)}
                                 >
                                     {METHODS.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
+                                        <option key={option} value={option}>
+                                            {t(`methods.${option}`)}
                                         </option>
                                     ))}
                                 </SelectField>
                                 <Field
-                                    label="Amount"
+                                    label={t("amount")}
                                     type="number"
                                     min="0"
                                     step="0.01"
@@ -146,18 +143,18 @@ export function PaymentDialog({
                                 />
                             </div>
                             <Field
-                                label="Reference (optional)"
+                                label={t("reference")}
                                 value={reference}
                                 onChange={(event) => setReference(event.target.value)}
-                                placeholder="Card / transfer reference"
+                                placeholder={t("referencePlaceholder")}
                             />
                             {change > 0 && (
-                                <p className="text-sm font-semibold text-emerald-700">
-                                    Change due: {formatCurrency(change)}
+                                <p className="text-sm font-semibold text-success-strong">
+                                    {t("changeDue", { amount: formatCurrency(change) })}
                                 </p>
                             )}
                             {paymentError ? (
-                                <p className="text-sm font-semibold text-destructive">{paymentError}</p>
+                                <p className="text-sm font-semibold text-error">{paymentError}</p>
                             ) : null}
                             <Button
                                 type="submit"
@@ -166,12 +163,12 @@ export function PaymentDialog({
                                 disabled={isLoading || tendered <= 0 || fullyPaid}
                                 className="w-full"
                             >
-                                Add payment
+                                {t("addPayment")}
                             </Button>
                         </form>
                     ) : null}
                 </div>
             )}
-        </Dialog>
+        </Modal>
     )
 }

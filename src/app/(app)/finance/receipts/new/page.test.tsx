@@ -18,6 +18,23 @@ vi.mock("sonner", () => ({
     },
 }))
 
+// Labels the test interacts with, mirroring messages/id.json.
+const labels: Record<string, string> = {
+    "finance.receipts.form.customer": "Pelanggan",
+    "finance.receipts.form.depositedTo": "Disetor Ke (Kas & Bank)",
+    "finance.receipts.form.amount": "Jumlah Diterima",
+    "finance.receipts.form.allocationFor": "Alokasi untuk {number}",
+    "finance.receipts.form.draft": "Draf Penerimaan",
+}
+
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, string | number>) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const template = labels[fullKey] ?? fullKey
+        return template.replace(/\{(\w+)\}/g, (match, token) => String(values?.[token] ?? match))
+    },
+}))
+
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: () => ({
         activeCompanyId: 1,
@@ -106,18 +123,18 @@ describe("new incoming receipt page", () => {
 
         render(<NewReceiptPage />)
 
-        fireEvent.focus(screen.getByLabelText("Customer"))
+        fireEvent.focus(screen.getByLabelText("Pelanggan"))
         fireEvent.click(screen.getByText("Acme Customer"))
-        fireEvent.focus(screen.getByLabelText("Deposited To (Kas & Bank)"))
+        fireEvent.focus(screen.getByLabelText("Disetor Ke (Kas & Bank)"))
         fireEvent.click(screen.getByText("1-1010 - Cash in Bank"))
-        fireEvent.change(screen.getByLabelText("Amount Received"), { target: { value: "750" } })
+        fireEvent.change(screen.getByLabelText("Jumlah Diterima"), { target: { value: "750" } })
 
-        const allocationInput = screen.getByLabelText("Allocation for INV-001")
+        const allocationInput = screen.getByLabelText("Alokasi untuk INV-001")
         fireEvent.change(allocationInput, { target: { value: "500" } })
 
         expect(allocationInput).toHaveValue(500)
 
-        fireEvent.click(screen.getByRole("button", { name: "Draft Receipt" }))
+        fireEvent.click(screen.getByRole("button", { name: "Draf Penerimaan" }))
 
         await waitFor(() => expect(mutate).toHaveBeenCalled())
         expect(mutate).toHaveBeenCalledWith(

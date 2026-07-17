@@ -13,6 +13,16 @@ vi.mock("@/features/finance/api-invoices", () => ({
     useARAging: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.ar.title": "Accounts Receivable Aging",
+        }
+        return labels[fullKey] ?? fullKey
+    },
+}))
+
 describe("accounts receivable aging page", () => {
     it("renders the aging report without the Export PDF action", () => {
         vi.mocked(useARAging).mockReturnValue({

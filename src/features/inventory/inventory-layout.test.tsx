@@ -30,17 +30,56 @@ vi.mock("next/navigation", () => ({
     useSearchParams: () => new URLSearchParams(),
 }))
 
-// Only the rebuilt dashboard consumes next-intl in this suite; echoing the
-// key keeps assertions readable without dragging in the full dictionaries.
+// The rebuilt dashboard and master-data views consume next-intl in this
+// suite; echoing the en.json copy for the asserted keys keeps assertions
+// readable without dragging in the full dictionaries.
 vi.mock("next-intl", () => ({
-    useTranslations: (namespace?: string) => (key: string) => {
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, string | number>) => {
         const labels: Record<string, string> = {
             "inventory.dashboard.title": "Dashboard Inventory",
             "inventory.dashboard.status.scoped": "Terhubung ke perusahaan",
             "inventory.dashboard.newProduct": "Produk Baru",
+            "inventory.catalogue.title": "Product Catalogue",
+            "inventory.catalogue.filters.category": "Category",
+            "inventory.catalogue.createProduct.category": "Category",
+            "inventory.catalogue.createProduct.nonePlaceholder": "None",
+            "inventory.pricing.title": "Pricing Management",
+            "inventory.promotions.title": "Promotions & Rewards",
+            "inventory.stock.overview.title": "Stock Overview",
+            "inventory.stock.receipt.title": "New Receipt",
+            "inventory.stock.receipt.submit": "Record Receipt",
+            "common.companyScoped": "Company scoped",
+            "common.noCompany": "No company",
+            "common.save": "Save",
+            "common.cancel": "Cancel",
+            "common.delete": "Delete",
+            "common.edit": "Edit",
+            "inventory.master.kinds.products.title": "Products",
+            "inventory.master.kinds.products.singular": "Product",
+            "inventory.master.kinds.categories.title": "Product Categories",
+            "inventory.master.kinds.categories.singular": "Product Category",
+            "inventory.master.heading.create": "New {name}",
+            "inventory.master.heading.edit": "Edit {name}",
+            "inventory.master.heading.detail": "{name} Detail",
+            "inventory.master.list.searchLabel": "Search {name}",
+            "inventory.master.list.recordCount": "{count} records",
+            "inventory.master.table.view": "View {name}",
+            "inventory.master.table.edit": "Edit {name}",
+            "inventory.master.table.collapse": "Collapse {name}",
+            "inventory.master.table.expand": "Expand {name}",
+            "inventory.master.table.empty": "No records found.",
+            "inventory.master.rootCategory": "Root category",
+            "inventory.master.form.parentCategory": "Parent Category",
+            "inventory.master.form.category": "Category",
+            "inventory.master.form.noCategory": "No category",
+            "inventory.master.form.image.remoteUrl": "Remote image URL",
+            "inventory.master.form.image.previewAlt": "Remote product preview",
+            "inventory.master.actions.import": "Import Products",
+            "inventory.master.import.title": "Import Products",
         }
         const fullKey = namespace ? `${namespace}.${key}` : key
-        return labels[fullKey] ?? fullKey
+        const template = labels[fullKey] ?? fullKey
+        return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values?.[token] ?? ""))
     },
 }))
 
@@ -303,7 +342,7 @@ describe("inventory layout unification", () => {
         await waitFor(() => expect(screen.getByRole("heading", { name: "Products" })).toBeInTheDocument())
         expectDashboardHeader("Products")
         expect(screen.getByText("Company scoped")).toBeInTheDocument()
-        expect(screen.getByRole("button", { name: "New Product" })).toHaveClass("h-11")
+        expect(screen.getByRole("link", { name: "New Product" })).toHaveClass("h-11")
     })
 
     it("upgrades stock pages and submit actions to the same dashboard layout system", async () => {

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
@@ -14,6 +15,7 @@ import { formatDateID, formatIDR } from "@/lib/format"
 
 export default function GoodsReceiptsPage() {
     const router = useRouter()
+    const t = useTranslations("finance.goodsReceipts")
     const { activeCompanyId } = useSession()
     const [filters, setFilters] = useState<GoodsReceiptFilters>({})
 
@@ -24,9 +26,10 @@ export default function GoodsReceiptsPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Penerimaan Bahan Baku (STB)"
+                title={t("title")}
                 primaryAction={{
-                    label: "+ STB Baru",
+                    label: t("new"),
+                    icon: "add",
                     // Routes to the Inventory module stock receipt capture flow.
                     onClick: () => router.push('/inventory/stock/receipts/new')
                 }}
@@ -35,45 +38,56 @@ export default function GoodsReceiptsPage() {
             <FilterBar>
                 <div className="flex gap-2">
                     <SelectDescription
-                        label="Status"
+                        label={t("filters.status.label")}
                         value={filters.status ?? ""}
                         onChange={(event) => setFilters((current) => ({
                             ...current,
                             status: event.target.value as GoodsReceiptFilters["status"],
                         }))}
                         options={[
-                            { value: "", label: "All Statuses", description: "Show receipts regardless of processing state." },
-                            { value: "received", label: "Received", description: "Goods have been received into stock." },
-                            { value: "completed", label: "Completed", description: "Receipt is fully processed downstream." },
-                            { value: "void", label: "Void", description: "Receipt was cancelled after creation." },
+                            { value: "", label: t("filters.status.all"), description: t("filters.status.allDesc") },
+                            { value: "received", label: t("filters.status.received"), description: t("filters.status.receivedDesc") },
+                            { value: "completed", label: t("filters.status.completed"), description: t("filters.status.completedDesc") },
+                            { value: "void", label: t("filters.status.void"), description: t("filters.status.voidDesc") },
                         ]}
                     />
                 </div>
             </FilterBar>
 
-            <DataTable columns={["No. STB", "Tanggal", "Supplier", "No. SJ", "Item Count", "Total", "Status", "No. Invoice"]}>
+            <DataTable
+                columns={[
+                    t("columns.number"),
+                    t("columns.date"),
+                    t("columns.supplier"),
+                    t("columns.deliveryNote"),
+                    t("columns.itemCount"),
+                    { label: t("columns.total"), align: "end" },
+                    t("columns.status"),
+                    t("columns.bill"),
+                ]}
+            >
                 <TableStateRow
                     isLoading={isLoading}
                     isError={isError}
                     error={error}
                     count={receipts.length}
                     columns={8}
-                    emptyMessage="No goods receipts found. Create one to get started."
+                    emptyMessage={t("empty")}
                     onRetry={() => refetch()}
                 />
                 {receipts.map((receipt: GoodsReceipt) => (
-                    <tr key={receipt.id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-navy-900">{receipt.receipt_number}</td>
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(receipt.receipt_date)}</td>
-                        <td className="px-6 py-4 text-navy-900">{receipt.partner?.name || `Supplier #${receipt.partner_id}`}</td>
-                        <td className="px-6 py-4 text-navy-700">{receipt.delivery_note_number || '-'}</td>
-                        <td className="px-6 py-4 text-navy-700 text-center">{receipt.item_count ?? receipt.lines?.length ?? '-'}</td>
-                        <td className="px-6 py-4 font-medium text-navy-900 text-right">{formatIDR(parseFloat(receipt.total_cost))}</td>
-                        <td className="px-6 py-4">
+                    <tr key={receipt.id}>
+                        <td className="font-semibold text-ink">{receipt.receipt_number}</td>
+                        <td className="text-ink-secondary">{formatDateID(receipt.receipt_date)}</td>
+                        <td className="text-ink">{receipt.partner?.name || t("supplierFallback", { id: receipt.partner_id })}</td>
+                        <td className="text-ink-secondary">{receipt.delivery_note_number || '-'}</td>
+                        <td className="text-center text-ink-secondary">{receipt.item_count ?? receipt.lines?.length ?? '-'}</td>
+                        <td className="text-end font-medium text-ink tabular-nums">{formatIDR(parseFloat(receipt.total_cost))}</td>
+                        <td>
                             <StatusBadge status={receipt.status} />
                         </td>
-                        <td className="px-6 py-4 text-navy-400 italic">
-                            {receipt.bill_id ? `Bill #${receipt.bill_id}` : 'Pending AP Link'}
+                        <td className="text-ink-faint italic">
+                            {receipt.bill_id ? t("billRef", { id: receipt.bill_id }) : t("pendingApLink")}
                         </td>
                     </tr>
                 ))}

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
@@ -17,6 +18,8 @@ import { Icon } from "@/components/ui/icon"
 
 export default function InvoicesPage() {
     const router = useRouter()
+    const t = useTranslations("finance.invoices")
+    const rootT = useTranslations()
     const { activeCompanyId } = useSession()
     const [filters, setFilters] = useState<InvoiceFilters>({})
     const { data: invoices = [], isLoading, isError, error, refetch } = useInvoices(activeCompanyId, filters)
@@ -25,9 +28,10 @@ export default function InvoicesPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Sales Invoices"
+                title={t("title")}
                 primaryAction={{
-                    label: "+ New Invoice",
+                    label: t("new"),
+                    icon: "add",
                     onClick: () => router.push("/finance/invoices/new")
                 }}
             />
@@ -35,8 +39,7 @@ export default function InvoicesPage() {
             <FilterBar>
                 <div className="flex w-full flex-wrap items-end gap-3">
                     <InputDate
-                        label="Invoice Date From"
-                        aria-label="Invoice date from"
+                        label={t("filters.from")}
                         value={filters.start_date ?? ""}
                         onChange={(event) => setFilters((current) => ({
                             ...current,
@@ -44,8 +47,7 @@ export default function InvoicesPage() {
                         }))}
                     />
                     <InputDate
-                        label="Invoice Date To"
-                        aria-label="Invoice date to"
+                        label={t("filters.to")}
                         value={filters.end_date ?? ""}
                         onChange={(event) => setFilters((current) => ({
                             ...current,
@@ -58,37 +60,46 @@ export default function InvoicesPage() {
                             variant="outline"
                             onClick={() => setFilters({})}
                         >
-                            Clear
+                            {rootT("common.clear")}
                         </Button>
                     ) : null}
                 </div>
             </FilterBar>
 
-            <DataTable columns={["Invoice Number", "Customer", "Date", "Due Date", "Total", "Status"]}>
+            <DataTable
+                columns={[
+                    t("columns.number"),
+                    t("columns.customer"),
+                    t("columns.date"),
+                    t("columns.dueDate"),
+                    { label: t("columns.total"), align: "end" },
+                    t("columns.status"),
+                ]}
+            >
                 <TableStateRow
                     isLoading={isLoading}
                     isError={isError}
                     error={error}
                     count={invoices.length}
                     columns={6}
-                    emptyMessage="No invoices found. Create one to get started."
+                    emptyMessage={t("empty")}
                     onRetry={() => refetch()}
                 />
                 {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-navy-50/50 transition-colors group">
-                        <td className="px-6 py-4">
-                            <Link href={`/finance/invoices/${invoice.id}`} className="font-semibold text-teal-700 hover:underline inline-flex items-center gap-1.5">
+                    <tr key={invoice.id} className="group">
+                        <td>
+                            <Link href={`/finance/invoices/${invoice.id}`} className="inline-flex items-center gap-1.5 font-semibold text-brand-ink hover:underline">
                                 {invoice.invoice_number}
-                                <Icon name="open_in_new" className="text-[12px] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Icon name="open_in_new" size={12} className="opacity-0 transition-opacity group-hover:opacity-100" />
                             </Link>
                         </td>
-                        <td className="px-6 py-4 font-semibold text-navy-900">
-                            {invoice.partner?.name || `Customer #${invoice.partner_id}`}
+                        <td className="font-semibold text-ink">
+                            {invoice.partner?.name || t("customerFallback", { id: invoice.partner_id })}
                         </td>
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(invoice.invoice_date)}</td>
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(invoice.due_date)}</td>
-                        <td className="px-6 py-4 text-navy-900 font-bold">{formatIDR(parseFloat(invoice.total))}</td>
-                        <td className="px-6 py-4">
+                        <td className="text-ink-secondary">{formatDateID(invoice.invoice_date)}</td>
+                        <td className="text-ink-secondary">{formatDateID(invoice.due_date)}</td>
+                        <td className="text-end font-bold text-ink tabular-nums">{formatIDR(parseFloat(invoice.total))}</td>
+                        <td>
                             <StatusBadge status={invoice.status} />
                         </td>
                     </tr>

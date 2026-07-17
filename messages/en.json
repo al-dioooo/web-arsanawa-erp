@@ -11,7 +11,15 @@
         "syncing": "Syncing",
         "loading": "Loading",
         "companyScoped": "Company scoped",
-        "noCompany": "No company"
+        "noCompany": "No company",
+        "back": "Back",
+        "clear": "Clear",
+        "retry": "Retry",
+        "requestFailed": "The request failed.",
+        "close": "Close",
+        "states": {
+            "loading": "Loading..."
+        }
     },
     "modules": {
         "inventory": "Inventory",
@@ -47,7 +55,14 @@
         "appearance": "Appearance",
         "themeLight": "Light",
         "themeSystem": "System",
-        "themeDark": "Dark"
+        "themeDark": "Dark",
+        "guard": {
+            "title": "Module Not Entitled",
+            "description": "The <strong>{module}</strong> module is not currently enabled for this company context.",
+            "goToModuleManager": "Go to Module Manager",
+            "backToApps": "Back to Apps",
+            "backToEnabledApps": "Back to Enabled Apps"
+        }
     },
     "console": {
         "eyebrow": "Console",
@@ -146,6 +161,12 @@
         "cateringImportDefaults": "Defaults",
         "cateringImportSave": "Save catering import settings",
         "cateringImportSaved": "Catering import settings saved.",
+        "moduleFinanceDescription": "Finance defaults for invoices, journals, payments, and tax workflows.",
+        "moduleInventoryDescription": "Inventory defaults for catalogue, stock, pricing, and promotion workflows.",
+        "modulePosDescription": "Point of Sale defaults for registers, shifts, sales, and receipts.",
+        "moduleOrganizationDescription": "Organization defaults for company, branch, membership, and entitlement workflows.",
+        "cateringImportFieldMap": "Field map",
+        "cateringImportNoPayment": "No payment",
         "whatsapp": {
             "title": "WhatsApp Receipts",
             "description": "Send an automatic WhatsApp receipt to each customer after a POS sales import. Powered by Fonnte.",
@@ -172,6 +193,231 @@
             "tokenPlaceholderSet": "Leave blank to keep the saved token",
             "clearToken": "Clear token",
             "tokenCleared": "Token cleared."
+        }
+    },
+    "organization": {
+        "eyebrow": "Organization",
+        "fallbackTitle": "Companies & Structure",
+        "subtitle": "Manage branches, company memberships, and general organizational structure.",
+        "developer": "Developer",
+        "createCompany": {
+            "title": "Create Company",
+            "name": "Company name",
+            "slug": "Slug",
+            "legalName": "Legal name",
+            "taxIdentifier": "Tax identifier",
+            "primaryBranch": "Primary branch",
+            "primaryBranchPlaceholder": "Head Office",
+            "submit": "Create company",
+            "creating": "Creating..."
+        },
+        "branches": {
+            "title": "Branches",
+            "empty": "No branches created yet",
+            "primary": "Primary",
+            "noCode": "No code",
+            "addTitle": "Add New Branch",
+            "name": "Branch name",
+            "code": "Code",
+            "submit": "Add Branch"
+        },
+        "members": {
+            "title": "Add Member",
+            "userId": "User ID",
+            "userIdHint": "The account ID of the person to add. Double-check it — assignments apply immediately. Existing members can be picked by name under Branch Roles.",
+            "branch": "Branch Assignment",
+            "branchPlaceholder": "No branch assignment (Company-wide)",
+            "role": "System Role",
+            "roleMember": "Member",
+            "roleAdmin": "Admin",
+            "submit": "Add Member"
+        },
+        "admin": {
+            "membersTitle": "Members",
+            "membersDescription": "Active company memberships and their default organization role.",
+            "membersEmpty": "No members found for this company.",
+            "noEmail": "No email loaded",
+            "userFallback": "User #{id}",
+            "roleFallback": "Role #{id}",
+            "rolesTitle": "Roles",
+            "rolesDescription": "Build custom roles from the API permission catalog.",
+            "permissionsCount": "{count} permissions",
+            "builtIn": "Built-in",
+            "roleName": "Role name",
+            "permissionsLoading": "Loading permission catalog...",
+            "saveChanges": "Save changes",
+            "createRole": "Create role",
+            "deleteRoleConfirmTitle": "Delete role “{name}”?",
+            "deleteRoleConfirmMessage": "Branch assignments that use this role lose it. This can't be undone.",
+            "branchRolesTitle": "Branch Role Assignments",
+            "branchRolesDescription": "Assign custom roles to users for the selected branch.",
+            "branch": "Branch",
+            "noBranches": "No branches",
+            "assignmentsEmpty": "No branch assignments for this branch.",
+            "assignMember": "Assign member",
+            "assignMemberPlaceholder": "Search company members",
+            "assignRole": "Assign role",
+            "selectRole": "Select role",
+            "assignSubmit": "Assign branch role",
+            "revoke": "Revoke",
+            "revokeAria": "Revoke {name}"
+        },
+        "modules": {
+            "eyebrow": "Module Manager",
+            "title": "{company} Modules",
+            "fallbackTitle": "Select a company context",
+            "subtitle": "Enable or disable core business modules for this company. Enabling a module grants access to authorized memberships.",
+            "availableTitle": "Available Modules",
+            "active": "Active",
+            "disabled": "Disabled",
+            "description": "Manage {module} operations, analytics, and tenant database mappings.",
+            "enable": "Enable Module",
+            "disable": "Disable Module",
+            "enableAria": "Enable {module} module",
+            "disableAria": "Disable {module} module"
+        },
+        "apiKeys": {
+            "title": "API Keys",
+            "subtitle": "Create and rotate company-scoped keys for landing pages and external integrations.",
+            "selectOrganization": "Select an organization before managing external access keys.",
+            "cannotManage": "Your account cannot manage external API keys for this organization.",
+            "secretTitle": "New secret for {name}",
+            "secretHint": "This value is shown once. Rotate the key if it is lost.",
+            "activeKeys": "Active Keys",
+            "empty": "No API keys created yet.",
+            "createTitle": "Create Key",
+            "name": "Key name",
+            "sourceChannel": "Source channel",
+            "expiresAt": "Expires at",
+            "submit": "Create API Key",
+            "created": "API key created.",
+            "createError": "Unable to create API key.",
+            "rotated": "API key rotated.",
+            "rotateError": "Unable to rotate API key.",
+            "revoked": "API key revoked.",
+            "revokeError": "Unable to revoke API key.",
+            "statusActive": "Active",
+            "statusRevoked": "Revoked",
+            "prefix": "Prefix",
+            "source": "Source",
+            "expires": "Expires",
+            "lastUsed": "Last used",
+            "rotate": "Rotate",
+            "revoke": "Revoke",
+            "rotateAria": "Rotate {name}",
+            "revokeAria": "Revoke {name}"
+        }
+    },
+    "identity": {
+        "eyebrow": "Identity",
+        "title": "Profile Settings",
+        "subtitle": "Keep your workspace identity, locale, and timezone aligned with the API profile record.",
+        "profileTitle": "Profile",
+        "displayName": "Display name",
+        "avatarUrl": "Avatar URL",
+        "locale": "Locale",
+        "timezone": "Timezone",
+        "localeEnglish": "English",
+        "localeIndonesian": "Indonesia",
+        "localeEnglishDescription": "Use English labels and formatting in the web console.",
+        "localeIndonesianDescription": "Use Indonesian labels and local formatting in the web console.",
+        "timezoneUtcDescription": "Universal time for cross-region audit and integration work.",
+        "timezoneDescription": "Use {timezone} as the user's working timezone.",
+        "save": "Save profile",
+        "saved": "Profile saved.",
+        "lookupTitle": "User Lookup",
+        "lookupDescription": "Resolve a user ID before adding members or assigning branch roles.",
+        "userId": "User ID",
+        "lookupSubmit": "Look up user"
+    },
+    "partners": {
+        "eyebrow": "Shared master data",
+        "title": "Partners",
+        "subtitle": "Maintain customers, suppliers, and shared contacts used by Finance and POS.",
+        "directory": {
+            "title": "Directory",
+            "emptyTitle": "No partners yet",
+            "emptyDescription": "Add a customer or supplier to unblock Finance and POS workflows.",
+            "noCode": "No code",
+            "noEmail": "No email"
+        },
+        "types": {
+            "customer": "Customer",
+            "supplier": "Supplier",
+            "both": "Both"
+        },
+        "statuses": {
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "create": {
+            "title": "Create Partner",
+            "description": "Start with the primary identity. Contacts and addresses can be expanded from this shared record.",
+            "submit": "Create partner"
+        },
+        "fields": {
+            "name": "Partner name",
+            "type": "Type",
+            "code": "Code",
+            "email": "Email",
+            "phone": "Phone",
+            "notes": "Notes",
+            "notesPlaceholder": "Internal context",
+            "status": "Status",
+            "taxId": "Tax ID",
+            "nationalId": "National ID",
+            "creditLimit": "Credit limit",
+            "transactionLimit": "Transaction limit"
+        },
+        "detail": {
+            "title": "Partner Detail",
+            "description": "Edit the shared partner record and maintain API-backed contacts and addresses.",
+            "empty": "Select a partner to view details.",
+            "editName": "Edit partner name",
+            "editType": "Edit type",
+            "editCode": "Edit code",
+            "editEmail": "Edit email",
+            "editPhone": "Edit phone",
+            "editNotes": "Edit notes",
+            "save": "Save changes",
+            "delete": "Delete partner",
+            "deleteConfirmTitle": "Delete “{name}”?",
+            "deleteConfirmMessage": "This partner is shared by Finance and POS. This can't be undone."
+        },
+        "contacts": {
+            "title": "Contacts",
+            "name": "Contact name",
+            "role": "Contact role",
+            "email": "Contact email",
+            "phone": "Contact phone",
+            "primary": "Primary contact",
+            "add": "Add contact",
+            "noRole": "No role",
+            "noEmail": "No email",
+            "deleteAria": "Delete contact {name}",
+            "deleteConfirmTitle": "Delete contact “{name}”?",
+            "deleteConfirmMessage": "This removes the contact from the shared partner record."
+        },
+        "addresses": {
+            "title": "Addresses",
+            "type": "Address type",
+            "label": "Address label",
+            "line1": "Address line",
+            "line2": "Address line 2",
+            "city": "City",
+            "province": "Province",
+            "postalCode": "Postal code",
+            "country": "Country",
+            "default": "Default address",
+            "add": "Add address",
+            "deleteAria": "Delete address {label}",
+            "deleteConfirmTitle": "Delete address “{label}”?",
+            "deleteConfirmMessage": "This removes the address from the shared partner record.",
+            "types": {
+                "billing": "Billing",
+                "shipping": "Shipping",
+                "other": "Other"
+            }
         }
     },
     "inventory": {
@@ -206,6 +452,190 @@
                 "openCatalogue": "Open catalogue"
             }
         },
+        "master": {
+            "eyebrow": "Inventory Master",
+            "backToList": "Back to List",
+            "rootCategory": "Root category",
+            "kinds": {
+                "categories": {
+                    "title": "Product Categories",
+                    "singular": "Product Category",
+                    "description": "Model product type, series, model, and other product hierarchy levels with nested categories."
+                },
+                "brands": {
+                    "title": "Product Brands",
+                    "singular": "Product Brand",
+                    "description": "Maintain inventory master data with separated list, detail, create, and edit workflows."
+                },
+                "units": {
+                    "title": "Units of Measure",
+                    "singular": "Unit of Measure",
+                    "description": "Maintain counting units such as pax, box, tray, pieces, kilograms, or liters."
+                },
+                "products": {
+                    "title": "Products",
+                    "singular": "Product",
+                    "description": "Maintain inventory master data with separated list, detail, create, and edit workflows."
+                },
+                "productUnits": {
+                    "title": "Product Units",
+                    "singular": "Product Unit",
+                    "description": "Manage final sellable SKU records by selecting a product and its variant values."
+                },
+                "variantGroups": {
+                    "title": "Variant Groups",
+                    "singular": "Variant Group",
+                    "description": "Define reusable variant dimensions and link each group to its unit of measure context."
+                },
+                "variants": {
+                    "title": "Variants",
+                    "singular": "Variant",
+                    "description": "Manage reusable company-wide variant values used by Product Units."
+                }
+            },
+            "heading": {
+                "create": "New {name}",
+                "edit": "Edit {name}",
+                "detail": "{name} Detail"
+            },
+            "actions": {
+                "import": "Import Products"
+            },
+            "import": {
+                "title": "Import Products",
+                "description": "Upload or inspect a public Google Sheets product template, preview row validation, then queue the import."
+            },
+            "list": {
+                "searchLabel": "Search {name}",
+                "recordCount": "{count} records"
+            },
+            "table": {
+                "name": "Name",
+                "context": "Context",
+                "status": "Status",
+                "actions": "Actions",
+                "empty": "No records found.",
+                "view": "View {name}",
+                "edit": "Edit {name}",
+                "collapse": "Collapse {name}",
+                "expand": "Expand {name}"
+            },
+            "status": {
+                "active": "Active",
+                "inactive": "Inactive"
+            },
+            "meta": {
+                "brand": "Brand",
+                "sellableSku": "Sellable SKU"
+            },
+            "detail": {
+                "notFound": "Record not found.",
+                "imageAlt": "Product image",
+                "deleteTitle": "Delete this {name}?",
+                "deleteMessage": "This action cannot be undone.",
+                "name": "Name",
+                "path": "Path",
+                "code": "Code",
+                "status": "Status",
+                "unit": "Unit",
+                "group": "Group",
+                "product": "Product",
+                "variants": "Variants",
+                "sku": "SKU",
+                "baseUnitId": "Base Unit ID"
+            },
+            "form": {
+                "name": "Name",
+                "unitName": "Unit Name",
+                "code": "Code",
+                "parentCategory": "Parent Category",
+                "baseUnit": "Base Unit",
+                "category": "Category",
+                "brand": "Brand",
+                "initialSku": "Initial variant SKU",
+                "initialVariantName": "Initial variant name",
+                "linkedUnit": "Linked Unit of Measure",
+                "description": "Description",
+                "variantGroup": "Variant Group",
+                "position": "Position",
+                "product": "Product",
+                "sku": "SKU",
+                "barcode": "Barcode",
+                "selectedVariants": "Selected Variants",
+                "noCategory": "No category",
+                "active": "Active",
+                "saving": "Saving...",
+                "image": {
+                    "remoteUrl": "Remote image URL",
+                    "altText": "Image alt text",
+                    "altPlaceholder": "Product image description",
+                    "file": "Image file",
+                    "preview": "Preview",
+                    "previewAlt": "Remote product preview"
+                }
+            },
+            "toast": {
+                "saved": "{name} saved.",
+                "deleted": "{name} deleted.",
+                "loadError": "Unable to load inventory master data.",
+                "saveError": "Unable to save master data.",
+                "deleteError": "Unable to delete master data."
+            },
+            "variantManager": {
+                "title": "Variants",
+                "subtitle": "Sellable SKUs for this product. Pricing and POS sales key off variants.",
+                "columns": {
+                    "sku": "SKU",
+                    "name": "Name",
+                    "barcode": "Barcode",
+                    "status": "Status",
+                    "actions": "Actions"
+                },
+                "empty": "No variants yet. Add one below to make this product sellable.",
+                "editSku": "Edit SKU",
+                "editName": "Edit variant name",
+                "editBarcode": "Edit barcode",
+                "editAria": "Edit variant {sku}",
+                "deleteAria": "Delete variant {sku}",
+                "activate": "Activate",
+                "deactivate": "Deactivate",
+                "newSku": "New variant SKU",
+                "newName": "Variant name",
+                "newBarcode": "Barcode",
+                "add": "Add variant",
+                "deleteTitle": "Delete variant “{sku}”?",
+                "deleteMessage": "This permanently removes the variant along with its prices, stock lots, and movements.",
+                "tags": {
+                    "title": "Tags",
+                    "subtitle": "Labels for grouping and filtering products.",
+                    "empty": "No tags.",
+                    "removeAria": "Remove tag {tag}",
+                    "addLabel": "Add tag",
+                    "addButton": "Add",
+                    "save": "Save tags"
+                },
+                "availability": {
+                    "title": "Branch availability",
+                    "subtitle": "Variants are available everywhere unless switched off for a branch.",
+                    "variantColumn": "Variant",
+                    "available": "Available",
+                    "availableAria": "{sku} available at {branch}",
+                    "empty": "Add a variant to manage availability."
+                },
+                "toast": {
+                    "added": "Variant added.",
+                    "updated": "Variant updated.",
+                    "activated": "Variant activated.",
+                    "deactivated": "Variant deactivated.",
+                    "deleted": "Variant deleted.",
+                    "available": "Variant made available.",
+                    "hidden": "Variant hidden for branch.",
+                    "tagsSaved": "Tags saved.",
+                    "loadError": "Unable to load product variants.",
+                    "error": "Something went wrong."
+                }
+            }
+        },
         "nav": {
             "product": "PRODUCT",
             "variants": "VARIANTS",
@@ -227,6 +657,345 @@
             "newTransfer": "New Transfer",
             "pricing": "Pricing",
             "promotions": "Promotions"
+        },
+        "stock": {
+            "eyebrow": "Inventory · Stock Movement",
+            "optionsError": "Unable to load product units.",
+            "missingContext": "Select an active company, branch, and Product Unit before recording stock.",
+            "selectors": {
+                "branch": "Branch",
+                "productUnit": "Product Unit",
+                "productUnitPlaceholder": "Select product unit"
+            },
+            "overview": {
+                "title": "Stock Overview",
+                "subtitle": "Review valuation, on-hand levels, active lots, and recent immutable stock movements.",
+                "error": "Unable to load stock overview.",
+                "contextValue": "Active Context Value",
+                "selectedOnHand": "Selected On Hand",
+                "activeLots": "Active Lots",
+                "links": {
+                    "lots": "Inspect batch balances, expiry dates, and costs.",
+                    "movements": "Audit immutable stock movement records.",
+                    "receipt": "Receive stock into a branch by Product Unit.",
+                    "issue": "Issue stock out of a branch by Product Unit.",
+                    "adjustment": "Correct counts with signed stock adjustments.",
+                    "transfer": "Move Product Unit stock between branches."
+                }
+            },
+            "lots": {
+                "title": "Stock Lots",
+                "subtitle": "Track open batches, remaining quantities, and Product Unit cost context.",
+                "error": "Unable to load stock lots.",
+                "empty": "No lots registered for this context.",
+                "lotNumber": "Lot #{id}",
+                "pageInfo": "{from}–{to} of {total}",
+                "columns": {
+                    "lot": "Lot",
+                    "productUnit": "Product Unit",
+                    "remaining": "Remaining",
+                    "unitCost": "Unit Cost"
+                }
+            },
+            "movements": {
+                "title": "Movement Ledger",
+                "subtitle": "Read-only stock movement audit trail for receipts, issues, adjustments, and transfers.",
+                "count": "{count} of {total}",
+                "error": "Unable to load stock movements.",
+                "empty": "No movements recorded for this context.",
+                "movementNumber": "Movement #{id}",
+                "columns": {
+                    "movement": "Movement",
+                    "productUnit": "Product Unit",
+                    "type": "Type",
+                    "qty": "Qty",
+                    "occurredAt": "Occurred At"
+                }
+            },
+            "detail": {
+                "subtitle": "Immutable movement audit details. Stock movements cannot be edited or deleted from the UI.",
+                "error": "Unable to load the stock movement.",
+                "productUnit": "Product Unit",
+                "type": "Type",
+                "quantity": "Quantity",
+                "unitCost": "Unit Cost",
+                "occurredAt": "Occurred At",
+                "notes": "Notes",
+                "noNotes": "No notes"
+            },
+            "receipt": {
+                "title": "New Receipt",
+                "subtitle": "Receive stock into a branch using a Product Unit sellable SKU.",
+                "quantity": "Quantity",
+                "unitCost": "Unit Cost (IDR)",
+                "lotNumber": "Lot Number",
+                "receivedAt": "Received At",
+                "submit": "Record Receipt",
+                "success": "Stock receipt recorded successfully.",
+                "failure": "Failed to record stock receipt."
+            },
+            "issue": {
+                "title": "New Issue",
+                "subtitle": "Issue Product Unit stock out of a branch.",
+                "quantity": "Issue quantity",
+                "notes": "Issue notes",
+                "submit": "Record Issue",
+                "success": "Stock issue recorded successfully.",
+                "failure": "Failed to record stock issue."
+            },
+            "adjustment": {
+                "title": "New Adjustment",
+                "subtitle": "Correct Product Unit stock with a signed quantity.",
+                "quantity": "Adjustment quantity",
+                "cost": "Adjustment cost",
+                "notes": "Adjustment notes",
+                "submit": "Record Adjustment",
+                "success": "Stock adjustment recorded successfully.",
+                "failure": "Failed to record stock adjustment."
+            },
+            "transfer": {
+                "title": "New Transfer",
+                "subtitle": "Move Product Unit stock between branches.",
+                "destination": "Destination branch",
+                "quantity": "Transfer quantity",
+                "notes": "Transfer notes",
+                "missingDestination": "Select a destination branch before recording stock.",
+                "submit": "Record Transfer",
+                "success": "Stock transfer recorded successfully.",
+                "failure": "Failed to record stock transfer."
+            }
+        },
+        "catalogue": {
+            "title": "Product Catalogue",
+            "subtitle": "Manage company-scoped products, custom variants, categories, brands, and units of measure.",
+            "loadError": "Unable to load catalogue.",
+            "mutationError": "The request failed.",
+            "products": {
+                "heading": "Products ({count} of {total})"
+            },
+            "filters": {
+                "search": "Search products",
+                "searchPlaceholder": "Search SKU or name...",
+                "category": "Category",
+                "allCategories": "All Categories",
+                "brand": "Brand",
+                "allBrands": "All Brands",
+                "status": "Status",
+                "allStatuses": "All Statuses",
+                "allStatusesDescription": "Show active and inactive products.",
+                "active": "Active",
+                "activeDescription": "Only products available for normal workflows.",
+                "inactive": "Inactive",
+                "inactiveDescription": "Only products held out of normal workflows."
+            },
+            "table": {
+                "product": "Product",
+                "variants": "Variants (SKU · Name)",
+                "tags": "Tags",
+                "status": "Status",
+                "empty": "No products found.",
+                "idLabel": "ID {id}"
+            },
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive"
+            },
+            "createProduct": {
+                "heading": "Create Product",
+                "name": "Product Name",
+                "namePlaceholder": "e.g. Rice Crackers",
+                "sku": "SKU",
+                "variantName": "Variant Name",
+                "variantNamePlaceholder": "e.g. Original",
+                "baseUnit": "Base Unit",
+                "selectUnit": "Select unit",
+                "category": "Category",
+                "noCategory": "No category",
+                "nonePlaceholder": "None",
+                "brand": "Brand",
+                "submit": "Create Product",
+                "success": "Product created successfully."
+            },
+            "quickCategory": {
+                "heading": "Quick Category",
+                "name": "Category Name",
+                "placeholder": "e.g. Snacks",
+                "submit": "Add Category",
+                "success": "Category created successfully."
+            },
+            "quickBrand": {
+                "heading": "Quick Brand",
+                "name": "Brand Name",
+                "placeholder": "e.g. Arsanawa Foods",
+                "submit": "Add Brand",
+                "success": "Brand created successfully."
+            },
+            "quickUnit": {
+                "heading": "Quick Unit",
+                "name": "Unit Name",
+                "placeholder": "e.g. Pieces",
+                "code": "Code",
+                "submit": "Add Unit",
+                "success": "Unit of measure created successfully."
+            }
+        },
+        "pricing": {
+            "title": "Pricing Management",
+            "subtitle": "Configure price lists scoped by company or branch, and set custom effective-dated pricing for product variants.",
+            "loadError": "Unable to load pricing data.",
+            "pricesError": "Unable to load prices.",
+            "statuses": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "default": "Default"
+            },
+            "lists": {
+                "heading": "Available Price Lists ({count})",
+                "empty": "No price lists yet",
+                "emptyHint": "Create one using the form beside this list.",
+                "companyWide": "Company-wide",
+                "branchScope": "Branch ID: {id}",
+                "default": "Default List"
+            },
+            "manage": {
+                "heading": "Manage Prices for: {name}",
+                "hint": "Select a variant in the list below to update its price on this price list."
+            },
+            "table": {
+                "productSku": "Product & SKU",
+                "variantSku": "Variant SKU",
+                "currentPrice": "Current Price",
+                "effectiveFrom": "Effective From",
+                "actions": "Actions",
+                "empty": "No product variants found in catalogue.",
+                "notPriced": "Not priced",
+                "setPrice": "Set Price"
+            },
+            "createList": {
+                "heading": "Create Price List",
+                "name": "Price List Name",
+                "namePlaceholder": "e.g. Retail Indonesia",
+                "branch": "Branch context (optional)",
+                "branchPlaceholder": "Company-wide (All branches)",
+                "isDefault": "Set as Default list",
+                "submit": "Create List",
+                "success": "Price list created successfully.",
+                "failure": "Failed to create price list."
+            },
+            "setPriceForm": {
+                "heading": "Set Price",
+                "close": "Close set price form",
+                "variant": "Selected Variant",
+                "variantPlaceholder": "Select Variant",
+                "price": "Price (IDR)",
+                "pricePlaceholder": "e.g. 50000",
+                "effectiveFrom": "Effective From",
+                "note": "Price will be set in price list: {name}.",
+                "submit": "Set Price",
+                "success": "Variant price set successfully.",
+                "failure": "Failed to set price."
+            }
+        },
+        "promotions": {
+            "title": "Promotions & Rewards",
+            "subtitle": "Manage discount campaigns, product bundle promotions, and customer loyalty rewards.",
+            "loadError": "Unable to load promotions.",
+            "discounts": {
+                "heading": "Discount Campaigns ({count})",
+                "empty": "No active discounts found."
+            },
+            "rewards": {
+                "heading": "Loyalty Rewards ({count})",
+                "empty": "No active rewards found."
+            },
+            "card": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "value": "Value:",
+                "benefit": "Benefit:",
+                "branchScope": "Scope: Branch ID {id}",
+                "companyWide": "Scope: Company-wide",
+                "minQty": "Min Qty: {value}",
+                "minPurchaseQty": "Min Purchase Qty: {value}",
+                "validity": "Validity: {from} to {to}",
+                "immediate": "Immediate",
+                "open": "Open"
+            },
+            "summary": {
+                "target": "{count} target",
+                "targets": "{count} targets",
+                "dependency": "{count} dependency",
+                "dependencies": "{count} dependencies",
+                "giveaway": "{count} giveaway",
+                "giveaways": "{count} giveaways"
+            },
+            "deleteDiscountAria": "Delete discount {name}",
+            "deleteRewardAria": "Delete reward {name}",
+            "deleteConfirm": {
+                "title": "Delete “{name}”?",
+                "discountMessage": "This permanently removes the campaign and its product targets. This can't be undone.",
+                "rewardMessage": "This permanently removes the loyalty reward. This can't be undone."
+            },
+            "toasts": {
+                "incompleteRows": "Complete or remove the empty target, dependency, and giveaway rows first.",
+                "discountCreated": "Discount campaign created successfully.",
+                "discountCreateFailed": "Failed to create discount.",
+                "discountDeleted": "Discount deleted.",
+                "discountDeleteFailed": "Failed to delete discount.",
+                "rewardCreated": "Loyalty reward created successfully.",
+                "rewardCreateFailed": "Failed to create reward.",
+                "rewardDeleted": "Reward deleted.",
+                "rewardDeleteFailed": "Failed to delete reward."
+            },
+            "tabs": {
+                "addDiscount": "Add Discount",
+                "addReward": "Add Reward"
+            },
+            "form": {
+                "campaignName": "Campaign Name",
+                "campaignNamePlaceholder": "e.g. End Year Mega Sale",
+                "rewardName": "Reward Name",
+                "rewardNamePlaceholder": "e.g. Premium Member Reward",
+                "calcType": "Calc Type",
+                "percentage": "Percentage (%)",
+                "amount": "Fixed Amount (IDR)",
+                "value": "Value",
+                "branchScope": "Branch scope",
+                "companyWidePlaceholder": "Company-wide",
+                "minQty": "Min Qty Requirement",
+                "minQtyPlaceholderDiscount": "e.g. 5 (Optional)",
+                "minQtyPlaceholderReward": "e.g. 2 (Optional)",
+                "appliesTo": "Applies to",
+                "add": "Add",
+                "addTarget": "Add target",
+                "targetType": "Target {index} type",
+                "target": "Target {index}",
+                "removeTarget": "Remove target {index}",
+                "targetTypes": {
+                    "variant": "Variant",
+                    "product": "Product",
+                    "category": "Category"
+                },
+                "selectVariant": "Select variant",
+                "selectProduct": "Select product",
+                "selectCategory": "Select category",
+                "requires": "Requires (buy-X)",
+                "addDependency": "Add dependency",
+                "dependencyVariant": "Dependency {index} variant",
+                "removeDependency": "Remove dependency {index}",
+                "requiredQuantity": "Required quantity",
+                "qtyPlaceholder": "Qty",
+                "giveaways": "Giveaways (get-Y)",
+                "addGiveaway": "Add giveaway",
+                "giveawayVariant": "Giveaway {index} variant",
+                "removeGiveaway": "Remove giveaway {index}",
+                "giveawayQuantity": "Giveaway quantity",
+                "effectiveFrom": "Effective From",
+                "effectiveTo": "Effective To",
+                "optional": "Optional",
+                "submitDiscount": "Create Discount",
+                "submitReward": "Create Reward"
+            }
         }
     },
     "finance": {
@@ -316,6 +1085,1071 @@
             "download": "Export {kind}",
             "success": "Your {kind} export is downloading.",
             "error": "The export could not be generated. Please try again."
+        },
+        "detail": {
+            "subtotal": "Subtotal",
+            "taxTotal": "Tax Total",
+            "total": "Total",
+            "amountPaid": "Amount Paid",
+            "balanceDue": "Balance Due",
+            "notes": "Notes",
+            "noNotes": "No notes provided.",
+            "ppn": "PPN (Value Added Tax)",
+            "pph": "PPh (Withholding Tax)"
+        },
+        "approvals": {
+            "title": "Document Approval",
+            "statusLabel": "Status",
+            "requiredBadge": "Approval Required",
+            "requiredHint": "This document requires approval before it can be posted to journals.",
+            "submit": "Submit for Approval",
+            "submitting": "Submitting...",
+            "trail": "Approval Trail",
+            "trailEmpty": "No actions recorded yet.",
+            "approvedAtLevel": "Approved (Level {level})",
+            "rejectedAtLevel": "Rejected (Level {level})",
+            "yourDecision": "Your Decision (Level {level})",
+            "remarks": "Remarks",
+            "remarksPlaceholder": "e.g. Budget approved",
+            "approve": "Approve",
+            "reject": "Reject",
+            "acting": "Acting...",
+            "waitingTitle": "Waiting for Approver",
+            "waitingHint": "Currently waiting for approval from {name} at level {level}.",
+            "approvedTitle": "Fully Approved",
+            "approvedHint": "This document has passed all required approval levels and is ready to post.",
+            "rejectedTitle": "Rejected",
+            "rejectedHint": "This document was rejected. Edit the document details to reset it to a clean draft and re-submit.",
+            "userFallback": "User #{id}",
+            "unknownApprover": "Unknown Approver",
+            "submitSuccess": "{doc} submitted for approval",
+            "submitError": "Failed to submit for approval",
+            "approveSuccess": "Approval request approved",
+            "rejectSuccess": "Approval request rejected",
+            "actError": "Failed to act on approval request",
+            "matrices": {
+                "eyebrow": "Finance",
+                "title": "Approval Matrix",
+                "subtitle": "Configure multi-level, value-banded approval rules for invoices/bills and payments.",
+                "addRule": "Add Approval Rule",
+                "tabs": {
+                    "bill": "Bills & Inbound Invoices",
+                    "payment": "Payments & Outbound Receipts"
+                },
+                "table": {
+                    "level": "Level",
+                    "minAmount": "Min Amount",
+                    "maxAmount": "Max Amount",
+                    "approver": "Approver Name",
+                    "actions": "Actions"
+                },
+                "empty": "No approval rules configured for {type}.",
+                "docTypeBill": "Bills",
+                "docTypePayment": "Payments",
+                "level": "Level {level}",
+                "userFallback": "User ID #{id}",
+                "actions": {
+                    "edit": "Edit Rule",
+                    "delete": "Delete Rule"
+                },
+                "deleteConfirm": {
+                    "title": "Delete this approval rule?",
+                    "message": "Documents in this amount band will no longer require this approval level. This action cannot be undone."
+                },
+                "toast": {
+                    "deleted": "Approval rule deleted successfully",
+                    "deleteFailed": "Failed to delete rule",
+                    "created": "Approval rule created successfully",
+                    "updated": "Approval rule updated successfully",
+                    "saveFailed": "Failed to save approval rule"
+                },
+                "drawer": {
+                    "editTitle": "Edit Approval Rule",
+                    "newTitle": "New Approval Rule",
+                    "documentType": "Document Type",
+                    "documentTypes": {
+                        "bill": "Bill / Inbound Invoice",
+                        "payment": "Payment / Outbound Receipt"
+                    },
+                    "minAmount": "Min Amount",
+                    "minRequired": "Min Amount is required",
+                    "minNegative": "Min amount cannot be negative",
+                    "maxAmount": "Max Amount",
+                    "maxRequired": "Max Amount is required",
+                    "maxGteMin": "Max Amount must be >= Min Amount",
+                    "levelLabel": "Approval Level (Seq. Tier)",
+                    "levelRequired": "Level is required",
+                    "levelMin": "Level must be >= 1",
+                    "approver": "Designated Approver",
+                    "approverRequired": "Approver is required",
+                    "approverPlaceholder": "Select a company member...",
+                    "saving": "Saving...",
+                    "saveChanges": "Save Changes",
+                    "createRule": "Create Rule"
+                }
+            },
+            "requests": {
+                "eyebrow": "Finance",
+                "title": "Approval Requests",
+                "filter": {
+                    "status": "Status",
+                    "all": "All Statuses",
+                    "allDesc": "Show every approval request state.",
+                    "pending": "Pending",
+                    "pendingDesc": "Requests waiting for the next approver.",
+                    "approved": "Approved",
+                    "approvedDesc": "Requests that passed all approvals.",
+                    "rejected": "Rejected",
+                    "rejectedDesc": "Requests declined by an approver."
+                },
+                "tabs": {
+                    "pending": "Pending Queue",
+                    "approved": "Approved Requests",
+                    "rejected": "Rejected Requests"
+                },
+                "table": {
+                    "documentType": "Document Type",
+                    "refNumber": "Ref Number",
+                    "amount": "Amount",
+                    "currentLevel": "Current Level",
+                    "submittedDate": "Submitted Date",
+                    "status": "Status",
+                    "actions": "Actions"
+                },
+                "empty": "No approval requests found.",
+                "docTypes": {
+                    "bill": "Bill",
+                    "payment": "Payment"
+                },
+                "fallbackBillRef": "Bill #{id}",
+                "fallbackPaymentRef": "Payment #{id}",
+                "level": "Level {level}",
+                "review": "Review",
+                "drawer": {
+                    "title": "Review Approval Request",
+                    "documentType": "Document Type",
+                    "reference": "Reference No",
+                    "amount": "Amount",
+                    "currentLevel": "Current Level",
+                    "trail": "Approval Trail",
+                    "userFallback": "User #{id}",
+                    "approvedBadge": "Approved (Lvl {level})",
+                    "rejectedBadge": "Rejected (Lvl {level})",
+                    "noActions": "No actions recorded yet.",
+                    "remarks": "Review Remarks",
+                    "remarksPlaceholder": "Add comments/reasons for decision...",
+                    "reject": "Reject",
+                    "approve": "Approve",
+                    "approving": "Approving...",
+                    "locked": "Review Locked",
+                    "lockedHint": "Only the designated approver ({name}) can act on Level {level} of this request.",
+                    "unknownApprover": "Unknown Approver"
+                },
+                "toast": {
+                    "approved": "Request approved successfully",
+                    "rejected": "Request rejected successfully",
+                    "actionFailed": "Failed to act on request"
+                }
+            }
+        },
+        "invoices": {
+            "detail": {
+                "eyebrow": "Finance",
+                "title": "Invoice {number}",
+                "notFound": "Invoice not found",
+                "notFoundHint": "The invoice may have been removed or the link is invalid.",
+                "backToList": "Back to Invoices",
+                "billedTo": "Billed to",
+                "customerFallback": "Customer #{id}",
+                "invoiceDate": "Invoice Date",
+                "dueDate": "Due Date",
+                "post": "Post Invoice",
+                "posting": "Posting...",
+                "void": "Void Invoice",
+                "voiding": "Voiding...",
+                "postConfirmTitle": "Post this invoice?",
+                "postConfirmMessage": "This action will generate a journal entry and cannot be easily undone.",
+                "voidConfirmTitle": "Void this invoice?",
+                "voidConfirmMessage": "This will cancel any pending receivables.",
+                "postSuccess": "Invoice posted successfully",
+                "postError": "Failed to post invoice",
+                "voidSuccess": "Invoice voided successfully",
+                "voidError": "Failed to void invoice",
+                "lines": {
+                    "description": "Description",
+                    "qty": "Qty",
+                    "unitPrice": "Unit Price",
+                    "tax": "Tax",
+                    "amount": "Amount",
+                    "empty": "No line items found."
+                }
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "Create New Invoice",
+                "saveDraft": "Save Draft",
+                "saving": "Saving...",
+                "detailsTitle": "Invoice Details",
+                "customer": "Customer (Partner)",
+                "customerPlaceholder": "Select customer...",
+                "customerRequired": "Customer is required",
+                "invoiceDate": "Invoice Date",
+                "invoiceDateRequired": "Invoice date is required",
+                "dueDate": "Due Date",
+                "dueDateRequired": "Due date is required",
+                "linesTitle": "Line Items",
+                "lineDescription": "Description",
+                "lineDescriptionPlaceholder": "Item description...",
+                "revenueAccount": "Revenue Account",
+                "qty": "Qty",
+                "unitPrice": "Unit Price",
+                "tax": "Tax",
+                "noTax": "No Tax",
+                "required": "Required",
+                "addLine": "Add Line Item",
+                "removeLine": "Remove line {number}",
+                "notes": "Notes",
+                "notesPlaceholder": "Additional notes for the customer...",
+                "success": "Invoice created successfully as Draft",
+                "error": "Failed to create invoice"
+            },
+            "title": "Sales Invoices",
+            "new": "New Invoice",
+            "filters": {
+                "from": "Invoice Date From",
+                "to": "Invoice Date To"
+            },
+            "columns": {
+                "number": "Invoice Number",
+                "customer": "Customer",
+                "date": "Date",
+                "dueDate": "Due Date",
+                "total": "Total",
+                "status": "Status"
+            },
+            "empty": "No invoices found. Create one to get started.",
+            "customerFallback": "Customer #{id}"
+        },
+        "bills": {
+            "detail": {
+                "eyebrow": "Finance",
+                "doc": "Bill",
+                "title": "Bill {number}",
+                "notFound": "Bill not found",
+                "notFoundHint": "The bill may have been removed or the link is invalid.",
+                "backToList": "Back to Bills",
+                "billedFrom": "Billed from",
+                "vendorFallback": "Vendor #{id}",
+                "billDate": "Bill Date",
+                "dueDate": "Due Date",
+                "post": "Post Bill",
+                "posting": "Posting...",
+                "void": "Void Bill",
+                "voiding": "Voiding...",
+                "postConfirmTitle": "Post this bill?",
+                "postConfirmMessage": "This will generate an accounts payable journal entry and cannot be easily undone.",
+                "voidConfirmTitle": "Void this bill?",
+                "voidConfirmMessage": "This will cancel any pending payables.",
+                "postSuccess": "Bill posted successfully",
+                "postError": "Failed to post bill",
+                "voidSuccess": "Bill voided successfully",
+                "voidError": "Failed to void bill",
+                "lines": {
+                    "description": "Description",
+                    "qty": "Qty",
+                    "unitPrice": "Unit Price",
+                    "ppn": "Tax (PPN)",
+                    "pph": "PPh (WHT)",
+                    "amount": "Amount",
+                    "empty": "No line items found."
+                }
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "New Bill",
+                "create": "Create Bill",
+                "creating": "Creating...",
+                "vendorTitle": "Vendor Information",
+                "vendor": "Vendor",
+                "vendorPlaceholder": "Select a vendor...",
+                "vendorRequired": "Vendor is required",
+                "vendorMissing": "Please select a vendor",
+                "accountsMissing": "All lines must have an expense account selected",
+                "datesTitle": "Dates",
+                "billDate": "Bill Date",
+                "billDateRequired": "Bill date is required",
+                "dueDate": "Due Date",
+                "dueDateRequired": "Due date is required",
+                "linesTitle": "Line Items",
+                "lineDescription": "Description",
+                "lineDescriptionLabel": "Line {number} description",
+                "lineDescriptionPlaceholder": "Item description...",
+                "expenseAccount": "Expense Account",
+                "accountPlaceholder": "Account...",
+                "qty": "Qty",
+                "lineQtyLabel": "Line {number} quantity",
+                "unitPrice": "Unit Price",
+                "lineUnitPriceLabel": "Line {number} unit price",
+                "taxRate": "Tax Rate",
+                "lineTaxLabel": "Line {number} tax rate",
+                "noTax": "No Tax",
+                "noTaxDescription": "Do not apply tax to this line.",
+                "taxRateDescription": "{type} tax rate",
+                "amount": "Amount",
+                "addLine": "Add Line",
+                "removeLine": "Remove line {number}",
+                "notes": "Notes / Memo",
+                "notesPlaceholder": "Add any details for internal use...",
+                "required": "Required",
+                "success": "Bill created successfully",
+                "error": "Failed to create bill"
+            },
+            "title": "Bills",
+            "new": "New Bill",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "All Statuses",
+                    "allDesc": "Show bills in every posting state.",
+                    "draft": "Draft",
+                    "draftDesc": "Bills that are still being prepared.",
+                    "posted": "Posted",
+                    "postedDesc": "Bills posted and waiting for settlement.",
+                    "partiallyPaid": "Partially Paid",
+                    "partiallyPaidDesc": "Bills with remaining outstanding balances.",
+                    "paid": "Paid",
+                    "paidDesc": "Bills fully settled by outgoing payments.",
+                    "void": "Void",
+                    "voidDesc": "Bills canceled after creation."
+                },
+                "from": "Bill Date From",
+                "to": "Bill Date To"
+            },
+            "columns": {
+                "number": "Bill Number",
+                "vendor": "Vendor",
+                "date": "Date",
+                "dueDate": "Due Date",
+                "total": "Total",
+                "status": "Status"
+            },
+            "empty": "No bills found. Create one to get started.",
+            "vendorFallback": "Vendor #{id}"
+        },
+        "payments": {
+            "detail": {
+                "eyebrow": "Finance",
+                "docPayment": "Payment",
+                "docReceipt": "Receipt",
+                "title": "{doc} {number}",
+                "notFound": "Payment not found",
+                "notFoundHint": "The payment may have been removed or the link is invalid.",
+                "backToList": "Back to Payments",
+                "paidTo": "Paid to",
+                "receivedFrom": "Received from",
+                "partnerFallback": "Partner #{id}",
+                "date": "Date",
+                "method": "Method",
+                "bankCash": "Bank / Cash",
+                "accountFallback": "Account #{id}",
+                "post": "Post {doc}",
+                "posting": "Posting...",
+                "void": "Void {doc}",
+                "voiding": "Voiding...",
+                "postConfirmTitle": "Post this {doc}?",
+                "postConfirmMessage": "This will generate a journal entry and reduce open payables/receivables.",
+                "voidConfirmTitle": "Void this {doc}?",
+                "voidConfirmMessage": "This will reverse the journal entry and reopen any allocated bills/invoices.",
+                "postSuccess": "{doc} posted successfully",
+                "postError": "Failed to post {doc}",
+                "voidSuccess": "{doc} voided successfully",
+                "voidError": "Failed to void {doc}",
+                "allocations": {
+                    "title": "Allocations",
+                    "document": "Document",
+                    "documentTotal": "Document Total",
+                    "amount": "Amount Allocated",
+                    "bill": "Bill #{id}",
+                    "invoice": "Invoice #{id}",
+                    "empty": "No allocations recorded.",
+                    "unallocated": "Unallocated (Prepayment)"
+                },
+                "notesTitle": "Notes & Reference",
+                "referenceNumber": "Reference Number",
+                "notes": "Notes"
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "New Outgoing Payment",
+                "draft": "Draft Payment",
+                "drafting": "Drafting...",
+                "detailsTitle": "Payment Details",
+                "vendor": "Vendor (Supplier)",
+                "vendorPlaceholder": "Select vendor...",
+                "vendorRequired": "Vendor is required",
+                "paidFrom": "Paid From (Kas & Bank)",
+                "accountPlaceholder": "Select bank account...",
+                "accountRequired": "Bank account is required",
+                "paymentDate": "Payment Date",
+                "dateRequired": "Date is required",
+                "method": "Payment Method",
+                "methodBankTransfer": "Bank Transfer",
+                "methodBankTransferDescription": "Settle through a bank transfer account.",
+                "methodCash": "Cash",
+                "methodCashDescription": "Settle directly through a cash account.",
+                "methodCheck": "Check / Giro",
+                "methodCheckDescription": "Settle using check or giro reference.",
+                "amount": "Amount Paid",
+                "amountRequired": "Amount is required",
+                "amountInvalid": "Amount must be greater than zero",
+                "reference": "Reference No. (Optional)",
+                "referencePlaceholder": "e.g. TRF-12345",
+                "totalPayment": "Total Payment",
+                "amountAllocated": "Amount Allocated",
+                "unallocated": "Unallocated (Prepayment)",
+                "overAllocated": "Allocations exceed payment amount!",
+                "overAllocatedToast": "Allocations cannot exceed the payment amount",
+                "prepaymentHint": "The remaining {amount} will be posted as a Vendor Prepayment.",
+                "allocationsTitle": "Outstanding Bills for Allocation",
+                "allocationsEmpty": "No open bills found for this vendor. The entire payment will be recorded as a prepayment.",
+                "billNo": "Bill No.",
+                "date": "Date",
+                "billTotal": "Bill Total",
+                "balanceDue": "Balance Due",
+                "allocationAmount": "Allocation Amount",
+                "allocationFor": "Allocation for {number}",
+                "success": "Payment drafted successfully",
+                "error": "Failed to draft payment"
+            },
+            "title": "Payments",
+            "new": "New Payment",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "All Statuses",
+                    "allDesc": "Show payments in every posting state.",
+                    "draft": "Draft",
+                    "draftDesc": "Payments that are still being prepared.",
+                    "posted": "Posted",
+                    "postedDesc": "Payments posted to the ledger.",
+                    "void": "Void",
+                    "voidDesc": "Payments canceled after creation."
+                },
+                "from": "Payment Date From",
+                "to": "Payment Date To"
+            },
+            "columns": {
+                "number": "Payment No.",
+                "vendor": "Vendor",
+                "date": "Date",
+                "account": "Bank/Cash",
+                "amount": "Amount",
+                "status": "Status"
+            },
+            "empty": "No outgoing payments found. Create one to get started.",
+            "vendorFallback": "Vendor #{id}",
+            "accountFallback": "Account #{id}"
+        },
+        "receipts": {
+            "form": {
+                "eyebrow": "Finance",
+                "title": "New Incoming Receipt",
+                "draft": "Draft Receipt",
+                "drafting": "Drafting...",
+                "detailsTitle": "Receipt Details",
+                "customer": "Customer",
+                "customerPlaceholder": "Select customer...",
+                "customerRequired": "Customer is required",
+                "depositedTo": "Deposited To (Kas & Bank)",
+                "accountPlaceholder": "Select bank account...",
+                "accountRequired": "Bank account is required",
+                "receiptDate": "Receipt Date",
+                "dateRequired": "Date is required",
+                "method": "Payment Method",
+                "methodBankTransfer": "Bank Transfer",
+                "methodBankTransferDescription": "Record settlement through a bank account.",
+                "methodCash": "Cash",
+                "methodCashDescription": "Record direct cash settlement.",
+                "methodCheck": "Check / Giro",
+                "methodCheckDescription": "Record check or giro settlement.",
+                "amount": "Amount Received",
+                "amountRequired": "Amount is required",
+                "amountInvalid": "Amount must be greater than zero",
+                "reference": "Reference No. (Optional)",
+                "referencePlaceholder": "e.g. TRF-12345",
+                "totalReceipt": "Total Receipt",
+                "amountAllocated": "Amount Allocated",
+                "unallocated": "Unallocated (Prepayment)",
+                "overAllocated": "Allocations exceed receipt amount!",
+                "overAllocatedToast": "Allocations cannot exceed the receipt amount",
+                "prepaymentHint": "The remaining {amount} will be posted as a Customer Prepayment.",
+                "allocationsTitle": "Outstanding Invoices for Allocation",
+                "allocationsEmpty": "No open invoices found for this customer. The entire receipt will be recorded as a prepayment.",
+                "invoiceNo": "Invoice No.",
+                "date": "Date",
+                "invoiceTotal": "Invoice Total",
+                "balanceDue": "Balance Due",
+                "allocationAmount": "Allocation Amount",
+                "allocationFor": "Allocation for {number}",
+                "success": "Receipt drafted successfully",
+                "error": "Failed to draft receipt"
+            },
+            "title": "Receipts",
+            "new": "New Receipt",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "All Statuses",
+                    "allDesc": "Show receipts in every posting state.",
+                    "draft": "Draft",
+                    "draftDesc": "Receipts that are still being prepared.",
+                    "posted": "Posted",
+                    "postedDesc": "Receipts posted to the ledger.",
+                    "void": "Void",
+                    "voidDesc": "Receipts canceled after creation."
+                },
+                "from": "Receipt Date From",
+                "to": "Receipt Date To"
+            },
+            "columns": {
+                "number": "Receipt No.",
+                "customer": "Customer",
+                "date": "Date",
+                "account": "Bank/Cash",
+                "amount": "Amount",
+                "status": "Status"
+            },
+            "empty": "No incoming receipts found. Create one to get started.",
+            "customerFallback": "Customer #{id}",
+            "accountFallback": "Account #{id}"
+        },
+        "journals": {
+            "detail": {
+                "eyebrow": "Finance",
+                "title": "Journal Entry {number}",
+                "notFound": "Journal entry not found",
+                "notFoundHint": "The journal entry may have been removed or the link is invalid.",
+                "backToList": "Back to Journals",
+                "draftHeading": "Draft JE #{id}",
+                "period": "Accounting Period",
+                "periodFallback": "Period #{id}",
+                "entryDate": "Entry Date",
+                "post": "Post Entry",
+                "posting": "Posting...",
+                "void": "Void Entry",
+                "voiding": "Voiding...",
+                "postConfirmTitle": "Post this journal entry?",
+                "postConfirmMessage": "Once posted, this entry will impact reports like the Trial Balance and General Ledger.",
+                "voidConfirmTitle": "Void this journal entry?",
+                "voidConfirmMessage": "Voiding will create a reversal entry in the ledger and cancel its balances.",
+                "postSuccess": "Journal entry posted successfully",
+                "postError": "Failed to post journal entry",
+                "voidSuccess": "Journal entry voided successfully",
+                "voidError": "Failed to void journal entry",
+                "lines": {
+                    "account": "Account",
+                    "accountFallback": "Account #{id}",
+                    "description": "Description",
+                    "debit": "Debit",
+                    "credit": "Credit",
+                    "empty": "No lines found in this journal entry.",
+                    "total": "Total"
+                },
+                "descriptionTitle": "Description / Notes",
+                "noDescription": "No description provided."
+            },
+            "ledger": {
+                "eyebrow": "Finance",
+                "title": "General Ledger: {account}",
+                "accountFallback": "Account #{id}",
+                "subtitle": "Normal Balance: {balance} · Type: {type}",
+                "periodLabel": "Accounting Period",
+                "periodPlaceholder": "Select a period",
+                "periodPlaceholderDescription": "Choose the period used for this ledger.",
+                "normalBalance": "Normal Balance",
+                "totalDebit": "Total Debit",
+                "totalCredit": "Total Credit",
+                "endingBalance": "Ending Balance",
+                "columns": {
+                    "date": "Date",
+                    "reference": "Journal Reference",
+                    "description": "Description",
+                    "debit": "Debit",
+                    "credit": "Credit",
+                    "balance": "Running Balance"
+                },
+                "empty": "No ledger lines found for this period."
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "New Journal Entry",
+                "saveDraft": "Save Draft",
+                "creating": "Creating...",
+                "detailsTitle": "Entry Details",
+                "description": "Description / Notes",
+                "descriptionPlaceholder": "Write the journal purpose or explanation...",
+                "descriptionRequired": "Description is required",
+                "dateTitle": "Date & Period",
+                "entryDate": "Entry Date",
+                "dateRequired": "Date is required",
+                "periodLabel": "Period",
+                "noPeriod": "No matching period found",
+                "noPeriodToast": "No accounting period found for the selected date",
+                "linesTitle": "Journal Lines",
+                "account": "Account",
+                "accountPlaceholder": "Select Account...",
+                "minLines": "A journal entry must have at least 2 lines",
+                "accountsMissing": "Please select an account for all lines",
+                "unbalancedToast": "Journal entry is unbalanced. Debits and Credits must match (Diff: {diff})",
+                "zeroToast": "Total Debit/Credit must be greater than 0",
+                "lineDescription": "Description",
+                "lineDescriptionLabel": "Line {number} description",
+                "lineDescriptionPlaceholder": "Line description (optional)...",
+                "debit": "Debit",
+                "lineDebitLabel": "Line {number} debit",
+                "credit": "Credit",
+                "lineCreditLabel": "Line {number} credit",
+                "addLine": "Add Line",
+                "removeLine": "Remove line {number}",
+                "totalDebit": "Total Debit",
+                "totalCredit": "Total Credit",
+                "balanced": "Journal Entry Balanced",
+                "unbalanced": "Journal Entry Unbalanced",
+                "balancedHint": "Everything is set! You can save this journal entry as a draft.",
+                "zeroHint": "Add debit and credit values greater than 0.",
+                "differenceHint": "Debit total must equal Credit total. Current difference is {diff}.",
+                "success": "Journal entry created successfully as Draft",
+                "error": "Failed to create journal entry"
+            },
+            "title": "Journal Entries",
+            "new": "New Journal Entry",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "All Statuses",
+                    "allDesc": "Show journals in every posting state.",
+                    "draft": "Draft",
+                    "draftDesc": "Entries still open for editing.",
+                    "posted": "Posted",
+                    "postedDesc": "Entries locked into the ledger.",
+                    "void": "Void",
+                    "voidDesc": "Entries canceled after creation."
+                }
+            },
+            "columns": {
+                "number": "Journal Number",
+                "date": "Date",
+                "period": "Period",
+                "description": "Description",
+                "totalDebit": "Total Debit",
+                "status": "Status"
+            },
+            "empty": "No journal entries found.",
+            "periodFallback": "Period #{id}"
+        },
+        "taxRates": {
+            "eyebrow": "Finance",
+            "title": "Tax Rates",
+            "subtitle": "Manage tax rates used for generating invoices and bills.",
+            "new": "New Tax Rate",
+            "tabs": {
+                "ppn": "PPN (Value Added Tax)",
+                "pph": "PPh (Income Tax)"
+            },
+            "table": {
+                "name": "Tax Name",
+                "type": "Type",
+                "rate": "Rate (%)",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "empty": "No {type} tax rates found.",
+            "activate": "Activate",
+            "deactivate": "Deactivate",
+            "deleteConfirm": {
+                "title": "Delete tax rate “{name}”?",
+                "message": "This rate will no longer be available when creating invoices or bills. This action cannot be undone."
+            },
+            "drawer": {
+                "title": "New Tax Rate",
+                "name": "Tax Name",
+                "namePlaceholder": "e.g. PPN 11%, PPh 23",
+                "nameRequired": "Name is required",
+                "type": "Tax Type",
+                "rate": "Rate (%)",
+                "rateRequired": "Rate is required",
+                "rateMin": "Rate cannot be negative",
+                "save": "Save Tax Rate",
+                "saving": "Saving..."
+            },
+            "toast": {
+                "created": "Tax rate created successfully",
+                "createFailed": "Failed to create tax rate"
+            }
+        },
+        "coa": {
+            "eyebrow": "Finance",
+            "title": "Chart of Accounts",
+            "subtitle": "Manage your company chart of accounts.",
+            "new": "New Account",
+            "table": {
+                "code": "Code",
+                "name": "Name",
+                "type": "Type",
+                "balance": "Balance",
+                "postable": "Postable",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "empty": "No accounts found. Create one to get started.",
+            "activate": "Activate",
+            "deactivate": "Deactivate",
+            "deleteConfirm": {
+                "title": "Delete account “{name}”?",
+                "message": "The account will be removed from the chart of accounts. This action cannot be undone."
+            },
+            "drawer": {
+                "title": "New Account",
+                "parent": "Parent Account",
+                "parentPlaceholder": "Select parent account...",
+                "noParent": "-- No Parent (Root) --",
+                "code": "Account Code",
+                "codeRequired": "Code is required",
+                "name": "Account Name",
+                "nameRequired": "Name is required",
+                "type": "Account Type",
+                "types": {
+                    "asset": "Asset",
+                    "liability": "Liability",
+                    "equity": "Equity",
+                    "revenue": "Revenue",
+                    "expense": "Expense"
+                },
+                "normalBalance": "Normal Balance",
+                "balances": {
+                    "debit": "Debit",
+                    "credit": "Credit"
+                },
+                "postable": "Postable Account",
+                "postableHint": "Transactions can be posted directly to this account.",
+                "save": "Save Account",
+                "saving": "Saving..."
+            },
+            "toast": {
+                "created": "Account created successfully",
+                "createFailed": "Failed to create account"
+            }
+        },
+        "periods": {
+            "eyebrow": "Finance",
+            "title": "Accounting Periods",
+            "subtitle": "Manage your financial accounting periods. Close periods to prevent further postings.",
+            "new": "New Period",
+            "table": {
+                "name": "Period Name",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "closedAt": "Closed At",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "empty": "No accounting periods found.",
+            "close": "Close Period",
+            "reopen": "Reopen",
+            "closeConfirm": {
+                "title": "Close this accounting period?",
+                "message": "Once closed, no further journal entries can be posted to this period."
+            },
+            "reopenConfirm": {
+                "title": "Reopen this accounting period?",
+                "message": "Posting journal entries to this period will be allowed again."
+            },
+            "toast": {
+                "closed": "Period closed successfully",
+                "closeFailed": "Failed to close period",
+                "reopened": "Period reopened successfully",
+                "reopenFailed": "Failed to reopen period",
+                "created": "Period created successfully",
+                "createFailed": "Failed to create period. Make sure dates do not overlap with existing periods."
+            },
+            "drawer": {
+                "title": "New Accounting Period",
+                "name": "Period Name",
+                "namePlaceholder": "e.g. FY2026-Q1, May 2026",
+                "nameRequired": "Name is required",
+                "startDate": "Start Date",
+                "startRequired": "Start date is required",
+                "endDate": "End Date",
+                "endRequired": "End date is required",
+                "save": "Save Period",
+                "saving": "Saving..."
+            }
+        },
+        "taxReturns": {
+            "eyebrow": "Finance",
+            "title": "Tax Returns (SPT)",
+            "subtitle": "Generate and file tax returns (SPT) for PPN and PPh 23. Returns are computed from posted transactions.",
+            "generate": "Generate Return",
+            "allReturns": "All Returns",
+            "types": {
+                "ppn": "PPN (Value Added Tax)",
+                "pph23": "PPh 23 (Withholding Tax)"
+            },
+            "typeShort": {
+                "ppn": "PPN",
+                "pph23": "PPh 23"
+            },
+            "summary": "{total} total · {draft} draft",
+            "tabs": {
+                "all": "All"
+            },
+            "table": {
+                "period": "Period",
+                "taxType": "Tax Type",
+                "outputTax": "Output Tax",
+                "inputTax": "Input Tax",
+                "netPayable": "Net Payable",
+                "status": "Status"
+            },
+            "empty": "No tax returns found. Click “Generate Return” to create a new SPT.",
+            "periodTo": "to {date}",
+            "drawer": {
+                "title": "Generate Tax Return",
+                "description": "Compute SPT from posted transactions",
+                "taxType": "Tax Type",
+                "taxTypeRequired": "Tax type is required",
+                "typeDescPpn": "Value Added Tax return for taxable sales and purchases.",
+                "typeDescPph23": "Withholding Tax return for applicable vendor payments.",
+                "reportingPeriod": "Reporting Period",
+                "periodStart": "Period Start",
+                "startRequired": "Start date is required",
+                "periodEnd": "Period End",
+                "endRequired": "End date is required",
+                "info": "The system will scan all posted invoices and bills within the selected date range and compute the tax totals automatically.",
+                "generate": "Generate Return",
+                "generating": "Generating..."
+            },
+            "toast": {
+                "generated": "Tax return generated successfully",
+                "generateFailed": "Failed to generate tax return"
+            },
+            "detail": {
+                "back": "Back to Tax Returns",
+                "title": "SPT — {type}",
+                "notFound": "Tax return not found",
+                "backToList": "Back to Tax Returns",
+                "finalize": "Finalize & Post",
+                "finalizing": "Finalizing...",
+                "reportingPeriod": "Reporting Period",
+                "finalizedIn": "Finalized in journal entry",
+                "draftNotice": "This return is in draft. Review the lines below, then click Finalize & Post to generate the settlement journal entry and lock the return.",
+                "totalOutput": "Total Output Tax",
+                "outputHint": "Tax collected from customers",
+                "totalInput": "Total Input Tax",
+                "inputHint": "Tax paid to vendors (creditable)",
+                "netPayable": "Net Tax Payable",
+                "payableHint": "Amount to remit to tax authority",
+                "creditHint": "Net credit position",
+                "lines": "Transaction Lines",
+                "lineCount": "{count, plural, one {# transaction} other {# transactions}}",
+                "linesEmpty": "No transactions found in this period.",
+                "linesEmptyHint": "Ensure you have posted invoices or bills within the reporting period.",
+                "sourceType": "Source Type",
+                "documentId": "Document ID",
+                "taxAmount": "Tax Amount",
+                "sources": {
+                    "invoice": "Invoice",
+                    "bill": "Bill"
+                },
+                "total": "Total",
+                "deleteConfirm": {
+                    "title": "Delete this tax return?",
+                    "message": "This draft tax return and all generated lines will be removed. This action cannot be undone."
+                },
+                "toast": {
+                    "finalized": "Tax return finalized and journal entry posted",
+                    "finalizeFailed": "Failed to finalize tax return",
+                    "deleted": "Tax return deleted",
+                    "deleteFailed": "Failed to delete tax return"
+                }
+            }
+        },
+        "goodsReceipts": {
+            "title": "Goods Receipts (STB)",
+            "new": "New STB",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "All Statuses",
+                    "allDesc": "Show receipts regardless of processing state.",
+                    "received": "Received",
+                    "receivedDesc": "Goods have been received into stock.",
+                    "completed": "Completed",
+                    "completedDesc": "Receipt is fully processed downstream.",
+                    "void": "Void",
+                    "voidDesc": "Receipt was cancelled after creation."
+                }
+            },
+            "columns": {
+                "number": "STB No.",
+                "date": "Date",
+                "supplier": "Supplier",
+                "deliveryNote": "Delivery Note No.",
+                "itemCount": "Item Count",
+                "total": "Total",
+                "status": "Status",
+                "bill": "Bill No."
+            },
+            "empty": "No goods receipts found. Create one to get started.",
+            "supplierFallback": "Supplier #{id}",
+            "billRef": "Bill #{id}",
+            "pendingApLink": "Pending AP Link"
+        },
+        "activity": {
+            "title": "Financial Activity History",
+            "subtitle": "Chronological stream of transactions, invoices, bills, and journal entries.",
+            "emptyTitle": "No Activity Yet",
+            "emptyDescription": "Every recorded financial transaction, payment, invoice, and journal entry will appear here chronologically.",
+            "types": {
+                "invoice": "Sales Invoice",
+                "bill": "Vendor Bill",
+                "paymentOut": "Outgoing Payment",
+                "paymentIn": "Incoming Receipt",
+                "journal": "Journal Entry"
+            },
+            "customerPrefix": "Customer: {name}",
+            "supplierPrefix": "Supplier: {name}",
+            "toPrefix": "To: {name}",
+            "fromPrefix": "From: {name}",
+            "partnerFallback": "Partner #{id}",
+            "manualAdjustment": "Manual adjustment"
+        },
+        "ap": {
+            "title": "Accounts Payable Aging",
+            "subtitle": "Track outstanding vendor balances (Hutang Usaha) categorized by how long they have been overdue.",
+            "totalOutstanding": "Total Outstanding Payable",
+            "overdueSuffix": "is currently overdue.",
+            "columns": {
+                "vendor": "Vendor",
+                "current": "Current",
+                "d1_30": "1-30 Days",
+                "d31_60": "31-60 Days",
+                "d61_90": "61-90 Days",
+                "over90": "> 90 Days",
+                "total": "Total Balance"
+            },
+            "grandTotal": "Grand Total",
+            "empty": "No outstanding accounts payable found."
+        },
+        "ar": {
+            "title": "Accounts Receivable Aging",
+            "subtitle": "Track outstanding customer balances (Piutang Usaha) categorized by how long they have been overdue.",
+            "totalOutstanding": "Total Outstanding Receivable",
+            "overdueSuffix": "is currently overdue.",
+            "columns": {
+                "customer": "Customer",
+                "current": "Current",
+                "d1_30": "1-30 Days",
+                "d31_60": "31-60 Days",
+                "d61_90": "61-90 Days",
+                "over90": "> 90 Days",
+                "total": "Total Balance"
+            },
+            "grandTotal": "Grand Total",
+            "empty": "No outstanding accounts receivable found."
+        },
+        "cashBank": {
+            "title": "Cash & Bank",
+            "subtitle": "Balances as of period {period}",
+            "error": "Unable to load balances. Please try again.",
+            "noPeriod": "No accounting period found. Create a period to see balances.",
+            "noAccounts": "No Cash & Bank accounts configured in Chart of Accounts.",
+            "categoryLabel": "Cash & Bank",
+            "currentBalance": "Current Balance"
+        },
+        "accountMappings": {
+            "title": "Account Mappings",
+            "subtitle": "Map standard system transactions to your specific chart of accounts.",
+            "save": "Save Mappings",
+            "saving": "Saving...",
+            "saveSuccess": "Account mappings saved successfully",
+            "saveError": "Failed to save account mappings",
+            "selectAccount": "-- Select Account --",
+            "selectPlaceholder": "Select a postable account...",
+            "fields": {
+                "ar_account": {
+                    "label": "Accounts Receivable (Piutang Usaha)",
+                    "description": "Default account for customer invoices"
+                },
+                "ap_account": {
+                    "label": "Accounts Payable (Hutang Usaha)",
+                    "description": "Default account for vendor bills"
+                },
+                "ppn_in_account": {
+                    "label": "PPN In (Pajak Masukan)",
+                    "description": "Account for input VAT on purchases"
+                },
+                "ppn_out_account": {
+                    "label": "PPN Out (Pajak Keluaran)",
+                    "description": "Account for output VAT on sales"
+                },
+                "retained_earnings": {
+                    "label": "Retained Earnings (Laba Ditahan)",
+                    "description": "Account for closing year-end profit/loss"
+                },
+                "cash_discount": {
+                    "label": "Cash Discount (Diskon Tunai)",
+                    "description": "Account for early payment discounts"
+                }
+            }
+        },
+        "trialBalance": {
+            "title": "Trial Balance",
+            "subtitle": "Closing balances for every general ledger account in a given accounting period.",
+            "period": {
+                "label": "Accounting Period",
+                "placeholder": "Select a period",
+                "placeholderDesc": "Choose the period used for this trial balance."
+            },
+            "balanced": "Trial Balance Balanced",
+            "unbalanced": "Trial Balance Unbalanced",
+            "balancedHint": "Great! The total debits match the total credits.",
+            "unbalancedHint": "Attention: Total debits do not match total credits. Difference is {difference}.",
+            "columns": {
+                "code": "Account Code",
+                "name": "Account Name",
+                "type": "Type",
+                "normal": "Normal",
+                "debit": "Debit",
+                "credit": "Credit"
+            },
+            "empty": "No accounts or balances recorded for the selected period.",
+            "grandTotal": "Grand Total"
+        },
+        "profitLoss": {
+            "title": "Income Statement",
+            "subtitle": "Laporan Laba Rugi",
+            "period": {
+                "label": "Accounting Period",
+                "placeholder": "Select a period",
+                "placeholderDesc": "Choose the accounting period for this report.",
+                "statusDesc": "Status: {status}"
+            },
+            "sections": {
+                "revenue": "Revenue",
+                "cogs": "Cost of Sales",
+                "opex": "Operating Expenses"
+            },
+            "grossProfit": "Gross Profit",
+            "grossProfitAlt": "Laba Kotor",
+            "netOperatingProfit": "Net Operating Profit",
+            "netOperatingProfitAlt": "Laba Usaha",
+            "selectPeriodTitle": "Select an accounting period",
+            "selectPeriodHint": "The Income Statement will be calculated from all posted journal entries in the selected period.",
+            "sectionEmpty": "No accounts in this category for the selected period.",
+            "noData": "No posted data found for this period.",
+            "noDataHint": "Post journal entries or invoices/bills to see the Income Statement.",
+            "footnote": "Figures computed from Trial Balance for period: {period}"
         }
     },
     "pos": {
@@ -376,6 +2210,362 @@
                 "countedCash": "Counted cash",
                 "variance": "Variance"
             }
+        },
+        "sales": {
+            "title": "Sales",
+            "subtitle": "Browse counter sales and catering orders. Open a sale to view its lines, payments, and promotions.",
+            "import": "Import Orders",
+            "importTitle": "Import Catering Orders",
+            "importDescription": "Preview the configured Google Form source or upload a catering order template, then queue confirmed orders.",
+            "loadError": "Unable to load sales.",
+            "updateError": "Unable to update sale.",
+            "empty": "No sales found.",
+            "walkIn": "Walk-in",
+            "partnerRef": "Partner #{id}",
+            "pageInfo": "{from}–{to} of {total} sales",
+            "columns": {
+                "sale": "Sale",
+                "type": "Type",
+                "customer": "Customer",
+                "date": "Date",
+                "total": "Total",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "filters": {
+                "status": "Status",
+                "allStatuses": "All statuses",
+                "draft": "Draft",
+                "confirmed": "Confirmed",
+                "completed": "Completed",
+                "void": "Void",
+                "type": "Type",
+                "allTypes": "All types",
+                "counter": "Counter",
+                "catering": "Catering",
+                "branch": "Branch",
+                "allBranches": "All branches",
+                "fulfilmentFrom": "Fulfilment from",
+                "fulfilmentTo": "Fulfilment to"
+            },
+            "lifecycle": {
+                "resume": "Resume checkout",
+                "receipt": "Receipt",
+                "cancelSale": "Cancel sale",
+                "voidSale": "Void completed sale",
+                "cancelTitle": "Cancel this sale?",
+                "cancelMessage": "The sale will be cancelled and removed from the active queue.",
+                "cancelConfirm": "Cancel sale",
+                "keepSale": "Keep sale",
+                "voidTitle": "Void this completed sale?",
+                "voidMessage": "Voiding reverses the sale's revenue, COGS journals, and inventory. This can't be undone.",
+                "voidConfirm": "Void sale"
+            },
+            "detail": {
+                "title": "Sale",
+                "fallbackTitle": "Sale #{id}",
+                "typeSale": "{type} sale",
+                "loadError": "Unable to load sale.",
+                "voided": "Sale voided.",
+                "canceled": "Sale canceled.",
+                "voidError": "Unable to void sale.",
+                "cancelError": "Unable to cancel sale.",
+                "lineItems": "Line Items",
+                "columns": {
+                    "description": "Description",
+                    "qty": "Qty",
+                    "unit": "Unit",
+                    "total": "Total"
+                },
+                "variantRef": "Variant #{id}",
+                "giveaway": "Giveaway",
+                "noLines": "No line items.",
+                "payments": "Payments",
+                "promotions": "Promotions",
+                "summary": "Summary",
+                "info": "Details",
+                "customer": "Customer",
+                "orderDate": "Order date",
+                "branch": "Branch",
+                "register": "Register",
+                "revenueJournal": "Revenue journal",
+                "cogsJournal": "COGS journal",
+                "completed": "Completed",
+                "fulfilment": "Fulfilment",
+                "batch": "Batch",
+                "delivery": "Delivery"
+            }
+        },
+        "shifts": {
+            "title": "Cashier Shifts",
+            "subtitle": "Open and close cashier shifts. A shift must be open before sales can be rung up on a register.",
+            "openShift": "Open shift",
+            "listTitle": "Shifts ({count})",
+            "columns": {
+                "register": "Register",
+                "status": "Status",
+                "opened": "Opened",
+                "openingFloat": "Opening float",
+                "countedVariance": "Counted / Variance",
+                "actions": "Actions"
+            },
+            "status": {
+                "open": "Open",
+                "closed": "Closed"
+            },
+            "close": "Close",
+            "empty": "No shifts yet.",
+            "loadError": "Unable to load shifts.",
+            "openSuccess": "Shift opened.",
+            "closeSuccess": "Shift closed.",
+            "registerRef": "Register #{id}",
+            "openDialog": {
+                "title": "Open shift",
+                "description": "Select a register and record the opening cash float.",
+                "register": "Register",
+                "selectRegister": "Select register",
+                "openingFloat": "Opening float",
+                "notes": "Notes",
+                "optional": "Optional",
+                "submit": "Open shift"
+            },
+            "closeDialog": {
+                "title": "Close shift",
+                "description": "Count the cash drawer. The variance against expected cash is shown below.",
+                "register": "Register",
+                "expectedCash": "Expected cash",
+                "variance": "Variance",
+                "countedCash": "Counted cash",
+                "notes": "Notes",
+                "submit": "Close shift"
+            }
+        },
+        "registers": {
+            "title": "Registers",
+            "subtitle": "Manage POS registers per branch. Each register can be linked to a cash account for settlement.",
+            "listTitle": "Registers ({count})",
+            "columns": {
+                "name": "Name",
+                "code": "Code",
+                "branch": "Branch",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "active": "Active",
+            "inactive": "Inactive",
+            "branchRef": "Branch #{id}",
+            "empty": "No registers yet.",
+            "loadError": "Unable to load registers.",
+            "created": "Register created.",
+            "updated": "Register updated.",
+            "deleted": "Register deleted.",
+            "deleteTitle": "Delete register “{name}”?",
+            "deleteMessage": "This register will be permanently removed.",
+            "deleteConfirm": "Delete register",
+            "form": {
+                "editTitle": "Edit register",
+                "newTitle": "New register",
+                "name": "Name",
+                "namePlaceholder": "e.g. Front Counter",
+                "code": "Code",
+                "codePlaceholder": "e.g. REG-01",
+                "branch": "Branch",
+                "selectBranch": "Select branch",
+                "cashAccount": "Cash account (optional)",
+                "none": "None",
+                "active": "Active",
+                "save": "Save changes",
+                "create": "Create register"
+            }
+        },
+        "register": {
+            "title": "POS Dashboard",
+            "cateringTitle": "Catering Orders",
+            "subtitle": "Ring up counter and catering sales. Tap a product to add it to the cart, then take payment.",
+            "cateringSubtitle": "Create and confirm catering orders without registers, shifts, or counter payments.",
+            "loadError": "Unable to load register.",
+            "resumeError": "Unable to resume sale.",
+            "shiftNeeded": "Open a shift for the selected register before selling.",
+            "cateringRequired": "Catering orders require a customer and a fulfilment date.",
+            "cateringConfirmed": "Catering order confirmed.",
+            "saleCompleted": "Sale completed.",
+            "shiftOpened": "Shift opened.",
+            "variantRef": "Variant #{id}",
+            "kpis": {
+                "activeRegisters": "Active Registers",
+                "totalCount": "{count} total",
+                "openShifts": "Open Shifts",
+                "readyDrawers": "Ready drawers",
+                "openSales": "Open Sales",
+                "openSalesDetail": "Draft or confirmed",
+                "todaySales": "Today Sales",
+                "transactions": "{count} transactions"
+            },
+            "openShiftDialog": {
+                "title": "Open shift",
+                "description": "Select a register and record the opening cash float.",
+                "register": "Register",
+                "selectRegister": "Select register",
+                "openingFloat": "Opening float",
+                "submit": "Open shift"
+            },
+            "saleTypes": {
+                "counter": "Counter",
+                "catering": "Catering"
+            },
+            "cart": {
+                "customer": "Customer",
+                "selectCustomer": "Select customer",
+                "fulfilmentDate": "Fulfilment date",
+                "deliveryAddress": "Delivery address",
+                "customerName": "Customer name (optional)",
+                "walkIn": "Walk-in",
+                "empty": "Tap products to add them to the sale.",
+                "subtotal": "Subtotal",
+                "discount": "Discount",
+                "tax": "Tax",
+                "total": "Total",
+                "paid": "Paid",
+                "balanceDue": "Balance due",
+                "confirmOrder": "Confirm order",
+                "charge": "Charge",
+                "managePayments": "Manage payments / complete",
+                "takePayment": "Take payment",
+                "cancelSale": "Cancel sale"
+            },
+            "products": {
+                "search": "Search products",
+                "searchPlaceholder": "Search products or SKU...",
+                "category": "Category",
+                "allCategories": "All categories",
+                "noPrice": "No price",
+                "empty": "No products found."
+            },
+            "payment": {
+                "title": "Payment",
+                "forSale": "Sale {number}",
+                "description": "Take payment for this sale",
+                "completeSale": "Complete sale",
+                "method": "Method",
+                "amount": "Amount",
+                "reference": "Reference (optional)",
+                "referencePlaceholder": "Card / transfer reference",
+                "changeDue": "Change due: {amount}",
+                "nonCashError": "Non-cash payments cannot exceed the balance due.",
+                "addPayment": "Add payment",
+                "methods": {
+                    "cash": "Cash",
+                    "card": "Card",
+                    "qris": "QRIS",
+                    "transfer": "Transfer"
+                }
+            },
+            "shiftBar": {
+                "noOpenShift": "No open shift",
+                "openPrompt": "Open a cashier shift before ringing up sales.",
+                "openShift": "Open shift",
+                "open": "Open",
+                "openingFloat": "Opening float",
+                "expectedCash": "Expected cash",
+                "closeShift": "Close shift",
+                "registerRef": "Register #{id}"
+            },
+            "summary": {
+                "subtotal": "Subtotal",
+                "discount": "Discount",
+                "tax": "Tax",
+                "total": "Total",
+                "paid": "Paid",
+                "balanceDue": "Balance due",
+                "paidInFull": "Paid in full",
+                "change": "Change"
+            },
+            "selector": {
+                "register": "Register",
+                "selectActive": "Select active register",
+                "noActive": "No active registers",
+                "createPrompt": "Create or activate a register in this branch before selling."
+            },
+            "checklist": {
+                "title": "Register setup required",
+                "branch": "Branch selected",
+                "register": "Active register selected",
+                "shift": "Shift open for selected register"
+            }
+        },
+        "receipt": {
+            "title": "Receipt",
+            "loadError": "Unable to load receipt.",
+            "brand": "Arsanawa POS",
+            "saleFallback": "Sale #{id}",
+            "variantRef": "Variant #{id}",
+            "status": "Status",
+            "type": "Type",
+            "customer": "Customer",
+            "register": "Register",
+            "completed": "Completed",
+            "walkIn": "Walk-in",
+            "noLines": "No line items.",
+            "subtotal": "Subtotal",
+            "discount": "Discount",
+            "tax": "Tax",
+            "total": "Total",
+            "paid": "Paid",
+            "balance": "Balance",
+            "change": "Change",
+            "payments": "Payments",
+            "saleDetail": "Sale detail",
+            "print": "Print"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "Sign in",
+            "subtitle": "Welcome back. Enter your credentials to access your console.",
+            "loginField": "Email or username",
+            "password": "Password",
+            "forgotPassword": "Forgot password?",
+            "submit": "Sign in",
+            "submitting": "Signing in...",
+            "panel": {
+                "badge": "Arsanawa ERP Console",
+                "headline": "Unified operations backend for modular companies.",
+                "description": "Multi-tenant company scoping, granular permissions, dynamic module entitlement and comprehensive inventory lifecycle management.",
+                "featureModularTitle": "Modular",
+                "featureModularDescription": "Enable POS, Accounting, Inventory as needed",
+                "featureScopedTitle": "Scoped",
+                "featureScopedDescription": "Strict company and branch-level data boundaries",
+                "featureDurableTitle": "Durable",
+                "featureDurableDescription": "State remains consistent across device sessions"
+            }
+        },
+        "forgot": {
+            "title": "Forgot password",
+            "subtitle": "Enter your email to receive a password reset link.",
+            "email": "Email address",
+            "submit": "Send reset link",
+            "submitting": "Sending link...",
+            "failed": "Password reset failed.",
+            "backToLogin": "Back to login"
+        },
+        "reset": {
+            "title": "Reset password",
+            "subtitle": "Enter your email, reset token, and your new password.",
+            "email": "Email address",
+            "token": "Reset token",
+            "newPassword": "New password",
+            "confirmPassword": "Confirm password",
+            "submit": "Reset password",
+            "submitting": "Resetting password...",
+            "passwordMismatch": "Passwords do not match.",
+            "failed": "Password reset failed.",
+            "backToLogin": "Back to login"
+        },
+        "requireSession": {
+            "eyebrow": "Arsanawa ERP",
+            "title": "Sign in to continue",
+            "description": "The web console keeps the access token in memory, so a refresh starts a new session.",
+            "goToLogin": "Go to login"
         }
     }
 }

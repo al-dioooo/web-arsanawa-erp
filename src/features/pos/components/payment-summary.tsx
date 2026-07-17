@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import type { Sale } from "@/features/pos/pos-types"
 import { formatCurrency, toNumber } from "@/lib/money"
 
@@ -9,35 +10,36 @@ type PaymentSummaryProps = {
 }
 
 export function PaymentSummary({ sale, showChange = false }: PaymentSummaryProps) {
+    const t = useTranslations("pos.register.summary")
     const total = toNumber(sale.total)
     const paid = toNumber(sale.amount_paid)
     const balance = Math.max(total - paid, 0)
     const change = showChange ? Math.max(paid - total, 0) : 0
 
     return (
-        <div className="grid gap-1.5 rounded-xl border border-navy-100 bg-navy-50/30 p-4 text-sm">
-            <SummaryRow label="Subtotal" value={formatCurrency(sale.subtotal)} />
-            <SummaryRow label="Discount" value={`- ${formatCurrency(sale.discount_total)}`} />
-            <SummaryRow label="Tax" value={formatCurrency(sale.tax_total)} />
-            <div className="flex justify-between pt-1 text-base font-bold text-navy-900">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
+        <div className="grid gap-1.5 rounded-md bg-surface-muted p-4 text-sm">
+            <SummaryRow label={t("subtotal")} value={formatCurrency(sale.subtotal)} />
+            <SummaryRow label={t("discount")} value={`- ${formatCurrency(sale.discount_total)}`} />
+            <SummaryRow label={t("tax")} value={formatCurrency(sale.tax_total)} />
+            <div className="flex justify-between pt-1 text-base font-bold text-ink">
+                <span>{t("total")}</span>
+                <span className="tabular-nums">{formatCurrency(total)}</span>
             </div>
-            <SummaryRow label="Paid" value={formatCurrency(paid)} />
-            <div className={`flex justify-between font-bold ${balance > 0 ? "text-teal-700" : "text-emerald-700"}`}>
-                <span>{balance > 0 ? "Balance due" : "Paid in full"}</span>
-                <span>{formatCurrency(balance)}</span>
+            <SummaryRow label={t("paid")} value={formatCurrency(paid)} />
+            <div className={`flex justify-between font-bold ${balance > 0 ? "text-brand-ink" : "text-success-strong"}`}>
+                <span>{balance > 0 ? t("balanceDue") : t("paidInFull")}</span>
+                <span className="tabular-nums">{formatCurrency(balance)}</span>
             </div>
-            {change > 0 ? <SummaryRow label="Change" value={formatCurrency(change)} /> : null}
+            {change > 0 ? <SummaryRow label={t("change")} value={formatCurrency(change)} /> : null}
         </div>
     )
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex justify-between gap-4 text-navy-500">
+        <div className="flex justify-between gap-4 text-ink-muted">
             <span>{label}</span>
-            <span className="text-right font-medium text-navy-700">{value}</span>
+            <span className="text-end font-medium text-ink-secondary tabular-nums">{value}</span>
         </div>
     )
 }

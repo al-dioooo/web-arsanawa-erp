@@ -1,11 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { TableStateRow } from "@/features/finance/components/table-state-row"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import { useTranslations } from "next-intl"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { Field } from "@/components/ui/field"
+import { Icon } from "@/components/ui/icon"
+import { Modal } from "@/components/ui/modal"
+import { PageHeader } from "@/components/ui/page-header"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import {
     useCOA,
@@ -14,13 +23,6 @@ import {
     useUpdateAccount,
     type COAAccount,
 } from "@/features/finance/api"
-import { EnterTransition } from "@/components/ui/enter"
-import { Icon } from "@/components/ui/icon"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { SearchableSelect } from "@/components/ui/searchable-select"
-import { useForm, Controller } from "react-hook-form"
-import { toast } from "sonner"
 
 type AccountFormData = {
     parent_id: string
@@ -32,84 +34,107 @@ type AccountFormData = {
 }
 
 export default function COAPage() {
+    const t = useTranslations("finance.coa")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const { data: accounts = [], isLoading, isError, error, refetch } = useCOA(activeCompanyId)
     const updateAccount = useUpdateAccount()
     const deleteAccount = useDeleteAccount()
+    const [confirm, confirmDialog] = useConfirm()
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     // Compute flat list for the table by flattening the tree
     const flatAccounts = flattenAccounts(accounts)
 
+    const handleDelete = async (account: COAAccount) => {
+        const ok = await confirm({
+            title: t("deleteConfirm.title", { name: account.name }),
+            message: t("deleteConfirm.message"),
+            confirmLabel: tCommon("delete"),
+            cancelLabel: tCommon("cancel"),
+            danger: true,
+        })
+        if (ok) deleteAccount.mutate(account.id)
+    }
+
     return (
         <div className="w-full">
             <PageHeader
-                title="Chart of Accounts"
-                primaryAction={{
-                    label: "+ New Account",
-                    onClick: () => setIsDrawerOpen(true)
-                }}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                actions={
+                    <Button size="lg" onClick={() => setIsDrawerOpen(true)}>
+                        {t("new")}
+                    </Button>
+                }
             />
 
-            <FilterBar>
-                <div className="flex-1 text-sm text-navy-500">
-                    Manage your company&apos;s chart of accounts.
-                </div>
-            </FilterBar>
-
-            <DataTable columns={["Code", "Name", "Type", "Balance", "Postable", "Status", "Actions"]}>
+            <DataTable
+                columns={[
+                    t("table.code"),
+                    t("table.name"),
+                    t("table.type"),
+                    t("table.balance"),
+                    t("table.postable"),
+                    t("table.status"),
+                    t("table.actions"),
+                ]}
+            >
                 <TableStateRow
                     isLoading={isLoading}
                     isError={isError}
                     error={error}
                     count={flatAccounts.length}
                     columns={7}
-                    emptyMessage="No accounts found. Create one to get started."
+                    emptyMessage={t("empty")}
                     onRetry={() => refetch()}
                 />
                 {flatAccounts.map((account) => (
-                    <tr key={account.id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4">
+                    <tr key={account.id}>
+                        <td>
                             <div className="flex items-center">
-                                <span style={{ marginLeft: `${account.depth * 1.5}rem` }} className="font-mono text-navy-900 font-medium">
+                                <span style={{ marginLeft: `${account.depth * 1.5}rem` }} className="font-mono font-medium text-ink">
                                     {account.code}
                                 </span>
                             </div>
                         </td>
-                        <td className="px-6 py-4 font-semibold text-navy-900">{account.name}</td>
-                        <td className="px-6 py-4 text-navy-700 capitalize">{account.type.replace('_', ' ')}</td>
-                        <td className="px-6 py-4 text-navy-700 capitalize">{account.normal_balance}</td>
-                        <td className="px-6 py-4">
+                        <td className="font-semibold text-ink">{account.name}</td>
+                        <td className="capitalize text-ink-secondary">{account.type.replace('_', ' ')}</td>
+                        <td className="capitalize text-ink-secondary">{account.normal_balance}</td>
+                        <td>
                             {account.is_postable ? (
-                                <Icon name="check_circle" className="text-teal-600" />
+                                <Icon name="check_circle" className="text-brand-ink" />
                             ) : (
-                                <Icon name="cancel" className="text-navy-300" />
+                                <Icon name="cancel" className="text-ink-faint" />
                             )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td>
                             <StatusBadge status={account.is_active ? "active" : "inactive"} />
                         </td>
-                        <td className="px-6 py-4">
+                        <td>
                             <div className="flex flex-wrap gap-2">
-                                <button
+                                <Button
                                     type="button"
+                                    size="sm"
+                                    variant="secondary"
                                     onClick={() =>
                                         updateAccount.mutate({
                                             id: account.id,
                                             data: { is_active: !account.is_active },
                                         })
                                     }
-                                    className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-bold text-navy-700 transition-colors hover:bg-navy-100 cursor-pointer"
                                 >
-                                    {account.is_active ? "Deactivate" : "Activate"}
-                                </button>
-                                <button
+                                    {account.is_active ? t("deactivate") : t("activate")}
+                                </Button>
+                                <Button
                                     type="button"
-                                    onClick={() => deleteAccount.mutate(account.id)}
-                                    className="rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors hover:bg-rose-100 cursor-pointer"
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => void handleDelete(account)}
                                 >
-                                    Delete
-                                </button>
+                                    {tCommon("delete")}
+                                </Button>
                             </div>
                         </td>
                     </tr>
@@ -117,19 +142,23 @@ export default function COAPage() {
             </DataTable>
 
             {isDrawerOpen && (
-                <AccountDrawer 
-                    onClose={() => setIsDrawerOpen(false)} 
+                <AccountDrawer
+                    onClose={() => setIsDrawerOpen(false)}
                     accounts={flatAccounts}
                 />
             )}
+            {confirmDialog}
         </div>
     )
 }
 
 function AccountDrawer({ onClose, accounts }: { onClose: () => void, accounts: COAAccount[] }) {
+    const t = useTranslations("finance.coa.drawer")
+    const tToast = useTranslations("finance.coa.toast")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const createAccount = useCreateAccount()
-    
+
     const { register, handleSubmit, control, formState: { errors } } = useForm<AccountFormData>({
         defaultValues: {
             parent_id: "",
@@ -155,112 +184,110 @@ function AccountDrawer({ onClose, accounts }: { onClose: () => void, accounts: C
             is_active: true
         }, {
             onSuccess: () => {
-                toast.success("Account created successfully")
+                toast.success(tToast("created"))
                 onClose()
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to create account")
+                toast.error(err?.message || tToast("createFailed"))
             }
         })
     }
 
     const parentOptions = [
-        { value: "", label: "-- No Parent (Root) --" },
+        { value: "", label: t("noParent") },
         ...accounts.map(a => ({ value: String(a.id), label: `${a.code} - ${a.name}` }))
     ]
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
-                    <h2 className="text-lg font-bold text-navy-900">New Account</h2>
-                    <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
-                        <Icon name="close" />
-                    </button>
+        <Modal
+            open
+            onClose={onClose}
+            variant="drawer"
+            size="md"
+            title={t("title")}
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>{tCommon("cancel")}</Button>
+                    <Button onClick={handleSubmit(onSubmit)} disabled={createAccount.isPending}>
+                        {createAccount.isPending ? t("saving") : t("save")}
+                    </Button>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                <Controller
+                    name="parent_id"
+                    control={control}
+                    render={({ field }) => (
+                        <SearchableSelect
+                            label={t("parent")}
+                            options={parentOptions}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={t("parentPlaceholder")}
+                        />
+                    )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label={t("code")}
+                        {...register("code", { required: t("codeRequired") })}
+                        error={errors.code?.message}
+                    />
+                    <Field
+                        label={t("name")}
+                        {...register("name", { required: t("nameRequired") })}
+                        error={errors.name?.message}
+                    />
                 </div>
-                
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
+
+                <div className="grid grid-cols-2 gap-4">
                     <Controller
-                        name="parent_id"
+                        name="type"
                         control={control}
                         render={({ field }) => (
                             <SearchableSelect
-                                label="Parent Account"
-                                options={parentOptions}
+                                label={t("type")}
+                                options={[
+                                    { value: "asset", label: t("types.asset") },
+                                    { value: "liability", label: t("types.liability") },
+                                    { value: "equity", label: t("types.equity") },
+                                    { value: "revenue", label: t("types.revenue") },
+                                    { value: "expense", label: t("types.expense") },
+                                ]}
                                 value={field.value}
                                 onChange={field.onChange}
-                                placeholder="Select parent account..."
                             />
                         )}
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field
-                            label="Account Code"
-                            {...register("code", { required: "Code is required" })}
-                            error={errors.code?.message}
-                        />
-                        <Field
-                            label="Account Name"
-                            {...register("name", { required: "Name is required" })}
-                            error={errors.name?.message}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <Controller
-                            name="type"
-                            control={control}
-                            render={({ field }) => (
-                                <SearchableSelect
-                                    label="Account Type"
-                                    options={[
-                                        { value: "asset", label: "Asset" },
-                                        { value: "liability", label: "Liability" },
-                                        { value: "equity", label: "Equity" },
-                                        { value: "revenue", label: "Revenue" },
-                                        { value: "expense", label: "Expense" },
-                                    ]}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                />
-                            )}
-                        />
-                        
-                        <Controller
-                            name="normal_balance"
-                            control={control}
-                            render={({ field }) => (
-                                <SearchableSelect
-                                    label="Normal Balance"
-                                    options={[
-                                        { value: "debit", label: "Debit" },
-                                        { value: "credit", label: "Credit" }
-                                    ]}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                />
-                            )}
-                        />
-                    </div>
-
-                    <label className="flex items-center gap-3 p-4 border border-navy-100 rounded-xl hover:bg-navy-50 cursor-pointer transition-colors mt-2">
-                        <input type="checkbox" className="w-5 h-5 rounded border-navy-300 text-teal-600 focus:ring-teal-500" {...register("is_postable")} />
-                        <div>
-                            <div className="font-semibold text-navy-900 text-sm">Postable Account</div>
-                            <div className="text-xs text-navy-500 mt-0.5">Transactions can be posted directly to this account.</div>
-                        </div>
-                    </label>
-                </form>
-
-                <div className="p-6 border-t border-navy-100 bg-navy-50/50 flex gap-3 justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit(onSubmit)} disabled={createAccount.isPending} className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                        {createAccount.isPending ? "Saving..." : "Save Account"}
-                    </Button>
+                    <Controller
+                        name="normal_balance"
+                        control={control}
+                        render={({ field }) => (
+                            <SearchableSelect
+                                label={t("normalBalance")}
+                                options={[
+                                    { value: "debit", label: t("balances.debit") },
+                                    { value: "credit", label: t("balances.credit") }
+                                ]}
+                                value={field.value}
+                                onChange={field.onChange}
+                            />
+                        )}
+                    />
                 </div>
-            </EnterTransition>
-        </div>
+
+                <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg bg-surface-muted/50 p-4 transition-colors hover:bg-surface-muted">
+                    <input type="checkbox" className="size-5 rounded accent-brand" {...register("is_postable")} />
+                    <div>
+                        <div className="text-sm font-semibold text-ink">{t("postable")}</div>
+                        <div className="mt-0.5 text-xs text-ink-muted">{t("postableHint")}</div>
+                    </div>
+                </label>
+            </form>
+        </Modal>
     )
 }
 

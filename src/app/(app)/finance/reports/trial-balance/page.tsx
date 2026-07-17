@@ -1,24 +1,28 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { FilterBar } from "@/features/finance/components/filter-bar"
 import { DataTable } from "@/features/finance/components/data-table"
+import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { useTrialBalance } from "@/features/finance/api-journals"
 import { usePeriods } from "@/features/finance/api"
 import { formatIDR, formatDateID } from "@/lib/format"
 import { Icon } from "@/components/ui/icon"
 import { SelectDescription } from "@/components/ui/select-description"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 
 export default function TrialBalancePage() {
+    const t = useTranslations("finance.trialBalance")
     const { activeCompanyId } = useSession()
     const { data: periods = [] } = usePeriods(activeCompanyId)
     const [periodIdState, setPeriodIdState] = useState<number | null>(null)
     const selectedPeriodId = periodIdState ?? periods[0]?.id ?? null
 
-    const { data: trialBalance = [], isLoading } = useTrialBalance(
+    const { data: trialBalance = [], isLoading, isError, error, refetch } = useTrialBalance(
         activeCompanyId,
         selectedPeriodId
     )
@@ -32,17 +36,17 @@ export default function TrialBalancePage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Neraca Saldo (Trial Balance)"
-                subtitle="Daftar saldo akhir untuk seluruh akun buku besar pada periode akuntansi tertentu."
+                title={t("title")}
+                subtitle={t("subtitle")}
             />
 
             <FilterBar>
                 <SelectDescription
-                    label="Accounting Period"
+                    label={t("period.label")}
                     value={selectedPeriodId || ""}
                     onChange={(e) => setPeriodIdState(Number(e.target.value) || null)}
                     options={[
-                        { value: "", label: "Select a period", description: "Choose the period used for this trial balance." },
+                        { value: "", label: t("period.placeholder"), description: t("period.placeholderDesc") },
                         ...periods.map((p) => ({
                             value: p.id,
                             label: p.name,
@@ -53,74 +57,79 @@ export default function TrialBalancePage() {
             </FilterBar>
 
             {/* Verification Banner */}
-            <div className={`p-4 rounded-2xl border flex items-center justify-between gap-4 mb-6 transition-colors ${
-                isBalanced 
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
-                    : "bg-rose-50 border-rose-100 text-rose-800"
-            }`}>
+            <div
+                className={cn(
+                    "mb-6 flex items-center justify-between gap-4 rounded-lg p-4 transition-colors",
+                    isBalanced
+                        ? "bg-success-soft text-success-strong"
+                        : "bg-error-soft text-error-strong",
+                )}
+            >
                 <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${isBalanced ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-                        <Icon name={isBalanced ? "check_circle" : "error"} className="text-lg" />
-                    </div>
+                    <Icon name={isBalanced ? "check_circle" : "error"} size={24} className="shrink-0" />
                     <div>
-                        <p className="font-bold text-sm">
-                            {isBalanced ? "Trial Balance Balanced" : "Trial Balance Unbalanced"}
+                        <p className="text-sm font-bold">
+                            {isBalanced ? t("balanced") : t("unbalanced")}
                         </p>
                         <p className="text-xs opacity-90">
-                            {isBalanced 
-                                ? "Great! The total debits match the total credits."
-                                : `Attention: Total debits do not match total credits. Difference is ${formatIDR(difference)}.`
+                            {isBalanced
+                                ? t("balancedHint")
+                                : t("unbalancedHint", { difference: formatIDR(difference) })
                             }
                         </p>
                     </div>
                 </div>
-                <div className="text-right font-mono font-bold text-sm">
+                <div className="text-end text-sm font-bold tabular-nums">
                     {formatIDR(grandDebit)} / {formatIDR(grandCredit)}
                 </div>
             </div>
 
-            <DataTable columns={["Account Code", "Account Name", "Type", "Normal", "Debit", "Credit"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Generating trial balance report...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && trialBalance.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-400 italic">
-                            No accounts or balances recorded for the selected period.
-                        </td>
-                    </tr>
-                )}
+            <DataTable
+                columns={[
+                    t("columns.code"),
+                    t("columns.name"),
+                    t("columns.type"),
+                    t("columns.normal"),
+                    { label: t("columns.debit"), align: "end" },
+                    { label: t("columns.credit"), align: "end" },
+                ]}
+            >
+                <TableStateRow
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    count={trialBalance.length}
+                    columns={6}
+                    emptyMessage={t("empty")}
+                    onRetry={() => refetch()}
+                />
                 {trialBalance.map((item) => (
-                    <tr key={item.account_id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-navy-900">
-                            <Link href={`/finance/journals/account/${item.account_id}`} className="text-teal-600 hover:text-teal-700 hover:underline">
+                    <tr key={item.account_id}>
+                        <td className="font-semibold">
+                            <Link href={`/finance/journals/account/${item.account_id}`} className="text-brand-ink hover:underline">
                                 {item.code}
                             </Link>
                         </td>
-                        <td className="px-6 py-4">
-                            <Link href={`/finance/journals/account/${item.account_id}`} className="text-navy-900 font-medium hover:text-teal-600">
+                        <td>
+                            <Link href={`/finance/journals/account/${item.account_id}`} className="font-medium text-ink transition-colors hover:text-brand-ink">
                                 {item.name}
                             </Link>
                         </td>
-                        <td className="px-6 py-4 text-navy-500 capitalize">{item.type}</td>
-                        <td className="px-6 py-4 text-navy-500 capitalize">{item.normal_balance}</td>
-                        <td className="px-6 py-4 text-navy-900 text-right font-medium">
+                        <td className="text-ink-muted capitalize">{item.type}</td>
+                        <td className="text-ink-muted capitalize">{item.normal_balance}</td>
+                        <td className="text-end font-medium text-ink tabular-nums">
                             {Number(item.debit) > 0 ? formatIDR(Number(item.debit)) : "-"}
                         </td>
-                        <td className="px-6 py-4 text-navy-900 text-right font-medium">
+                        <td className="text-end font-medium text-ink tabular-nums">
                             {Number(item.credit) > 0 ? formatIDR(Number(item.credit)) : "-"}
                         </td>
                     </tr>
                 ))}
                 {trialBalance.length > 0 && (
-                    <tr className="bg-navy-50/30 border-t border-navy-200 font-bold text-navy-900">
-                        <td colSpan={4} className="px-6 py-4">Grand Total</td>
-                        <td className="px-6 py-4 text-right">{formatIDR(grandDebit)}</td>
-                        <td className="px-6 py-4 text-right">{formatIDR(grandCredit)}</td>
+                    <tr className="border-t border-line-strong bg-surface-muted/60 font-bold text-ink">
+                        <td colSpan={4}>{t("grandTotal")}</td>
+                        <td className="text-end tabular-nums">{formatIDR(grandDebit)}</td>
+                        <td className="text-end tabular-nums">{formatIDR(grandCredit)}</td>
                     </tr>
                 )}
             </DataTable>

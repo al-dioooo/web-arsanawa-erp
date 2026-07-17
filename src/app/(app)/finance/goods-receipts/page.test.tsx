@@ -20,6 +20,25 @@ vi.mock("@/features/finance/api-goods-receipt", async (importOriginal) => {
     return { ...actual, useGoodsReceipts: vi.fn() }
 })
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, unknown>) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.goodsReceipts.filters.status.label": "Status",
+            "finance.goodsReceipts.filters.status.received": "Received",
+            "finance.goodsReceipts.pendingApLink": "Pending AP Link",
+            "finance.goodsReceipts.billRef": "Bill #{id}",
+        }
+        const label = labels[fullKey] ?? fullKey
+        return values
+            ? Object.entries(values).reduce(
+                  (text, [name, value]) => text.replace(`{${name}}`, String(value)),
+                  label,
+              )
+            : label
+    },
+}))
+
 function mockReceipts(receipts: GoodsReceipt[]) {
     vi.mocked(useGoodsReceipts).mockReturnValue({
         data: receipts,

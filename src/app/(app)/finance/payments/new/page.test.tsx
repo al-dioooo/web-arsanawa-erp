@@ -19,6 +19,23 @@ vi.mock("sonner", () => ({
     },
 }))
 
+// Labels the test interacts with, mirroring messages/id.json.
+const labels: Record<string, string> = {
+    "finance.payments.form.vendor": "Vendor (Supplier)",
+    "finance.payments.form.paidFrom": "Dibayar Dari (Kas & Bank)",
+    "finance.payments.form.amount": "Jumlah Dibayar",
+    "finance.payments.form.allocationFor": "Alokasi untuk {number}",
+    "finance.payments.form.draft": "Draf Pembayaran",
+}
+
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, string | number>) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const template = labels[fullKey] ?? fullKey
+        return template.replace(/\{(\w+)\}/g, (match, token) => String(values?.[token] ?? match))
+    },
+}))
+
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: () => ({
         activeCompanyId: 1,
@@ -115,16 +132,16 @@ describe("new outgoing payment page", () => {
 
         fireEvent.focus(screen.getByLabelText("Vendor (Supplier)"))
         fireEvent.click(screen.getByText("Supplier Inc"))
-        fireEvent.focus(screen.getByLabelText("Paid From (Kas & Bank)"))
+        fireEvent.focus(screen.getByLabelText("Dibayar Dari (Kas & Bank)"))
         fireEvent.click(screen.getByText("1-1010 - Cash in Bank"))
-        fireEvent.change(screen.getByLabelText("Amount Paid"), { target: { value: "750" } })
+        fireEvent.change(screen.getByLabelText("Jumlah Dibayar"), { target: { value: "750" } })
 
-        const allocationInput = screen.getByLabelText("Allocation for BILL-001")
+        const allocationInput = screen.getByLabelText("Alokasi untuk BILL-001")
         fireEvent.change(allocationInput, { target: { value: "500" } })
 
         expect(allocationInput).toHaveValue(500)
 
-        fireEvent.click(screen.getByRole("button", { name: "Draft Payment" }))
+        fireEvent.click(screen.getByRole("button", { name: "Draf Pembayaran" }))
 
         await waitFor(() => expect(mutate).toHaveBeenCalled())
         expect(mutate).toHaveBeenCalledWith(
