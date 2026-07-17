@@ -65,55 +65,22 @@
     font-style: normal;
 }
 
-:root {
-    /* shadcn mappings to Arsanawa */
-    --background: var(--color-navy-50);
-    --foreground: var(--color-navy-900);
-
-    --card: var(--color-white);
-    --card-foreground: var(--color-navy-900);
-
-    --popover: var(--color-white);
-    --popover-foreground: var(--color-navy-900);
-
-    --primary: var(--color-teal-700);
-    --primary-foreground: var(--color-white);
-
-    --secondary: var(--color-navy-100);
-    --secondary-foreground: var(--color-navy-900);
-
-    --muted: var(--color-navy-50);
-    --muted-foreground: var(--color-navy-500);
-
-    --accent: var(--color-orange-500);
-    --accent-foreground: var(--color-white);
-
-    --destructive: var(--color-error);
-    --destructive-foreground: var(--color-white);
-
-    --border: var(--color-navy-100);
-    --input: var(--color-navy-100);
-    --ring: var(--color-teal-700);
-
-    --radius: 12px;
-
-    --sidebar: var(--color-white);
-    --sidebar-foreground: var(--color-navy-700);
-    --sidebar-primary: var(--color-teal-700);
-    --sidebar-primary-foreground: var(--color-white);
-    --sidebar-accent: var(--color-navy-50);
-    --sidebar-accent-foreground: var(--color-teal-700);
-    --sidebar-border: var(--color-navy-100);
-    --sidebar-ring: var(--color-teal-700);
-}
+/*
+ * ─── Token architecture ──────────────────────────────────────────────
+ * Two tiers, per the Arsanawa Design System (design-system/project/):
+ *
+ * 1. RAW ramps (@theme, static): brand color scales that never change
+ *    between themes. Shades marked "interpolated" fill gaps between the
+ *    design-system anchors for utilities already in use.
+ * 2. SEMANTIC vars (:root / .dark, exposed via @theme inline): the only
+ *    tokens that flip in dark mode — surfaces, ink (text), lines,
+ *    brand roles, shadows. `src/components/ui/**` must style with
+ *    semantic utilities only (bg-surface, text-ink, border-line, …);
+ *    raw ramps are for intentional, theme-stable brand moments.
+ */
 
 @theme {
-    /*
-     * Brand color scales. These MUST live in @theme (not :root): Tailwind v4
-     * only generates `bg-navy-50`-style utilities for colors declared here.
-     * Shades marked "interpolated" fill gaps in the original brand ramp that
-     * components already reference.
-     */
+    /* Primary — Teal */
     --color-teal-50: #e6f6f8; /* interpolated */
     --color-teal-100: #cdeef2;
     --color-teal-200: #93cfd8; /* interpolated */
@@ -125,6 +92,7 @@
     --color-teal-800: #084c58; /* interpolated */
     --color-teal-900: #063d47;
 
+    /* Accent — Coral Orange */
     --color-orange-50: #fef3ef; /* interpolated */
     --color-orange-100: #fde8df;
     --color-orange-200: #fbc8b4; /* interpolated */
@@ -135,48 +103,222 @@
     --color-orange-700: #d9522a;
     --color-orange-900: #a33d1f; /* interpolated */
 
+    /* Accent — Warm Yellow */
     --color-yellow-100: #fef3d8;
     --color-yellow-300: #fdd892;
     --color-yellow-500: #fbbe57;
     --color-yellow-700: #c97a0a;
 
+    /* Neutral — Warm Cream (marketing/brand surfaces) */
     --color-cream-100: #fffaf7;
     --color-cream-200: #fcf5f0;
     --color-cream-500: #d4a898;
     --color-cream-700: #a37565;
     --color-cream-900: #6b5044;
 
-    --color-navy-50: #fafafa;
-    --color-navy-100: #f5f5f5;
-    --color-navy-200: #e5e5e5;
-    --color-navy-300: #d4d4d4;
-    --color-navy-400: #a3a3a3;
-    --color-navy-450: #8c8c8c;
-    --color-navy-500: #737373;
-    --color-navy-600: #525252;
-    --color-navy-700: #404040;
-    --color-navy-800: #262626;
-    --color-navy-850: #202020;
-    --color-navy-900: #171717;
-    --color-navy-950: #0a0a0a;
+    /* App neutrals — blue navy ramp (design-system anchors + interpolated) */
+    --color-navy-50: #f4f7fe; /* DS: app background */
+    --color-navy-100: #e9edf7; /* DS: dividers */
+    --color-navy-200: #c9d2e9; /* interpolated */
+    --color-navy-300: #a3aed0; /* DS: labels */
+    --color-navy-400: #8a97bf; /* interpolated */
+    --color-navy-450: #7d8ab6; /* interpolated */
+    --color-navy-500: #707eae; /* DS: muted/body */
+    --color-navy-600: #4d5a8f; /* interpolated */
+    --color-navy-700: #2b3674; /* DS */
+    --color-navy-800: #232d67; /* interpolated */
+    --color-navy-900: #1b2559; /* DS: headings */
+    --color-navy-950: #141b40; /* interpolated */
 
+    /* Status */
     --color-success: #84cc16;
     --color-error: #ef4444;
     --color-warning: #fbbe57;
     --color-white: #ffffff;
     --color-black: #000000;
 
-    /* Semantic status surfaces (soft bg / border / strong text) for pills */
-    --color-success-soft: #ecfdf5;
-    --color-success-border: #a7f3d0;
-    --color-success-strong: #065f46;
-    --color-warning-soft: #fffbeb;
-    --color-warning-border: #fde68a;
-    --color-warning-strong: #92400e;
-    --color-error-soft: #fff1f2;
-    --color-error-border: #fecdd3;
-    --color-error-strong: #9f1239;
+    /* Radii — design-system scale.
+       --radius-xl is held at 16px and --radius-2xl pinned to 20px until the
+       page migration rewrites legacy rounded-2xl cards to rounded-lg; then
+       xl flips to the DS 32px and the 2xl compat alias is retired. */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 16px;
+    --radius-2xl: 20px;
+    --radius-pill: 9999px;
 
+    /* Typography */
+    --font-brand: "Acorn", Georgia, serif;
+    --font-display: "Poppins", system-ui, sans-serif;
+    --font-ui: "Poppins", system-ui, sans-serif;
+    --font-body: "Poppins", system-ui, sans-serif;
+    --font-sans: "Poppins", system-ui, sans-serif;
+
+    /* Motion — gentle, non-bouncy (see src/lib/motion.ts for the JS mirror) */
+    --ease-out-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --ease-in-soft: cubic-bezier(0.4, 0, 1, 1);
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --default-transition-duration: 150ms;
+    --default-transition-timing-function: var(--ease-standard);
+}
+
+/* ─── Semantic layer (theme-flipping) ───────────────────────────────── */
+
+:root {
+    /* Surfaces */
+    --canvas: var(--color-navy-50);
+    --surface: var(--color-white);
+    --surface-raised: var(--color-white);
+    --surface-muted: var(--color-navy-50);
+    --overlay: rgb(27 37 89 / 0.45);
+
+    /* Ink (text ramp) */
+    --ink: var(--color-navy-900);
+    --ink-secondary: var(--color-navy-700);
+    --ink-muted: var(--color-navy-500);
+    --ink-faint: var(--color-navy-300);
+
+    /* Lines */
+    --line: var(--color-navy-100);
+    --line-strong: var(--color-navy-200);
+
+    /* Brand roles */
+    --brand: var(--color-teal-700);
+    --brand-hover: var(--color-teal-900);
+    --brand-soft: var(--color-teal-100);
+    --brand-ink: var(--color-teal-700);
+
+    /* Status surfaces (soft bg / strong text for pills) */
+    --status-success-soft: #f0fdf4;
+    --status-success-strong: #15803d;
+    --status-warning-soft: var(--color-yellow-100);
+    --status-warning-strong: var(--color-yellow-700);
+    --status-error-soft: #fef2f2;
+    --status-error-strong: #b91c1c;
+
+    /* Elevation — soft periwinkle shadows per design system */
+    --sh-card: 0 4px 24px 0 rgb(163 174 208 / 0.2);
+    --sh-card-hover: 0 8px 32px 0 rgb(163 174 208 / 0.35);
+    --sh-accent: 8px 8px 0 0 rgb(163 174 208 / 0.4);
+    --skeleton: var(--color-navy-100);
+
+    color-scheme: light;
+
+    /* shadcn compatibility aliases — re-pointed at the semantic layer so
+       bg-background / text-foreground / border-border flip with the theme */
+    --background: var(--canvas);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--surface-raised);
+    --popover-foreground: var(--ink);
+    --primary: var(--brand);
+    --primary-foreground: var(--color-white);
+    --secondary: var(--surface-muted);
+    --secondary-foreground: var(--ink);
+    --muted: var(--surface-muted);
+    --muted-foreground: var(--ink-muted);
+    --accent: var(--color-orange-500);
+    --accent-foreground: var(--color-white);
+    --destructive: var(--color-error);
+    --destructive-foreground: var(--color-white);
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--brand);
+
+    --radius: 12px;
+
+    --sidebar: var(--surface);
+    --sidebar-foreground: var(--ink-secondary);
+    --sidebar-primary: var(--brand);
+    --sidebar-primary-foreground: var(--color-white);
+    --sidebar-accent: var(--surface-muted);
+    --sidebar-accent-foreground: var(--brand-ink);
+    --sidebar-border: var(--line);
+    --sidebar-ring: var(--brand);
+
+    /* Legacy status-pill borders — removed with the Phase-2 pill restyle */
+    --legacy-success-border: #a7f3d0;
+    --legacy-warning-border: #fde68a;
+    --legacy-error-border: #fecdd3;
+}
+
+.dark {
+    --canvas: #0b1437;
+    --surface: #111c44;
+    --surface-raised: #1b2559;
+    --surface-muted: rgb(233 237 247 / 0.06);
+    --overlay: rgb(4 8 25 / 0.6);
+
+    --ink: #ffffff;
+    --ink-secondary: var(--color-navy-100);
+    --ink-muted: var(--color-navy-300);
+    --ink-faint: var(--color-navy-500);
+
+    --line: rgb(163 174 208 / 0.16);
+    --line-strong: rgb(163 174 208 / 0.28);
+
+    --brand: var(--color-teal-500);
+    --brand-hover: var(--color-teal-400);
+    --brand-soft: rgb(19 125 144 / 0.22);
+    --brand-ink: var(--color-teal-300);
+
+    --status-success-soft: rgb(132 204 22 / 0.14);
+    --status-success-strong: #a3e635;
+    --status-warning-soft: rgb(251 190 87 / 0.14);
+    --status-warning-strong: var(--color-yellow-500);
+    --status-error-soft: rgb(239 68 68 / 0.14);
+    --status-error-strong: #f87171;
+
+    --sh-card: 0 4px 24px 0 rgb(0 0 0 / 0.35);
+    --sh-card-hover: 0 8px 32px 0 rgb(0 0 0 / 0.5);
+    --sh-accent: 8px 8px 0 0 rgb(0 0 0 / 0.4);
+    --skeleton: rgb(163 174 208 / 0.15);
+
+    color-scheme: dark;
+}
+
+/* Expose semantic vars as utilities (bg-surface, text-ink, shadow-card, …).
+   `inline` makes utilities carry the var() reference, so they flip with .dark */
+@theme inline {
+    --color-canvas: var(--canvas);
+    --color-surface: var(--surface);
+    --color-surface-raised: var(--surface-raised);
+    --color-surface-muted: var(--surface-muted);
+    --color-overlay: var(--overlay);
+
+    --color-ink: var(--ink);
+    --color-ink-secondary: var(--ink-secondary);
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-faint: var(--ink-faint);
+
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+
+    --color-brand: var(--brand);
+    --color-brand-hover: var(--brand-hover);
+    --color-brand-soft: var(--brand-soft);
+    --color-brand-ink: var(--brand-ink);
+
+    --color-success-soft: var(--status-success-soft);
+    --color-success-strong: var(--status-success-strong);
+    --color-warning-soft: var(--status-warning-soft);
+    --color-warning-strong: var(--status-warning-strong);
+    --color-error-soft: var(--status-error-soft);
+    --color-error-strong: var(--status-error-strong);
+    --color-success-border: var(--legacy-success-border);
+    --color-warning-border: var(--legacy-warning-border);
+    --color-error-border: var(--legacy-error-border);
+
+    --color-skeleton: var(--skeleton);
+
+    --shadow-card: var(--sh-card);
+    --shadow-card-hover: var(--sh-card-hover);
+    --shadow-accent: var(--sh-accent);
+
+    /* shadcn utility bridge */
+    --font-heading: var(--font-sans);
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);
@@ -196,23 +338,64 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
-
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 20px;
-    --radius-xl: 32px;
-    --radius-pill: 9999px;
-
-    --font-brand: "Acorn", Georgia, serif;
-    --font-display: "Poppins", system-ui, sans-serif;
-    --font-ui: "Poppins", system-ui, sans-serif;
-    --font-body: "Poppins", system-ui, sans-serif;
-    --font-sans: "Poppins", system-ui, sans-serif;
-
-    --shadow-card: none;
-    --shadow-card-hover: none;
-    --shadow-accent: none;
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* ─── Type roles (one class per text role, design-system spec) ──────── */
+
+@utility type-page-title {
+    font-family: var(--font-brand);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--ink);
+}
+
+@utility type-eyebrow {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+    color: var(--ink-faint);
+}
+
+@utility type-section {
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+    color: var(--ink);
+}
+
+@utility type-card-label {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+    color: var(--ink-faint);
+}
+
+@utility type-card-value {
+    font-family: var(--font-ui);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--ink);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────── */
 
 body {
     font-family: var(--font-ui);
@@ -229,44 +412,6 @@ textarea {
     font: inherit;
 }
 
-@theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
-}
-
 @layer base {
     * {
         @apply border-border outline-ring/50;
@@ -280,6 +425,24 @@ textarea {
 }
 
 @media print {
+    /* Invoices and receipts always print light, even in dark mode */
+    :root,
+    .dark {
+        --canvas: #ffffff;
+        --surface: #ffffff;
+        --surface-raised: #ffffff;
+        --surface-muted: #f4f7fe;
+        --ink: #1b2559;
+        --ink-secondary: #2b3674;
+        --ink-muted: #707eae;
+        --ink-faint: #a3aed0;
+        --line: #e9edf7;
+        --line-strong: #c9d2e9;
+        --sh-card: none;
+        --sh-card-hover: none;
+        color-scheme: light;
+    }
+
     body {
         background: #ffffff;
     }

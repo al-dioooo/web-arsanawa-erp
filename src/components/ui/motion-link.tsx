@@ -1,9 +1,10 @@
 "use client"
 
 import Link, { type LinkProps } from "next/link"
-import { motion, useReducedMotion } from "motion/react"
+import { m, useReducedMotion } from "motion/react"
 import type { AnchorHTMLAttributes, ReactNode } from "react"
 import { Icon } from "@/components/ui/icon"
+import { SPRING } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 type MotionLinkItemProps = LinkProps &
@@ -23,10 +24,10 @@ export function MotionLinkItem({
     const shouldReduceMotion = useReducedMotion()
 
     return (
-        <motion.div
+        <m.div
             whileHover={shouldReduceMotion ? undefined : { y: -2, scale: 1.01 }}
             whileTap={shouldReduceMotion ? undefined : { y: 0, scale: 0.985 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.6 }}
+            transition={SPRING.hover}
         >
             <Link
                 data-motion-control="link-item"
@@ -42,6 +43,6 @@ export function MotionLinkItem({
                 </span>
                 {children ? <span className="mt-3 text-xs leading-relaxed text-navy-500">{children}</span> : null}
             </Link>
-        </motion.div>
+        </m.div>
     )
 }

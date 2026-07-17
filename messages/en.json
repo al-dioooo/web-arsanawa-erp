@@ -43,7 +43,11 @@
         "goToConsole": "Go to Console",
         "profileSettings": "Profile Settings",
         "platformSettings": "Platform Settings",
-        "signOut": "Sign out"
+        "signOut": "Sign out",
+        "appearance": "Appearance",
+        "themeLight": "Light",
+        "themeSystem": "System",
+        "themeDark": "Dark"
     },
     "console": {
         "eyebrow": "Console",

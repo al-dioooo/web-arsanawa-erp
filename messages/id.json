@@ -43,7 +43,11 @@
         "goToConsole": "Ke Konsol",
         "profileSettings": "Pengaturan Profil",
         "platformSettings": "Pengaturan Platform",
-        "signOut": "Keluar"
+        "signOut": "Keluar",
+        "appearance": "Tampilan",
+        "themeLight": "Terang",
+        "themeSystem": "Sistem",
+        "themeDark": "Gelap"
     },
     "console": {
         "eyebrow": "Konsol",

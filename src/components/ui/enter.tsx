@@ -1,11 +1,12 @@
 "use client"
 
-import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react"
+import { m, useReducedMotion, type HTMLMotionProps } from "motion/react"
 import type { ElementType } from "react"
+import { DUR, EASE } from "@/lib/motion"
 
 const MOTION_TAGS = {
-    div: motion.div,
-    form: motion.form,
+    div: m.div,
+    form: m.form,
 } as const
 
 type EnterTag = keyof typeof MOTION_TAGS
@@ -56,7 +57,7 @@ export function EnterTransition<T extends EnterTag = "div">({
     distance = 8,
     fade = true,
     scale = 1,
-    duration = 0.15,
+    duration = DUR.fast,
     ...props
 }: EnterTransitionProps<T>) {
     const shouldReduceMotion = useReducedMotion()
@@ -81,7 +82,7 @@ export function EnterTransition<T extends EnterTag = "div">({
         <Component
             initial={initial}
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-            transition={{ duration, ease: "easeOut" }}
+            transition={{ duration, ease: EASE.out }}
             {...props}
         />
     )

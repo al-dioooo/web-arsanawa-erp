@@ -9,22 +9,18 @@ import {
 } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "motion/react"
+import { AnimatePresence, m } from "motion/react"
 import { Icon } from "@/components/ui/icon"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
+import { SPRING, transitions } from "@/lib/motion"
 import { useCommandPalette } from "@/lib/search/command-palette-context"
 import { searchRegistry, searchGroups, type SearchItem } from "@/lib/search/registry"
 import { cn } from "@/lib/utils"
 
-// ── Spring presets ────────────────────────────────────────────────────────────
+// ── Motion presets (shared tokens) ────────────────────────────────────────────
 
-const BACKDROP_TRANSITION = { duration: 0.18, ease: [0.4, 0, 0.2, 1] } as const
-const PANEL_TRANSITION = {
-    type: "spring",
-    stiffness: 420,
-    damping: 34,
-    mass: 0.7,
-} as const
+const BACKDROP_TRANSITION = transitions.backdrop
+const PANEL_TRANSITION = SPRING.panel
 
 // ── Filtering ─────────────────────────────────────────────────────────────────
 
@@ -306,13 +302,13 @@ export function CommandPalette() {
             {isOpen && (
                 <>
                     {/* Backdrop */}
-                    <motion.div
+                    <m.div
                         key="cmd-backdrop"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={BACKDROP_TRANSITION}
-                        className="fixed inset-0 z-50 bg-navy-900/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 bg-overlay backdrop-blur-sm"
                         aria-hidden="true"
                         onClick={close}
                     />
@@ -325,16 +321,16 @@ export function CommandPalette() {
                         className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh] pointer-events-none"
                     >
                         {/* Animated panel */}
-                        <motion.div
+                        <m.div
                             key="cmd-panel"
                             initial={{ opacity: 0, scale: 0.97, y: -12 }}
                             animate={{ opacity: 1, scale: 1,    y: 0 }}
                             exit={{    opacity: 0, scale: 0.97, y: -12 }}
                             transition={PANEL_TRANSITION}
-                            className="w-full max-w-[640px] pointer-events-auto origin-top overflow-hidden rounded-2xl border border-navy-100 bg-white shadow-2xl"
+                            className="w-full max-w-[640px] pointer-events-auto origin-top overflow-hidden rounded-lg bg-surface-raised shadow-card-hover"
                         >
                             <CommandPalettePanel onClose={close} />
-                        </motion.div>
+                        </m.div>
                     </div>
                 </>
             )}

@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ThemeProvider } from "next-themes"
+import { LazyMotion, MotionConfig, domAnimation } from "motion/react"
 import { SessionProvider } from "@/features/auth/session-provider"
 import { CommandPaletteProvider } from "@/lib/search/command-palette-context"
 import { CommandPalette } from "@/components/command-palette/command-palette"
@@ -31,32 +33,45 @@ export function Providers({ children }: { children: React.ReactNode }) {
     )
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <SessionProvider>
-                <CommandPaletteProvider>
-                    {children}
-                    <CommandPalette />
-                    <Toaster
-                        position="bottom-left"
-                        expand
-                        visibleToasts={4}
-                        offset={{ left: 24, bottom: 24 }}
-                        mobileOffset={{ left: 16, bottom: 16 }}
-                        style={{ zIndex: 2147483647 }}
-                        richColors
-                        toastOptions={{
-                            style: { zIndex: 2147483647 },
-                            classNames: {
-                                toast: "border border-navy-100 bg-white text-navy-900 shadow-2xl",
-                                title: "font-display text-sm font-bold",
-                                description: "font-body text-xs text-navy-500",
-                                actionButton: "bg-teal-700 text-white",
-                                cancelButton: "bg-navy-100 text-navy-700",
-                            },
-                        }}
-                    />
-                </CommandPaletteProvider>
-            </SessionProvider>
-        </QueryClientProvider>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            storageKey="arsanawa-theme"
+            disableTransitionOnChange
+        >
+            <LazyMotion features={domAnimation} strict>
+                <MotionConfig reducedMotion="user">
+                    <QueryClientProvider client={queryClient}>
+                        <SessionProvider>
+                            <CommandPaletteProvider>
+                                {children}
+                                <CommandPalette />
+                                <Toaster
+                                    position="bottom-left"
+                                    expand
+                                    visibleToasts={4}
+                                    duration={4000}
+                                    gap={8}
+                                    offset={{ left: 24, bottom: 24 }}
+                                    mobileOffset={{ left: 16, bottom: 16 }}
+                                    style={{ zIndex: 2147483647 }}
+                                    toastOptions={{
+                                        style: { zIndex: 2147483647 },
+                                        classNames: {
+                                            toast: "border-none bg-surface-raised text-ink shadow-card-hover",
+                                            title: "font-display text-sm font-bold",
+                                            description: "font-body text-xs text-ink-muted",
+                                            actionButton: "bg-brand text-white",
+                                            cancelButton: "bg-surface-muted text-ink-secondary",
+                                        },
+                                    }}
+                                />
+                            </CommandPaletteProvider>
+                        </SessionProvider>
+                    </QueryClientProvider>
+                </MotionConfig>
+            </LazyMotion>
+        </ThemeProvider>
     )
 }
