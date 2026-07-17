@@ -190,11 +190,13 @@ export function ProductVariantManager({
 
                 <DataTable columns={["SKU", "Name", "Barcode", "Status", "Actions"]}>
                     {isLoading && variants.length === 0 ? (
-                        <tr>
-                            <td colSpan={5} className="px-5 py-6 text-center text-sm text-navy-400">
-                                Loading variants...
-                            </td>
-                        </tr>
+                        Array.from({ length: 3 }).map((_, row) => (
+                            <tr key={row} aria-hidden="true">
+                                {Array.from({ length: 5 }).map((__, cell) => (
+                                    <td key={cell} className="px-5 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                                ))}
+                            </tr>
+                        ))
                     ) : variants.length === 0 ? (
                         <tr>
                             <td colSpan={5} className="px-5 py-6 text-center text-sm text-navy-400">
