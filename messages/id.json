@@ -138,6 +138,30 @@
             "tokenCleared": "Token dihapus."
         }
     },
+    "inventory": {
+        "nav": {
+            "product": "PRODUK",
+            "variants": "VARIAN",
+            "stockMovement": "PERGERAKAN STOK",
+            "operations": "OPERASIONAL",
+            "products": "Produk",
+            "categories": "Kategori Produk",
+            "brands": "Merek Produk",
+            "unitsOfMeasure": "Satuan Ukur",
+            "productUnits": "Satuan Produk",
+            "variantGroups": "Daftar Grup Varian",
+            "variantList": "Daftar Varian",
+            "stockOverview": "Ringkasan Stok",
+            "stockLots": "Lot Stok",
+            "movements": "Buku Pergerakan",
+            "newReceipt": "Penerimaan Baru",
+            "newIssue": "Pengeluaran Baru",
+            "newAdjustment": "Penyesuaian Baru",
+            "newTransfer": "Transfer Baru",
+            "pricing": "Harga",
+            "promotions": "Promosi"
+        }
+    },
     "finance": {
         "nav": {
             "transactions": "TRANSAKSI",

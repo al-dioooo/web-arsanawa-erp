@@ -138,6 +138,30 @@
             "tokenCleared": "Token cleared."
         }
     },
+    "inventory": {
+        "nav": {
+            "product": "PRODUCT",
+            "variants": "VARIANTS",
+            "stockMovement": "STOCK MOVEMENT",
+            "operations": "OPERATIONS",
+            "products": "Products",
+            "categories": "Product Categories",
+            "brands": "Product Brands",
+            "unitsOfMeasure": "Units of Measure",
+            "productUnits": "Product Units",
+            "variantGroups": "Variant Group List",
+            "variantList": "Variant List",
+            "stockOverview": "Stock Overview",
+            "stockLots": "Stock Lots",
+            "movements": "Movement Ledger",
+            "newReceipt": "New Receipt",
+            "newIssue": "New Issue",
+            "newAdjustment": "New Adjustment",
+            "newTransfer": "New Transfer",
+            "pricing": "Pricing",
+            "promotions": "Promotions"
+        }
+    },
     "finance": {
         "nav": {
             "transactions": "TRANSACTIONS",
