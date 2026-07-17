@@ -1,5 +1,8 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+
+import { useSession } from "@/features/auth/session-provider";
 import { ApiError, apiBaseUrl, apiRequest, jsonBody } from "@/lib/api-client";
 import type {
     Brand,
@@ -140,6 +143,27 @@ export async function loadInventoryDashboardSummary(options: InventoryRequestOpt
     )
 
     return response.data
+}
+
+/**
+ * Canonical dashboard-summary query, shared by the inventory dashboard and
+ * the home widgets (re-exported from `@/features/home/home-api`). `enabled`
+ * layers the module entitlement on top of session readiness so widgets for
+ * disabled modules never fire a request.
+ */
+export function useInventoryDashboardSummary(enabled: boolean) {
+    const { token, activeCompanyId } = useSession()
+
+    return useQuery({
+        queryKey: ["inventory", "dashboard", activeCompanyId],
+        queryFn: () => {
+            if (!token || !activeCompanyId) {
+                throw new Error("Missing session context.")
+            }
+            return loadInventoryDashboardSummary({ token, companyId: activeCompanyId })
+        },
+        enabled: enabled && Boolean(token) && Boolean(activeCompanyId),
+    })
 }
 
 export async function loadStockSnapshot(

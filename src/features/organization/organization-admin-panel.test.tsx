@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { NextIntlClientProvider } from "next-intl"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import messages from "../../../messages/en.json"
 import { OrganizationAdminPanel } from "@/features/organization/organization-admin-panel"
 import {
     useAssignBranchRole,
@@ -24,6 +26,27 @@ vi.mock("@/features/organization/organization-api", () => ({
     useAssignBranchRole: vi.fn(),
     useRevokeBranchRole: vi.fn(),
 }))
+
+function renderPanel() {
+    return render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+            <OrganizationAdminPanel
+                companyId={1}
+                canManage
+                branches={[
+                    {
+                        id: 1,
+                        company_id: 1,
+                        name: "Main",
+                        code: "MAIN",
+                        is_primary: true,
+                        status: "active",
+                    },
+                ]}
+            />
+        </NextIntlClientProvider>,
+    )
+}
 
 const createRole = vi.fn()
 const updateRole = vi.fn()
@@ -129,22 +152,7 @@ describe("OrganizationAdminPanel", () => {
     })
 
     it("surfaces memberships, roles, and permission-backed role creation", async () => {
-        render(
-            <OrganizationAdminPanel
-                companyId={1}
-                canManage
-                branches={[
-                    {
-                        id: 1,
-                        company_id: 1,
-                        name: "Main",
-                        code: "MAIN",
-                        is_primary: true,
-                        status: "active",
-                    },
-                ]}
-            />,
-        )
+        renderPanel()
 
         expect(screen.getAllByText("Alice Evergarden").length).toBeGreaterThan(0)
         expect(screen.getAllByText("company-owner").length).toBeGreaterThan(0)
@@ -181,22 +189,7 @@ describe("OrganizationAdminPanel", () => {
     })
 
     it("prefills and updates an existing custom role", async () => {
-        render(
-            <OrganizationAdminPanel
-                companyId={1}
-                canManage
-                branches={[
-                    {
-                        id: 1,
-                        company_id: 1,
-                        name: "Main",
-                        code: "MAIN",
-                        is_primary: true,
-                        status: "active",
-                    },
-                ]}
-            />,
-        )
+        renderPanel()
 
         fireEvent.click(screen.getByRole("button", { name: "Edit" }))
 
@@ -227,22 +220,7 @@ describe("OrganizationAdminPanel", () => {
     })
 
     it("cancel leaves the role unchanged", () => {
-        render(
-            <OrganizationAdminPanel
-                companyId={1}
-                canManage
-                branches={[
-                    {
-                        id: 1,
-                        company_id: 1,
-                        name: "Main",
-                        code: "MAIN",
-                        is_primary: true,
-                        status: "active",
-                    },
-                ]}
-            />,
-        )
+        renderPanel()
 
         fireEvent.click(screen.getByRole("button", { name: "Edit" }))
         expect(screen.getByLabelText("Role name")).toHaveValue("stock-supervisor")

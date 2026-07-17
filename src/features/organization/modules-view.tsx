@@ -1,14 +1,17 @@
 "use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
 import { StatusPill } from "@/components/ui/status-pill"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Icon } from "@/components/ui/icon"
-import { PageHeaderShell } from "@/components/ui/page-header-shell"
+import { PageHeader } from "@/components/ui/page-header"
 import { moduleRegistry } from "@/lib/modules/registry"
 
 export function ModulesView() {
+    const t = useTranslations("organization.modules")
     const {
         activeCompanyId,
         companies,
@@ -51,61 +54,75 @@ export function ModulesView() {
 
     return (
         <div className="grid gap-6">
-            <PageHeaderShell
-                eyebrow="Module Manager"
-                title={activeCompany ? `${activeCompany.company.name} Modules` : "Select a company context"}
-                subtitle="Enable or disable core business modules for this company. Enabling a module grants access to authorized memberships."
+            <PageHeader
+                eyebrow={t("eyebrow")}
+                title={
+                    activeCompany
+                        ? t("title", { company: activeCompany.company.name })
+                        : t("fallbackTitle")
+                }
+                subtitle={t("subtitle")}
+                className="mb-0"
             />
             {error ? (
-                <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+                <div className="rounded-md bg-error-soft px-4 py-3 text-sm font-medium text-error-strong">
                     {error}
                 </div>
             ) : null}
 
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <h2 className="text-lg font-bold text-navy-900 font-display mb-6">Available Modules</h2>
-                
+            <Card as="section" padding="lg">
+                <h2 className="type-section mb-6">{t("availableTitle")}</h2>
+
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {moduleRegistry.map((moduleEntry) => {
                         const enabled = entitlementMap.get(moduleEntry.key)?.is_enabled ?? false
 
                         return (
-                            <article key={moduleEntry.key} className="flex flex-col justify-between rounded-xl border border-navy-100 bg-navy-50/20 p-5 transition-all hover:border-navy-200">
+                            <Card
+                                as="article"
+                                inset
+                                key={moduleEntry.key}
+                                className="flex flex-col justify-between"
+                            >
                                 <div>
                                     <div className="flex items-start justify-between gap-3">
                                         <div
-                                            className="flex h-11 w-11 items-center justify-center rounded-xl font-brand text-lg"
+                                            className="flex h-11 w-11 items-center justify-center rounded-md font-brand text-lg"
                                             style={{ backgroundColor: `${moduleEntry.accentColor}15`, color: moduleEntry.accentColor }}
                                         >
                                             <Icon name={moduleEntry.icon} className="text-xl" />
                                         </div>
                                         <StatusPill tone={enabled ? "green" : "neutral"}>
-                                            {enabled ? "Active" : "Disabled"}
+                                            {enabled ? t("active") : t("disabled")}
                                         </StatusPill>
                                     </div>
-                                    <h3 className="mt-4 text-base font-bold text-navy-900 leading-tight">
+                                    <h3 className="mt-4 text-base font-bold leading-tight text-ink">
                                         {moduleEntry.label}
                                     </h3>
-                                    <p className="mt-2 text-xs leading-relaxed text-navy-500 font-body">
-                                        Manage {moduleEntry.label.toLowerCase()} operations, analytics, and tenant database mappings.
+                                    <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+                                        {t("description", { module: moduleEntry.label.toLowerCase() })}
                                     </p>
                                 </div>
-                                
+
                                 <Button
                                     type="button"
                                     variant={enabled ? "outline" : "default"}
-                                    className="mt-6 w-full cursor-pointer"
-                                    aria-label={`${enabled ? "Disable" : "Enable"} ${moduleEntry.label} module`}
+                                    className="mt-6 w-full"
+                                    aria-label={
+                                        enabled
+                                            ? t("disableAria", { module: moduleEntry.label })
+                                            : t("enableAria", { module: moduleEntry.label })
+                                    }
                                     disabled={!activeCompanyId || isLoading}
                                     onClick={() => toggleModule(moduleEntry.key, !enabled)}
                                 >
-                                    {enabled ? "Disable Module" : "Enable Module"}
+                                    {enabled ? t("disable") : t("enable")}
                                 </Button>
-                            </article>
+                            </Card>
                         )
                     })}
                 </div>
-            </section>
+            </Card>
         </div>
     )
 }

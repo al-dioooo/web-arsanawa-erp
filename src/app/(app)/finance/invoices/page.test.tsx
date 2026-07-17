@@ -19,6 +19,18 @@ vi.mock("@/features/finance/api-invoices", () => ({
     useInvoices: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.invoices.filters.from": "Invoice Date From",
+            "finance.invoices.filters.to": "Invoice Date To",
+            "finance.invoices.empty": "No invoices found. Create one to get started.",
+        }
+        return labels[fullKey] ?? fullKey
+    },
+}))
+
 describe("finance invoices page", () => {
     it("passes invoice date range filters to the invoices API hook", () => {
         vi.mocked(useInvoices).mockReturnValue({
@@ -28,10 +40,10 @@ describe("finance invoices page", () => {
 
         render(<InvoicesPage />)
 
-        fireEvent.change(screen.getByLabelText("Invoice date from"), {
+        fireEvent.change(screen.getByLabelText("Invoice Date From"), {
             target: { value: "2026-06-01" },
         })
-        fireEvent.change(screen.getByLabelText("Invoice date to"), {
+        fireEvent.change(screen.getByLabelText("Invoice Date To"), {
             target: { value: "2026-06-30" },
         })
 

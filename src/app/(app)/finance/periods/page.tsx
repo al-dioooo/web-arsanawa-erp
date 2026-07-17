@@ -1,19 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import { useTranslations } from "next-intl"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Field } from "@/components/ui/field"
+import { Modal } from "@/components/ui/modal"
+import { PageHeader } from "@/components/ui/page-header"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { usePeriods, useCreatePeriod, useClosePeriod, useReopenPeriod } from "@/features/finance/api"
-import { EnterTransition } from "@/components/ui/enter"
-import { Icon } from "@/components/ui/icon"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { DatePicker } from "@/components/ui/date-picker"
-import { useForm, Controller } from "react-hook-form"
-import { toast } from "sonner"
 import { formatDateID } from "@/lib/format"
 
 type PeriodFormData = {
@@ -23,27 +25,43 @@ type PeriodFormData = {
 }
 
 export default function PeriodsPage() {
+    const t = useTranslations("finance.periods")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const { data: periods = [], isLoading } = usePeriods(activeCompanyId)
     const closePeriod = useClosePeriod()
     const reopenPeriod = useReopenPeriod()
+    const [confirm, confirmDialog] = useConfirm()
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-    const handleClose = (id: number) => {
-        if (confirm("Are you sure you want to close this accounting period?")) {
+    const handleClose = async (id: number) => {
+        const ok = await confirm({
+            title: t("closeConfirm.title"),
+            message: t("closeConfirm.message"),
+            confirmLabel: t("close"),
+            cancelLabel: tCommon("cancel"),
+            danger: true,
+        })
+        if (ok) {
             closePeriod.mutate(id, {
-                onSuccess: () => toast.success("Period closed successfully"),
-                onError: (err: Error) => toast.error(err?.message || "Failed to close period")
+                onSuccess: () => toast.success(t("toast.closed")),
+                onError: (err: Error) => toast.error(err?.message || t("toast.closeFailed"))
             })
         }
     }
 
-    const handleReopen = (id: number) => {
-        if (confirm("Are you sure you want to reopen this accounting period?")) {
+    const handleReopen = async (id: number) => {
+        const ok = await confirm({
+            title: t("reopenConfirm.title"),
+            message: t("reopenConfirm.message"),
+            confirmLabel: t("reopen"),
+            cancelLabel: tCommon("cancel"),
+        })
+        if (ok) {
             reopenPeriod.mutate(id, {
-                onSuccess: () => toast.success("Period reopened successfully"),
-                onError: (err: Error) => toast.error(err?.message || "Failed to reopen period")
+                onSuccess: () => toast.success(t("toast.reopened")),
+                onError: (err: Error) => toast.error(err?.message || t("toast.reopenFailed"))
             })
         }
     }
@@ -51,61 +69,60 @@ export default function PeriodsPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Accounting Periods"
-                primaryAction={{
-                    label: "+ New Period",
-                    onClick: () => setIsDrawerOpen(true)
-                }}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                actions={
+                    <Button size="lg" onClick={() => setIsDrawerOpen(true)}>
+                        {t("new")}
+                    </Button>
+                }
             />
 
-            <FilterBar>
-                <div className="flex-1 text-sm text-navy-500">
-                    Manage your financial accounting periods. Close periods to prevent further postings.
-                </div>
-            </FilterBar>
-
-            <DataTable columns={["Period Name", "Start Date", "End Date", "Closed At", "Status", "Actions"]}>
-                {isLoading &&
-                    Array.from({ length: 4 }).map((_, row) => (
-                        <tr key={row} aria-hidden="true">
-                            {Array.from({ length: 6 }).map((__, cell) => (
-                                <td key={cell} className="px-6 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
-                            ))}
-                        </tr>
-                    ))}
-                {!isLoading && periods.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            No accounting periods found.
-                        </td>
-                    </tr>
-                )}
+            <DataTable
+                columns={[
+                    t("table.name"),
+                    t("table.startDate"),
+                    t("table.endDate"),
+                    t("table.closedAt"),
+                    t("table.status"),
+                    t("table.actions"),
+                ]}
+            >
+                <TableStateRow
+                    isLoading={isLoading}
+                    count={periods.length}
+                    columns={6}
+                    emptyMessage={t("empty")}
+                />
                 {periods.map((period) => (
-                    <tr key={period.id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-navy-900">{period.name}</td>
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(period.start_date)}</td>
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(period.end_date)}</td>
-                        <td className="px-6 py-4 text-navy-700">
+                    <tr key={period.id}>
+                        <td className="font-semibold text-ink">{period.name}</td>
+                        <td className="text-ink-secondary">{formatDateID(period.start_date)}</td>
+                        <td className="text-ink-secondary">{formatDateID(period.end_date)}</td>
+                        <td className="text-ink-secondary">
                             {period.closed_at ? formatDateID(period.closed_at) : "-"}
                         </td>
-                        <td className="px-6 py-4">
+                        <td>
                             <StatusBadge status={period.status === 'open' ? 'active' : 'closed'} />
                         </td>
-                        <td className="px-6 py-4">
+                        <td>
                             {period.status === 'open' ? (
-                                <button 
-                                    onClick={() => handleClose(period.id)}
-                                    className="text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => void handleClose(period.id)}
                                 >
-                                    Close Period
-                                </button>
+                                    {t("close")}
+                                </Button>
                             ) : (
-                                <button 
-                                    onClick={() => handleReopen(period.id)}
-                                    className="text-xs font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => void handleReopen(period.id)}
                                 >
-                                    Reopen
-                                </button>
+                                    {t("reopen")}
+                                </Button>
                             )}
                         </td>
                     </tr>
@@ -113,18 +130,22 @@ export default function PeriodsPage() {
             </DataTable>
 
             {isDrawerOpen && (
-                <PeriodDrawer 
-                    onClose={() => setIsDrawerOpen(false)} 
+                <PeriodDrawer
+                    onClose={() => setIsDrawerOpen(false)}
                 />
             )}
+            {confirmDialog}
         </div>
     )
 }
 
 function PeriodDrawer({ onClose }: { onClose: () => void }) {
+    const t = useTranslations("finance.periods.drawer")
+    const tToast = useTranslations("finance.periods.toast")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const createPeriod = useCreatePeriod()
-    
+
     const { register, handleSubmit, control, formState: { errors } } = useForm<PeriodFormData>({
         defaultValues: {
             name: "",
@@ -144,71 +165,69 @@ function PeriodDrawer({ onClose }: { onClose: () => void }) {
             status: 'open'
         }, {
             onSuccess: () => {
-                toast.success("Period created successfully")
+                toast.success(tToast("created"))
                 onClose()
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to create period. Make sure dates do not overlap with existing periods.")
+                toast.error(err?.message || tToast("createFailed"))
             }
         })
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
-                    <h2 className="text-lg font-bold text-navy-900">New Accounting Period</h2>
-                    <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
-                        <Icon name="close" />
-                    </button>
-                </div>
-                
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-                    <Field
-                        label="Period Name"
-                        placeholder="e.g. FY2026-Q1, May 2026"
-                        {...register("name", { required: "Name is required" })}
-                        error={errors.name?.message}
+        <Modal
+            open
+            onClose={onClose}
+            variant="drawer"
+            size="md"
+            title={t("title")}
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>{tCommon("cancel")}</Button>
+                    <Button onClick={handleSubmit(onSubmit)} disabled={createPeriod.isPending}>
+                        {createPeriod.isPending ? t("saving") : t("save")}
+                    </Button>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                <Field
+                    label={t("name")}
+                    placeholder={t("namePlaceholder")}
+                    {...register("name", { required: t("nameRequired") })}
+                    error={errors.name?.message}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <Controller
+                        name="start_date"
+                        control={control}
+                        rules={{ required: t("startRequired") }}
+                        render={({ field }) => (
+                            <DatePicker
+                                label={t("startDate")}
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={errors.start_date?.message}
+                            />
+                        )}
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Controller
-                            name="start_date"
-                            control={control}
-                            rules={{ required: "Start date is required" }}
-                            render={({ field }) => (
-                                <DatePicker
-                                    label="Start Date"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={errors.start_date?.message}
-                                />
-                            )}
-                        />
-
-                        <Controller
-                            name="end_date"
-                            control={control}
-                            rules={{ required: "End date is required" }}
-                            render={({ field }) => (
-                                <DatePicker
-                                    label="End Date"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={errors.end_date?.message}
-                                />
-                            )}
-                        />
-                    </div>
-                </form>
-
-                <div className="p-6 border-t border-navy-100 bg-navy-50/50 flex gap-3 justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit(onSubmit)} disabled={createPeriod.isPending} className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                        {createPeriod.isPending ? "Saving..." : "Save Period"}
-                    </Button>
+                    <Controller
+                        name="end_date"
+                        control={control}
+                        rules={{ required: t("endRequired") }}
+                        render={({ field }) => (
+                            <DatePicker
+                                label={t("endDate")}
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={errors.end_date?.message}
+                            />
+                        )}
+                    />
                 </div>
-            </EnterTransition>
-        </div>
+            </form>
+        </Modal>
     )
 }

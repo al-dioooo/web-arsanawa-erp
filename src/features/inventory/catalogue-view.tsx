@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { SelectDescription } from "@/components/ui/select-description"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
 import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
@@ -27,7 +31,12 @@ import type {
     UnitOfMeasure,
 } from "@/features/inventory/inventory-types"
 
+function readableError(caught: unknown, fallback: string): string {
+    return caught instanceof Error && caught.message ? caught.message : fallback
+}
+
 export function CatalogueView() {
+    const t = useTranslations("inventory.catalogue")
     const { token, activeCompanyId } = useSession()
     const searchParams = useSearchParams()
     const [categories, setCategories] = useState<Category[]>([])
@@ -37,6 +46,7 @@ export function CatalogueView() {
     const [productTotal, setProductTotal] = useState(0)
 
     const [isLoading, setIsLoading] = useState(false)
+    const [loadError, setLoadError] = useState<string | null>(null)
 
     // Filters & Search
     const [searchQuery, setSearchQuery] = useState("")
@@ -76,6 +86,8 @@ export function CatalogueView() {
         return { token, companyId: activeCompanyId }
     }, [activeCompanyId, token])
 
+    const loadErrorFallback = t("loadError")
+
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
 
@@ -88,12 +100,13 @@ export function CatalogueView() {
             setUnits(loaded.units)
             setProducts(loaded.products)
             setProductTotal(loaded.productTotal)
+            setLoadError(null)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load catalogue.")
+            setLoadError(readableError(caught, loadErrorFallback))
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions])
+    }, [loadErrorFallback, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -117,7 +130,7 @@ export function CatalogueView() {
             toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(readableError(caught, t("mutationError")))
         } finally {
             setIsLoading(false)
         }
@@ -141,127 +154,122 @@ export function CatalogueView() {
         })
     }, [products, searchQuery, selectedCategory, selectedBrand, selectedStatus])
 
+    const showSkeleton = isLoading && filteredProducts.length === 0
+
+    function statusLabel(status: string): string {
+        if (status === "active") return t("statuses.active")
+        if (status === "inactive") return t("statuses.inactive")
+        return status
+    }
+
     return (
         <div className="grid gap-6">
             <InventoryPageHeader
-                title="Product Catalogue"
-                description="Manage company-scoped products, custom variants, categories, brands, and units of measure."
+                title={t("title")}
+                description={t("subtitle")}
                 isCompanyScoped={Boolean(activeCompanyId)}
             />
 
             {/* Filter and Content section */}
-            <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+            <div className="grid items-start gap-6 xl:grid-cols-[1fr_380px]">
                 {/* Left column: Products list */}
-                <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-navy-50 pb-4">
-                        <h2 className="text-lg font-bold text-navy-900 font-display flex items-center gap-2">
-                            <Icon name="list_alt" className="text-teal-700" />
-                            <span>Products ({filteredProducts.length} of {productTotal})</span>
-                        </h2>
-                    </div>
+                <DataTable
+                    minWidth={640}
+                    columns={[t("table.product"), t("table.variants"), t("table.tags"), t("table.status")]}
+                    toolbar={
+                        <div className="grid gap-4">
+                            <h2 className="type-section flex items-center gap-2">
+                                <Icon name="list_alt" className="text-brand-ink" />
+                                <span>{t("products.heading", { count: filteredProducts.length, total: productTotal })}</span>
+                            </h2>
 
-                    {/* Search and Filters */}
-                    <div className="grid gap-3 sm:grid-cols-4">
-                        <Input
-                            label="Search products"
-                            type="text"
-                            placeholder="Search SKU or name..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                            {/* Search and Filters */}
+                            <div className="grid gap-3 sm:grid-cols-4">
+                                <Input
+                                    label={t("filters.search")}
+                                    type="text"
+                                    placeholder={t("filters.searchPlaceholder")}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
 
-                        <CategoryLeveledSelect
-                            label="Category"
-                            value={selectedCategory}
-                            onChange={(value) => setSelectedCategory(String(value))}
-                            categories={categories}
-                            mode="all"
-                            emptyLabel="All Categories"
-                            placeholder="All Categories"
-                        />
+                                <CategoryLeveledSelect
+                                    label={t("filters.category")}
+                                    value={selectedCategory}
+                                    onChange={(value) => setSelectedCategory(String(value))}
+                                    categories={categories}
+                                    mode="all"
+                                    emptyLabel={t("filters.allCategories")}
+                                    placeholder={t("filters.allCategories")}
+                                />
 
-                        <SelectDescription
-                            label="Brand"
-                            value={selectedBrand}
-                            onChange={(e) => setSelectedBrand(e.target.value)}
-                            options={[
-                                { value: "", label: "All Brands" },
-                                ...brands.map((brand) => ({ value: brand.id, label: brand.name })),
-                            ]}
-                        />
+                                <SelectDescription
+                                    label={t("filters.brand")}
+                                    value={selectedBrand}
+                                    onChange={(e) => setSelectedBrand(e.target.value)}
+                                    options={[
+                                        { value: "", label: t("filters.allBrands") },
+                                        ...brands.map((brand) => ({ value: brand.id, label: brand.name })),
+                                    ]}
+                                />
 
-                        <SelectDescription
-                            label="Status"
-                            value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
-                            options={[
-                                { value: "", label: "All Statuses", description: "Show active and inactive products." },
-                                { value: "active", label: "Active", description: "Only products available for normal workflows." },
-                                { value: "inactive", label: "Inactive", description: "Only products held out of normal workflows." },
-                            ]}
-                        />
-                    </div>
-
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-sm">
-                            <thead>
-                                <tr className="text-xs font-bold uppercase tracking-wider text-navy-500 bg-navy-50/30">
-                                    <th className="border-b border-navy-100 py-3 px-4 font-display">Product</th>
-                                    <th className="border-b border-navy-100 py-3 px-4 font-display">Variants (SKU · Name)</th>
-                                    <th className="border-b border-navy-100 py-3 px-4 font-display">Tags</th>
-                                    <th className="border-b border-navy-100 py-3 px-4 font-display">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredProducts.map((product) => (
-                                    <tr key={product.id} className="hover:bg-navy-50/20 transition-colors">
-                                        <td className="border-b border-navy-100/50 py-3 px-4">
-                                            <p className="font-bold text-navy-900">{product.name}</p>
-                                            <p className="text-xs text-navy-400 font-medium">ID {product.id}</p>
-                                        </td>
-                                        <td className="border-b border-navy-100/50 py-3 px-4 text-navy-700 font-medium">
-                                            {product.variants.map((variant) => (
-                                                <div key={variant.id} className="py-0.5">
-                                                    <code className="text-xs bg-navy-50 px-1.5 py-0.5 rounded border border-navy-100 text-teal-800 font-semibold">{variant.sku}</code>
-                                                    {variant.name ? <span className="text-navy-500 text-xs ml-1.5">({variant.name})</span> : null}
-                                                </div>
-                                            ))}
-                                        </td>
-                                        <td className="border-b border-navy-100/50 py-3 px-4 text-navy-600 font-medium">
-                                            {product.tags?.map((tag) => tag.name).join(", ") || <span className="text-navy-300">-</span>}
-                                        </td>
-                                        <td className="border-b border-navy-100/50 py-3 px-4">
-                                            <StatusPill tone={product.status === "active" ? "green" : "neutral"}>
-                                                {product.status}
-                                            </StatusPill>
-                                        </td>
-                                    </tr>
+                                <SelectDescription
+                                    label={t("filters.status")}
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    options={[
+                                        { value: "", label: t("filters.allStatuses"), description: t("filters.allStatusesDescription") },
+                                        { value: "active", label: t("filters.active"), description: t("filters.activeDescription") },
+                                        { value: "inactive", label: t("filters.inactive"), description: t("filters.inactiveDescription") },
+                                    ]}
+                                />
+                            </div>
+                        </div>
+                    }
+                >
+                    <TableStateRow
+                        isLoading={showSkeleton}
+                        isError={Boolean(loadError)}
+                        error={loadError ? new Error(loadError) : undefined}
+                        count={filteredProducts.length}
+                        columns={4}
+                        emptyMessage={t("table.empty")}
+                        onRetry={() => void refreshData()}
+                    />
+                    {!loadError && !showSkeleton && filteredProducts.map((product) => (
+                        <tr key={product.id}>
+                            <td>
+                                <p className="font-semibold text-ink">{product.name}</p>
+                                <p className="text-xs text-ink-faint">{t("table.idLabel", { id: product.id })}</p>
+                            </td>
+                            <td>
+                                {product.variants.map((variant) => (
+                                    <div key={variant.id} className="py-0.5">
+                                        <code className="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-brand-ink">{variant.sku}</code>
+                                        {variant.name ? <span className="ms-1.5 text-xs text-ink-muted">({variant.name})</span> : null}
+                                    </div>
                                 ))}
-                                {isLoading && filteredProducts.length === 0
-                                    ? Array.from({ length: 4 }).map((_, row) => (
-                                        <tr key={row} aria-hidden="true">
-                                            {Array.from({ length: 4 }).map((__, cell) => (
-                                                <td key={cell} className="px-4 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
-                                            ))}
-                                        </tr>
-                                    ))
-                                    : filteredProducts.length === 0 && (
-                                        <tr>
-                                            <td colSpan={4} className="text-center py-8 text-navy-400 font-medium bg-navy-50/10">No products found.</td>
-                                        </tr>
-                                    )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </td>
+                            <td>
+                                {product.tags?.map((tag) => tag.name).join(", ") || <span className="text-ink-faint">-</span>}
+                            </td>
+                            <td>
+                                <StatusPill tone={product.status === "active" ? "green" : "neutral"}>
+                                    {statusLabel(product.status)}
+                                </StatusPill>
+                            </td>
+                        </tr>
+                    ))}
+                </DataTable>
 
                 {/* Right column: Forms */}
                 <div className="grid gap-6">
                     {/* Create Product Form */}
-                    <form
-                        className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
-                        onSubmit={(event) => {
+                    <Card
+                        as="form"
+                        padding="lg"
+                        className="flex flex-col gap-4"
+                        onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
                             event.preventDefault()
                             void runMutation(() => {
                                 return createProduct(requestOptions!, {
@@ -271,7 +279,7 @@ export function CatalogueView() {
                                     base_uom_id: Number(productForm.base_uom_id),
                                     variants: [{ sku: productForm.sku, name: productForm.variant_name || undefined }],
                                 })
-                            }, "Product created successfully.").then(() => {
+                            }, t("createProduct.success")).then(() => {
                                 setProductForm({
                                     name: "",
                                     sku: "",
@@ -283,23 +291,23 @@ export function CatalogueView() {
                             })
                         }}
                     >
-                        <h2 className="text-lg font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-3">
-                            <Icon name="add" className="text-teal-700" />
-                            <span>Create Product</span>
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name="add" className="text-brand-ink" />
+                            <span>{t("createProduct.heading")}</span>
                         </h2>
                         <div className="grid gap-3.5">
                             <Field
-                                label="Product Name"
+                                label={t("createProduct.name")}
                                 value={productForm.name}
                                 onChange={(event) =>
                                     setProductForm((current) => ({ ...current, name: event.target.value }))
                                 }
-                                placeholder="e.g. Rice Crackers"
+                                placeholder={t("createProduct.namePlaceholder")}
                                 required
                             />
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <Field
-                                    label="SKU"
+                                    label={t("createProduct.sku")}
                                     value={productForm.sku}
                                     onChange={(event) =>
                                         setProductForm((current) => ({ ...current, sku: event.target.value }))
@@ -308,16 +316,16 @@ export function CatalogueView() {
                                     required
                                 />
                                 <Field
-                                    label="Variant Name"
+                                    label={t("createProduct.variantName")}
                                     value={productForm.variant_name}
                                     onChange={(event) =>
                                         setProductForm((current) => ({ ...current, variant_name: event.target.value }))
                                     }
-                                    placeholder="e.g. Original"
+                                    placeholder={t("createProduct.variantNamePlaceholder")}
                                 />
                             </div>
                             <SearchableSelect
-                                label="Base Unit"
+                                label={t("createProduct.baseUnit")}
                                 value={productForm.base_uom_id}
                                 onChange={(val) =>
                                     setProductForm((current) => ({ ...current, base_uom_id: String(val) }))
@@ -327,22 +335,22 @@ export function CatalogueView() {
                                     value: unit.id,
                                     label: `${unit.name} (${unit.code})`
                                 }))}
-                                placeholder="Select unit"
+                                placeholder={t("createProduct.selectUnit")}
                             />
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <CategoryLeveledSelect
-                                    label="Category"
+                                    label={t("createProduct.category")}
                                     value={productForm.category_id}
                                     onChange={(val) =>
                                         setProductForm((current) => ({ ...current, category_id: String(val) }))
                                     }
                                     categories={categories}
                                     mode="leaf"
-                                    emptyLabel="No category"
-                                    placeholder="None"
+                                    emptyLabel={t("createProduct.noCategory")}
+                                    placeholder={t("createProduct.nonePlaceholder")}
                                 />
                                 <SearchableSelect
-                                    label="Brand"
+                                    label={t("createProduct.brand")}
                                     value={productForm.brand_id}
                                     onChange={(val) =>
                                         setProductForm((current) => ({ ...current, brand_id: String(val) }))
@@ -351,89 +359,95 @@ export function CatalogueView() {
                                         value: brand.id,
                                         label: brand.name
                                     }))}
-                                    placeholder="None"
+                                    placeholder={t("createProduct.nonePlaceholder")}
                                 />
                             </div>
-                            <Button type="submit" size="xl" disabled={isLoading || !units.length} className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2">
-                                Create Product
+                            <Button type="submit" size="xl" disabled={isLoading || !units.length} className="mt-2 w-full">
+                                {t("createProduct.submit")}
                             </Button>
                         </div>
-                    </form>
+                    </Card>
 
                     {/* Quick Category Form */}
-                    <form
-                        className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
-                        onSubmit={(event) => {
+                    <Card
+                        as="form"
+                        padding="lg"
+                        className="flex flex-col gap-4"
+                        onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
                             event.preventDefault()
-                            void runMutation(() => createCategory(requestOptions!, categoryName), "Category created successfully.").then(() => {
+                            void runMutation(() => createCategory(requestOptions!, categoryName), t("quickCategory.success")).then(() => {
                                 setCategoryName("")
                             })
                         }}
                     >
-                        <h3 className="text-base font-bold text-navy-900 font-display border-b border-navy-50 pb-2">Quick Category</h3>
+                        <h3 className="type-section">{t("quickCategory.heading")}</h3>
                         <div className="grid gap-3">
                             <Field
-                                label="Category Name"
+                                label={t("quickCategory.name")}
                                 value={categoryName}
                                 onChange={(event) => setCategoryName(event.target.value)}
-                                placeholder="e.g. Snacks"
+                                placeholder={t("quickCategory.placeholder")}
                                 required
                             />
-                            <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full cursor-pointer">
-                                Add Category
+                            <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full">
+                                {t("quickCategory.submit")}
                             </Button>
                         </div>
-                    </form>
+                    </Card>
 
                     {/* Quick Brand & Unit Forms */}
                     <div className="grid gap-6">
-                        <form
-                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
-                            onSubmit={(event) => {
+                        <Card
+                            as="form"
+                            padding="lg"
+                            className="flex flex-col gap-4"
+                            onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
                                 event.preventDefault()
-                                void runMutation(() => createBrand(requestOptions!, brandName), "Brand created successfully.").then(() => {
+                                void runMutation(() => createBrand(requestOptions!, brandName), t("quickBrand.success")).then(() => {
                                     setBrandName("")
                                 })
                             }}
                         >
-                            <h3 className="text-base font-bold text-navy-900 font-display border-b border-navy-50 pb-2">Quick Brand</h3>
+                            <h3 className="type-section">{t("quickBrand.heading")}</h3>
                             <div className="grid gap-3">
                                 <Field
-                                    label="Brand Name"
+                                    label={t("quickBrand.name")}
                                     value={brandName}
                                     onChange={(event) => setBrandName(event.target.value)}
-                                    placeholder="e.g. Arsanawa Foods"
+                                    placeholder={t("quickBrand.placeholder")}
                                     required
                                 />
-                                <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full cursor-pointer">
-                                    Add Brand
+                                <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full">
+                                    {t("quickBrand.submit")}
                                 </Button>
                             </div>
-                        </form>
+                        </Card>
 
-                        <form
-                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
-                            onSubmit={(event) => {
+                        <Card
+                            as="form"
+                            padding="lg"
+                            className="flex flex-col gap-4"
+                            onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
                                 event.preventDefault()
-                                void runMutation(() => createUnit(requestOptions!, unitForm), "Unit of measure created successfully.").then(() => {
+                                void runMutation(() => createUnit(requestOptions!, unitForm), t("quickUnit.success")).then(() => {
                                     setUnitForm({ name: "", code: "" })
                                 })
                             }}
                         >
-                            <h3 className="text-base font-bold text-navy-900 font-display border-b border-navy-50 pb-2">Quick Unit</h3>
+                            <h3 className="type-section">{t("quickUnit.heading")}</h3>
                             <div className="grid gap-3">
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <Field
-                                        label="Unit Name"
+                                        label={t("quickUnit.name")}
                                         value={unitForm.name}
                                         onChange={(event) =>
                                             setUnitForm((current) => ({ ...current, name: event.target.value }))
                                         }
-                                        placeholder="e.g. Pieces"
+                                        placeholder={t("quickUnit.placeholder")}
                                         required
                                     />
                                     <Field
-                                        label="Code"
+                                        label={t("quickUnit.code")}
                                         value={unitForm.code}
                                         onChange={(event) =>
                                             setUnitForm((current) => ({ ...current, code: event.target.value }))
@@ -442,11 +456,11 @@ export function CatalogueView() {
                                         required
                                     />
                                 </div>
-                                <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full cursor-pointer">
-                                    Add Unit
+                                <Button type="submit" variant="secondary" size="xl" disabled={isLoading} className="w-full">
+                                    {t("quickUnit.submit")}
                                 </Button>
                             </div>
-                        </form>
+                        </Card>
                     </div>
                 </div>
             </div>

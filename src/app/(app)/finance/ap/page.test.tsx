@@ -13,6 +13,16 @@ vi.mock("@/features/finance/api-bills", () => ({
     useAPAging: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.ap.title": "Accounts Payable Aging",
+        }
+        return labels[fullKey] ?? fullKey
+    },
+}))
+
 describe("accounts payable aging page", () => {
     it("renders the aging report without the Export PDF action", () => {
         vi.mocked(useAPAging).mockReturnValue({

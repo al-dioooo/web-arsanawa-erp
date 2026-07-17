@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { motion, useSpring, useTransform } from "motion/react"
+import { m, useReducedMotion, useSpring, useTransform } from "motion/react"
+import { SPRING as MOTION_SPRING } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 type HighlightContextType = {
@@ -35,7 +36,7 @@ type HighlightProps = {
     hover?: boolean
 }
 
-const SPRING = { type: "spring", stiffness: 380, damping: 30, mass: 0.6 } as const
+const SPRING = MOTION_SPRING.marker
 
 export function Highlight({
     children,
@@ -53,6 +54,7 @@ export function Highlight({
 
     const containerRef = React.useRef<HTMLDivElement>(null)
     const itemsMap = React.useRef<Map<string, HTMLElement>>(new Map())
+    const shouldReduceMotion = useReducedMotion()
 
     const activeValueToUse = value !== undefined ? value : activeValue
 
@@ -88,8 +90,9 @@ export function Highlight({
         const containerRect = containerRef.current.getBoundingClientRect()
         const targetRect    = targetElement.getBoundingClientRect()
 
-        // Snap position on first appearance (no spring from 0,0)
-        if (!visible) {
+        // Snap position on first appearance (no spring from 0,0). Raw motion
+        // values bypass MotionConfig, so reduced motion must also jump here.
+        if (!visible || shouldReduceMotion) {
             springTop.jump(targetRect.top  - containerRect.top)
             springLeft.jump(targetRect.left - containerRect.left)
             springWidth.jump(targetRect.width)
@@ -102,7 +105,7 @@ export function Highlight({
         }
 
         setVisible(true)
-    }, [hoveredValue, activeValueToUse, visible, springTop, springLeft, springWidth, springHeight])
+    }, [hoveredValue, activeValueToUse, visible, shouldReduceMotion, springTop, springLeft, springWidth, springHeight])
 
     const registerItem = React.useCallback((val: string, element: HTMLElement) => {
         itemsMap.current.set(val, element)
@@ -145,7 +148,7 @@ export function Highlight({
                 className={cn("relative", containerClassName)}
                 onMouseLeave={() => setHoveredValue(null)}
             >
-                <motion.div
+                <m.div
                     aria-hidden="true"
                     style={{
                         ...style,

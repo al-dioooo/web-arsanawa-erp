@@ -1,13 +1,18 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
+import { EmptyState } from "@/components/ui/empty-state"
 import { EnterTransition } from "@/components/ui/enter"
 import { Field } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { Icon } from "@/components/ui/icon"
 import { useSession } from "@/features/auth/session-provider"
 import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
@@ -22,13 +27,19 @@ import type {
     PriceList,
     ProductVariant,
 } from "@/features/inventory/inventory-types"
-import { TableStateRow } from "@/features/finance/components/table-state-row"
 import { formatCurrency } from "@/lib/money"
+import { cn } from "@/lib/utils"
+
 function today(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
+function readableError(caught: unknown, fallback: string): string {
+    return caught instanceof Error && caught.message ? caught.message : fallback
+}
+
 export function PricingView() {
+    const t = useTranslations("inventory.pricing")
     const { token, activeCompanyId, organizationContext } = useSession()
     const [priceLists, setPriceLists] = useState<PriceList[]>([])
     const [variants, setVariants] = useState<Array<ProductVariant & { product_name: string }>>([])
@@ -61,6 +72,8 @@ export function PricingView() {
 
     const branches = organizationContext?.branches ?? []
 
+    const loadErrorFallback = t("loadError")
+
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
 
@@ -69,7 +82,7 @@ export function PricingView() {
         try {
             const loaded = await loadInventory(requestOptions, { includePriceLists: true })
             setPriceLists(loaded.priceLists)
-            
+
             const list = loaded.products.flatMap((product) =>
                 product.variants.map((variant) => ({
                     ...variant,
@@ -83,11 +96,11 @@ export function PricingView() {
                 setSelectedPriceListId(loaded.priceLists[0].id)
             }
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load pricing data.")
+            toast.error(readableError(caught, loadErrorFallback))
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions, selectedPriceListId])
+    }, [loadErrorFallback, requestOptions, selectedPriceListId])
 
     useEffect(() => {
         let active = true
@@ -110,6 +123,8 @@ export function PricingView() {
         selectedPriceListRef.current = selectedPriceListId
     }, [selectedPriceListId])
 
+    const pricesErrorFallback = t("pricesError")
+
     const loadPrices = useCallback(async () => {
         if (!requestOptions || !selectedPriceListId) return
 
@@ -123,13 +138,13 @@ export function PricingView() {
             setPrices(response.data.prices)
         } catch (caught) {
             if (selectedPriceListRef.current !== requestedListId) return
-            setPricesError(caught instanceof Error ? caught.message : "Unable to load prices.")
+            setPricesError(readableError(caught, pricesErrorFallback))
         } finally {
             if (selectedPriceListRef.current === requestedListId) {
                 setPricesLoading(false)
             }
         }
-    }, [requestOptions, selectedPriceListId])
+    }, [pricesErrorFallback, requestOptions, selectedPriceListId])
 
     useEffect(() => {
         let active = true
@@ -168,11 +183,11 @@ export function PricingView() {
                 branch_id: priceListForm.branch_id ? Number(priceListForm.branch_id) : null,
                 is_default: priceListForm.is_default,
             })
-            toast.success("Price list created successfully.")
+            toast.success(t("createList.success"))
             setPriceListForm({ name: "", branch_id: "", is_default: false })
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Failed to create price list.")
+            toast.error(readableError(caught, t("createList.failure")))
         } finally {
             setIsLoading(false)
         }
@@ -190,11 +205,11 @@ export function PricingView() {
                 price: Number(priceForm.price),
                 effective_from: priceForm.effective_from,
             })
-            toast.success("Variant price set successfully.")
+            toast.success(t("setPriceForm.success"))
             setPriceForm((current) => ({ ...current, price: "" }))
             await Promise.all([refreshData(), loadPrices()])
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Failed to set price.")
+            toast.error(readableError(caught, t("setPriceForm.failure")))
         } finally {
             setIsLoading(false)
         }
@@ -204,11 +219,13 @@ export function PricingView() {
         return priceLists.find((pl) => pl.id === selectedPriceListId) ?? null
     }, [priceLists, selectedPriceListId])
 
+    const showPricesSkeleton = pricesLoading && prices.length === 0
+
     return (
         <div className="grid gap-6">
             <InventoryPageHeader
-                title="Pricing Management"
-                description="Configure price lists scoped by company or branch, and set custom effective-dated pricing for product variants."
+                title={t("title")}
+                description={t("subtitle")}
                 isCompanyScoped={Boolean(activeCompanyId)}
             />
 
@@ -217,176 +234,179 @@ export function PricingView() {
                 {/* Left Side: Price Lists Grid & Selected Price List details */}
                 <div className="grid gap-6">
                     {/* Price Lists Overview Card */}
-                    <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4">
-                        <h2 className="text-lg font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-3">
-                            <Icon name="sell" className="text-teal-700" />
-                            <span>Available Price Lists ({priceLists.length})</span>
+                    <Card padding="lg" className="flex flex-col gap-4">
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name="sell" className="text-brand-ink" />
+                            <span>{t("lists.heading", { count: priceLists.length })}</span>
                         </h2>
 
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {priceLists.map((priceList) => {
                                 const isSelected = priceList.id === selectedPriceListId
                                 return (
-                                    <article
+                                    <Card
+                                        as="article"
+                                        inset
+                                        padding="sm"
                                         key={priceList.id}
                                         onClick={() => setSelectedPriceListId(priceList.id)}
-                                        className={`rounded-xl border p-4 cursor-pointer transition-all duration-150 ${ isSelected ? "border-teal-700 bg-teal-50/10 ring-2 ring-teal-700/15" : "border-navy-100 bg-navy-50/10 hover:bg-navy-50/30" }`}
+                                        className={cn(
+                                            "cursor-pointer transition-all duration-150",
+                                            isSelected
+                                                ? "bg-brand-soft ring-2 ring-brand"
+                                                : "hover:bg-brand-soft/40",
+                                        )}
                                     >
                                         <div className="flex items-center justify-between gap-3">
-                                            <h3 className="text-sm font-bold text-navy-900 truncate">
+                                            <h3 className="truncate text-sm font-bold text-ink">
                                                 {priceList.name}
                                             </h3>
                                             <StatusPill tone={priceList.is_active ? "green" : "neutral"}>
-                                                {priceList.is_active ? "Active" : "Inactive"}
+                                                {priceList.is_active ? t("statuses.active") : t("statuses.inactive")}
                                             </StatusPill>
                                         </div>
-                                        
-                                        <p className="mt-3 text-xs text-navy-500 font-semibold">
+
+                                        <p className="mt-3 text-xs font-semibold text-ink-muted">
                                             {priceList.branch_id
-                                                ? `Branch ID: ${priceList.branch_id}`
-                                                : "Company-wide"}
+                                                ? t("lists.branchScope", { id: priceList.branch_id })
+                                                : t("lists.companyWide")}
                                         </p>
 
                                         {priceList.is_default && (
-                                            <p className="mt-2.5 text-[10px] font-bold uppercase tracking-wider text-teal-700 flex items-center gap-1">
+                                            <p className="mt-2.5 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-brand-ink">
                                                 <Icon name="check_circle" size={12} />
-                                                <span>Default List</span>
+                                                <span>{t("lists.default")}</span>
                                             </p>
                                         )}
-                                    </article>
+                                    </Card>
                                 )
                             })}
                             {priceLists.length === 0 && (
-                                <div className="col-span-full py-8 text-center text-navy-400 font-medium">
-                                    No price lists available. Please create one using the sidebar form.
-                                </div>
+                                <EmptyState
+                                    compact
+                                    icon="sell"
+                                    className="col-span-full"
+                                    title={t("lists.empty")}
+                                    description={t("lists.emptyHint")}
+                                />
                             )}
                         </div>
-                    </div>
+                    </Card>
 
                     {/* Selected Price List details & Variant prices */}
                     {activePriceList && (
-                        <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-navy-50 pb-3 gap-2">
-                                <div>
-                                    <h2 className="text-lg font-bold text-navy-900 font-display flex items-center gap-2">
-                                        <Icon name="list_alt" className="text-teal-700" />
-                                        <span>Manage Prices for: {activePriceList.name}</span>
-                                    </h2>
-                                    <p className="text-xs text-navy-500 font-medium mt-1">
-                                        Select a variant in the list below to update its price on this price list.
-                                    </p>
+                        <DataTable
+                            minWidth={560}
+                            columns={[
+                                t("table.productSku"),
+                                t("table.variantSku"),
+                                t("table.currentPrice"),
+                                t("table.effectiveFrom"),
+                                t("table.actions"),
+                            ]}
+                            toolbar={
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h2 className="type-section flex items-center gap-2">
+                                            <Icon name="list_alt" className="text-brand-ink" />
+                                            <span>{t("manage.heading", { name: activePriceList.name })}</span>
+                                        </h2>
+                                        <p className="mt-1 text-xs text-ink-muted">
+                                            {t("manage.hint")}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {activePriceList.is_default && <StatusPill tone="green">{t("statuses.default")}</StatusPill>}
+                                        <StatusPill tone={activePriceList.is_active ? "green" : "neutral"}>
+                                            {activePriceList.is_active ? t("statuses.active") : t("statuses.inactive")}
+                                        </StatusPill>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    {activePriceList.is_default && <StatusPill tone="green">Default</StatusPill>}
-                                    <StatusPill tone={activePriceList.is_active ? "green" : "neutral"}>
-                                        {activePriceList.is_active ? "Active" : "Inactive"}
-                                    </StatusPill>
-                                </div>
-                            </div>
-
-                            {/* Variant Prices Table */}
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-[560px] border-separate border-spacing-0 text-left text-sm">
-                                    <thead>
-                                        <tr className="text-xs font-bold uppercase tracking-wider text-navy-500 bg-navy-50/30">
-                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Product & SKU</th>
-                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Variant SKU</th>
-                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Current Price</th>
-                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Effective From</th>
-                                            <th className="border-b border-navy-100 py-3 px-4 font-display">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <TableStateRow
-                                            isLoading={pricesLoading && prices.length === 0}
-                                            isError={Boolean(pricesError)}
-                                            error={pricesError ? new Error(pricesError) : undefined}
-                                            count={variants.length}
-                                            columns={5}
-                                            emptyMessage="No product variants found in catalogue."
-                                            onRetry={() => void loadPrices()}
-                                        />
-                                        {!pricesError && !(pricesLoading && prices.length === 0) && variants.map((variant) => {
-                                            const currentPrice = currentPriceByVariant.get(variant.id)
-                                            return (
-                                            <tr key={variant.id} className="hover:bg-navy-50/20 transition-colors">
-                                                <td className="border-b border-navy-100/50 py-3 px-4">
-                                                    <p className="font-bold text-navy-900">{variant.product_name}</p>
-                                                    {variant.name && (
-                                                        <p className="text-xs text-navy-450 font-semibold">{variant.name}</p>
-                                                    )}
-                                                </td>
-                                                <td className="border-b border-navy-100/50 py-3 px-4">
-                                                    <code className="text-xs bg-navy-50 px-1.5 py-0.5 rounded border border-navy-100 text-teal-800 font-semibold font-mono">
-                                                        {variant.sku}
-                                                    </code>
-                                                </td>
-                                                <td className="border-b border-navy-100/50 py-3 px-4">
-                                                    {currentPrice ? (
-                                                        <span className="font-bold text-navy-900">{formatCurrency(currentPrice.price)}</span>
-                                                    ) : (
-                                                        <span className="text-xs font-semibold text-navy-400">Not priced</span>
-                                                    )}
-                                                </td>
-                                                <td className="border-b border-navy-100/50 py-3 px-4 text-xs font-semibold text-navy-500">
-                                                    {currentPrice?.effective_from ?? "—"}
-                                                </td>
-                                                <td className="border-b border-navy-100/50 py-3 px-4">
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        onClick={() => {
-                                                            setPriceForm((current) => ({
-                                                                ...current,
-                                                                product_variant_id: String(variant.id),
-                                                            }))
-                                                            // Auto scroll to price form on mobile
-                                                            const priceFormEl = document.getElementById("set-price-form")
-                                                            if (priceFormEl) {
-                                                                priceFormEl.scrollIntoView({ behavior: "smooth" })
-                                                            }
-                                                        }}
-                                                        className="cursor-pointer py-1 h-8 text-xs px-2.5 font-bold"
-                                                    >
-                                                        Set Price
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                            }
+                        >
+                            <TableStateRow
+                                isLoading={showPricesSkeleton}
+                                isError={Boolean(pricesError)}
+                                error={pricesError ? new Error(pricesError) : undefined}
+                                count={variants.length}
+                                columns={5}
+                                emptyMessage={t("table.empty")}
+                                onRetry={() => void loadPrices()}
+                            />
+                            {!pricesError && !showPricesSkeleton && variants.map((variant) => {
+                                const currentPrice = currentPriceByVariant.get(variant.id)
+                                return (
+                                    <tr key={variant.id}>
+                                        <td>
+                                            <p className="font-semibold text-ink">{variant.product_name}</p>
+                                            {variant.name && (
+                                                <p className="text-xs text-ink-muted">{variant.name}</p>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <code className="rounded-sm bg-surface-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-brand-ink">
+                                                {variant.sku}
+                                            </code>
+                                        </td>
+                                        <td>
+                                            {currentPrice ? (
+                                                <span className="font-semibold text-ink tabular-nums">{formatCurrency(currentPrice.price)}</span>
+                                            ) : (
+                                                <span className="text-xs font-semibold text-ink-faint">{t("table.notPriced")}</span>
+                                            )}
+                                        </td>
+                                        <td className="text-xs font-semibold text-ink-muted">
+                                            {currentPrice?.effective_from ?? "—"}
+                                        </td>
+                                        <td>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setPriceForm((current) => ({
+                                                        ...current,
+                                                        product_variant_id: String(variant.id),
+                                                    }))
+                                                    // Auto scroll to price form on mobile
+                                                    const priceFormEl = document.getElementById("set-price-form")
+                                                    if (priceFormEl) {
+                                                        priceFormEl.scrollIntoView({ behavior: "smooth" })
+                                                    }
+                                                }}
+                                            >
+                                                {t("table.setPrice")}
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </DataTable>
                     )}
                 </div>
 
                 {/* Right Side: Side Forms */}
                 <div className="grid gap-6 self-start">
                     {/* Create Price List Form */}
-                    <form
-                        className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
-                        onSubmit={handleCreatePriceList}
-                    >
-                        <h2 className="text-base font-bold text-navy-900 font-display flex items-center gap-2 border-b border-navy-50 pb-2">
-                            <Icon name="add" size={20} className="text-teal-700" />
-                            <span>Create Price List</span>
+                    <Card as="form" padding="lg" className="flex flex-col gap-4" onSubmit={handleCreatePriceList}>
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name="add" size={20} className="text-brand-ink" />
+                            <span>{t("createList.heading")}</span>
                         </h2>
-                        
+
                         <div className="grid gap-3">
                             <Field
-                                label="Price List Name"
+                                label={t("createList.name")}
                                 value={priceListForm.name}
                                 onChange={(event) =>
                                     setPriceListForm((current) => ({ ...current, name: event.target.value }))
                                 }
-                                placeholder="e.g. Retail Indonesia"
+                                placeholder={t("createList.namePlaceholder")}
                                 required
                             />
 
                             <SearchableSelect
-                                label="Branch context (optional)"
+                                label={t("createList.branch")}
                                 value={priceListForm.branch_id}
                                 onChange={(val) =>
                                     setPriceListForm((current) => ({ ...current, branch_id: String(val) }))
@@ -395,31 +415,26 @@ export function PricingView() {
                                     value: branch.id,
                                     label: branch.name
                                 }))}
-                                placeholder="Company-wide (All branches)"
+                                placeholder={t("createList.branchPlaceholder")}
                             />
 
-                            <label className="flex min-h-11 items-center gap-3 rounded-md border border-navy-100 bg-white px-3 text-sm font-medium text-navy-800 cursor-pointer select-none">
+                            <label className="flex min-h-11 cursor-pointer select-none items-center gap-3 rounded-md border border-line bg-surface px-3 text-sm font-medium text-ink-secondary">
                                 <input
                                     type="checkbox"
                                     checked={priceListForm.is_default}
                                     onChange={(event) =>
                                         setPriceListForm((current) => ({ ...current, is_default: event.target.checked }))
                                     }
-                                    className="rounded border-navy-300 text-teal-700 focus:ring-teal-700/15"
+                                    className="rounded-sm border-line text-brand focus:ring-ring/50"
                                 />
-                                <span>Set as Default list</span>
+                                <span>{t("createList.isDefault")}</span>
                             </label>
 
-                            <Button
-                                type="submit"
-                                size="xl"
-                                disabled={isLoading}
-                                className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
-                            >
-                                Create List
+                            <Button type="submit" size="xl" disabled={isLoading} className="mt-2 w-full">
+                                {t("createList.submit")}
                             </Button>
                         </div>
-                    </form>
+                    </Card>
 
                     {/* Set Price Form */}
                     {activePriceList && priceForm.product_variant_id && (
@@ -427,26 +442,28 @@ export function PricingView() {
                             as="form"
                             id="set-price-form"
                             from="bottom"
-                            className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col gap-4"
+                            className="flex flex-col gap-4 rounded-lg bg-surface p-6 shadow-card"
                             onSubmit={handleSetPrice}
                         >
-                            <div className="flex items-center justify-between border-b border-navy-50 pb-2">
-                                <h2 className="text-base font-bold text-navy-900 font-display flex items-center gap-2">
-                                    <Icon name="payments" size={20} className="text-orange-500" />
-                                    <span>Set Price</span>
+                            <div className="flex items-center justify-between">
+                                <h2 className="type-section flex items-center gap-2">
+                                    <Icon name="payments" size={20} className="text-orange-700" />
+                                    <span>{t("setPriceForm.heading")}</span>
                                 </h2>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={t("setPriceForm.close")}
                                     onClick={() => setPriceForm((current) => ({ ...current, product_variant_id: "" }))}
-                                    className="text-navy-400 hover:text-navy-600 transition-colors"
                                 >
                                     <Icon name="close" size={16} />
-                                </button>
+                                </Button>
                             </div>
 
                             <div className="grid gap-3">
                                 <SearchableSelect
-                                    label="Selected Variant"
+                                    label={t("setPriceForm.variant")}
                                     value={priceForm.product_variant_id}
                                     onChange={(val) =>
                                         setPriceForm((current) => ({ ...current, product_variant_id: String(val) }))
@@ -456,11 +473,11 @@ export function PricingView() {
                                         value: v.id,
                                         label: `${v.product_name} (${v.sku})`
                                     }))}
-                                    placeholder="Select Variant"
+                                    placeholder={t("setPriceForm.variantPlaceholder")}
                                 />
 
                                 <Field
-                                    label="Price (IDR)"
+                                    label={t("setPriceForm.price")}
                                     type="number"
                                     min="0"
                                     step="1"
@@ -468,12 +485,12 @@ export function PricingView() {
                                     onChange={(event) =>
                                         setPriceForm((current) => ({ ...current, price: event.target.value }))
                                     }
-                                    placeholder="e.g. 50000"
+                                    placeholder={t("setPriceForm.pricePlaceholder")}
                                     required
                                 />
 
                                 <DatePicker
-                                    label="Effective From"
+                                    label={t("setPriceForm.effectiveFrom")}
                                     value={priceForm.effective_from}
                                     onChange={(val) =>
                                         setPriceForm((current) => ({ ...current, effective_from: val }))
@@ -481,17 +498,12 @@ export function PricingView() {
                                     required
                                 />
 
-                                <div className="text-xs bg-navy-50 border border-navy-100 rounded-lg p-2.5 text-navy-500 font-medium leading-relaxed">
-                                    Price will be set in price list: <strong className="text-navy-800">{activePriceList.name}</strong>.
+                                <div className="rounded-md bg-surface-muted p-2.5 text-xs font-medium leading-relaxed text-ink-muted">
+                                    {t("setPriceForm.note", { name: activePriceList.name })}
                                 </div>
 
-                                <Button
-                                    type="submit"
-                                    size="xl"
-                                    disabled={isLoading}
-                                    className="w-full cursor-pointer bg-teal-700 hover:bg-teal-800 text-white mt-2"
-                                >
-                                    Set Price
+                                <Button type="submit" size="xl" disabled={isLoading} className="mt-2 w-full">
+                                    {t("setPriceForm.submit")}
                                 </Button>
                             </div>
                         </EnterTransition>

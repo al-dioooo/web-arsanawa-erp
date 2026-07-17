@@ -1,9 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { SelectDescription } from "@/components/ui/select-description"
 import { formatCurrency } from "@/lib/money"
+import { cn } from "@/lib/utils"
 import type { Category, InventoryProduct, ProductVariant } from "@/features/inventory/inventory-types"
 
 export type ProductTile = {
@@ -22,6 +24,7 @@ type ProductGridProps = {
 }
 
 export function ProductGrid({ products, categories, priceMap, onAdd, disabled }: ProductGridProps) {
+    const t = useTranslations("pos.register.products")
     const [search, setSearch] = useState("")
     const [categoryId, setCategoryId] = useState("")
 
@@ -42,21 +45,21 @@ export function ProductGrid({ products, categories, priceMap, onAdd, disabled }:
     }, [products, categoryId, search, priceMap])
 
     return (
-        <div className="flex flex-col gap-4 rounded-2xl border border-navy-100 bg-white p-6">
+        <div className="flex flex-col gap-4 rounded-lg bg-surface p-6 shadow-card">
             <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
                 <Input
-                    label="Search products"
+                    label={t("search")}
                     type="text"
-                    placeholder="Search products or SKU..."
+                    placeholder={t("searchPlaceholder")}
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                 />
                 <SelectDescription
-                    label="Category"
+                    label={t("category")}
                     value={categoryId}
                     onChange={(event) => setCategoryId(event.target.value)}
                     options={[
-                        { value: "", label: "All categories" },
+                        { value: "", label: t("allCategories") },
                         ...categories.map((category) => ({
                             value: category.id,
                             label: `${"- ".repeat(category.depth)}${category.name}`,
@@ -77,7 +80,7 @@ export function ProductGrid({ products, categories, priceMap, onAdd, disabled }:
                             onClick={() => {
                                 if (!missingPrice) onAdd(product, variant)
                             }}
-                            className="flex flex-col items-start gap-1 rounded-xl border border-navy-100 p-4 text-left transition-colors hover:border-teal-700 hover:bg-teal-50/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer outline-none"
+                            className="flex flex-col items-start gap-1 rounded-md border border-line p-4 text-left transition-colors hover:border-brand hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer outline-none"
                         >
                             {product.images?.[0] ? (
                                 <img
@@ -85,25 +88,30 @@ export function ProductGrid({ products, categories, priceMap, onAdd, disabled }:
                                     alt={product.images[0].alt_text || product.name}
                                     loading="lazy"
                                     decoding="async"
-                                    className="mb-2 aspect-square w-full rounded-md border border-navy-100 object-cover"
+                                    className="mb-2 aspect-square w-full rounded-sm border border-line object-cover"
                                 />
                             ) : null}
-                            <span className="line-clamp-2 text-sm font-bold text-navy-900">{product.name}</span>
+                            <span className="line-clamp-2 text-sm font-bold text-ink">{product.name}</span>
                             {variant.name ? (
-                                <span className="text-xs text-navy-500">{variant.name}</span>
+                                <span className="text-xs text-ink-muted">{variant.name}</span>
                             ) : null}
-                            <code className="rounded border border-navy-100 bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold text-teal-800">
+                            <code className="rounded-sm bg-surface-muted px-1.5 py-0.5 text-[10px] font-semibold text-brand-ink">
                                 {variant.sku}
                             </code>
-                            <span className={`mt-1 text-sm font-bold ${missingPrice ? "text-orange-700" : "text-teal-700"}`}>
-                                {missingPrice ? "No price" : formatCurrency(price)}
+                            <span
+                                className={cn(
+                                    "mt-1 text-sm font-bold tabular-nums",
+                                    missingPrice ? "text-warning-strong" : "text-brand-ink",
+                                )}
+                            >
+                                {missingPrice ? t("noPrice") : formatCurrency(price)}
                             </span>
                         </button>
                     )
                 })}
                 {tiles.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-sm font-medium text-navy-400">
-                        No products found.
+                    <div className="col-span-full py-12 text-center text-sm font-medium text-ink-muted">
+                        {t("empty")}
                     </div>
                 )}
             </div>

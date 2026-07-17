@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { NextIntlClientProvider } from "next-intl"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import messages from "../../../messages/en.json"
 import { ProfileSettings } from "@/features/identity/profile-settings"
 import { useSession } from "@/features/auth/session-provider"
 import { toast } from "sonner"
@@ -82,7 +84,11 @@ describe("ProfileSettings", () => {
     })
 
     it("surfaces profile settings and authenticated user lookup", async () => {
-        render(<ProfileSettings />)
+        render(
+            <NextIntlClientProvider locale="en" messages={messages}>
+                <ProfileSettings />
+            </NextIntlClientProvider>,
+        )
 
         fireEvent.change(screen.getByLabelText("Display name"), {
             target: { value: "Alice E." },
@@ -132,7 +138,11 @@ describe("ProfileSettings", () => {
             isPending: false,
         } as unknown as ReturnType<typeof useIdentityUserLookup>)
 
-        render(<ProfileSettings />)
+        render(
+            <NextIntlClientProvider locale="en" messages={messages}>
+                <ProfileSettings />
+            </NextIntlClientProvider>,
+        )
 
         expect(toast.error).toHaveBeenCalledWith("Forbidden")
         expect(screen.queryByText("Forbidden")).not.toBeInTheDocument()

@@ -2,21 +2,24 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import { useTranslations } from "next-intl"
+import { useForm } from "react-hook-form"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { DataTable } from "@/components/ui/data-table"
+import { Icon } from "@/components/ui/icon"
+import { InputDate } from "@/components/ui/input-date"
+import { Modal } from "@/components/ui/modal"
+import { PageHeader } from "@/components/ui/page-header"
+import { SelectDescription } from "@/components/ui/select-description"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { useTaxReturns, useGenerateTaxReturn, type TaxReturn } from "@/features/finance/api-tax-returns"
-import { EnterTransition } from "@/components/ui/enter"
-import { Icon } from "@/components/ui/icon"
-import { Button } from "@/components/ui/button"
-import { InputDate } from "@/components/ui/input-date"
-import { SelectDescription } from "@/components/ui/select-description"
 import { formatIDR, formatDateID } from "@/lib/format"
-import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { useForm } from "react-hook-form"
 
 type GenerateForm = {
     tax_type: 'ppn' | 'pph23'
@@ -24,12 +27,8 @@ type GenerateForm = {
     period_end: string
 }
 
-const TAX_TYPE_LABEL: Record<string, string> = {
-    ppn: 'PPN (Value Added Tax)',
-    pph23: 'PPh 23 (Withholding Tax)',
-}
-
 export default function TaxReturnsPage() {
+    const t = useTranslations("finance.taxReturns")
     const router = useRouter()
     const { activeCompanyId } = useSession()
     const { data: taxReturns = [], isLoading } = useTaxReturns(activeCompanyId)
@@ -41,21 +40,18 @@ export default function TaxReturnsPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Tax Returns (SPT)"
-                primaryAction={{
-                    label: "+ Generate Return",
-                    onClick: () => setIsDrawerOpen(true),
-                }}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                actions={
+                    <Button size="lg" onClick={() => setIsDrawerOpen(true)}>
+                        {t("generate")}
+                    </Button>
+                }
             />
 
-            <FilterBar>
-                <div className="flex-1 text-sm text-navy-500">
-                    Generate and file tax returns (SPT) for PPN and PPh 23. Returns are computed from posted transactions.
-                </div>
-            </FilterBar>
-
             {/* Summary KPI row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                 {(['all', 'ppn', 'pph23'] as const).map(type => {
                     const subset = type === 'all' ? taxReturns : taxReturns.filter(r => r.tax_type === type)
                     const draftCount = subset.filter(r => r.status === 'draft').length
@@ -63,61 +59,61 @@ export default function TaxReturnsPage() {
                     return (
                         <button
                             key={type}
+                            type="button"
                             onClick={() => setActiveTab(type)}
                             className={cn(
-                                "bg-white rounded-2xl border p-5 text-left shadow-sm transition-all cursor-pointer",
-                                activeTab === type ? "border-teal-500 ring-2 ring-teal-500/20" : "border-navy-100 hover:border-teal-300"
+                                "cursor-pointer rounded-lg bg-surface p-5 text-left shadow-card transition-all",
+                                activeTab === type ? "ring-2 ring-brand" : "hover:shadow-card-hover"
                             )}
                         >
-                            <div className="text-xs font-bold uppercase tracking-wider text-navy-400 mb-1">
-                                {type === 'all' ? 'All Returns' : TAX_TYPE_LABEL[type]}
+                            <div className="type-card-label mb-1">
+                                {type === 'all' ? t("allReturns") : t(`types.${type}`)}
                             </div>
-                            <div className="text-2xl font-bold text-navy-900 mb-1">{formatIDR(total)}</div>
-                            <div className="text-sm text-navy-500">{subset.length} total · {draftCount} draft</div>
+                            <div className="type-card-value mb-1 tabular-nums">{formatIDR(total)}</div>
+                            <div className="text-sm text-ink-muted">
+                                {t("summary", { total: subset.length, draft: draftCount })}
+                            </div>
                         </button>
                     )
                 })}
             </div>
 
             {/* Tab filter */}
-            <div className="mb-4 border-b border-navy-100 flex gap-4">
+            <div className="mb-4 flex gap-4 border-b border-line">
                 {(['all', 'ppn', 'pph23'] as const).map(type => (
                     <button
                         key={type}
+                        type="button"
                         onClick={() => setActiveTab(type)}
                         className={cn(
-                            "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
+                            "cursor-pointer border-b-2 px-1 py-2 text-sm font-semibold transition-colors",
                             activeTab === type
-                                ? "border-teal-600 text-teal-700"
-                                : "border-transparent text-navy-500 hover:text-navy-700"
+                                ? "border-brand text-brand-ink"
+                                : "border-transparent text-ink-muted hover:text-ink"
                         )}
                     >
-                        {type === 'all' ? 'All' : type.toUpperCase()}
+                        {type === 'all' ? t("tabs.all") : t(`typeShort.${type}`)}
                     </button>
                 ))}
             </div>
 
-            <DataTable columns={["Period", "Tax Type", "Output Tax", "Input Tax", "Net Payable", "Status", ""]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-navy-500">
-                            Loading tax returns...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && filtered.length === 0 && (
-                    <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center">
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="p-4 bg-navy-50 rounded-2xl">
-                                    <Icon name="description" className="text-4xl text-navy-300" />
-                                </div>
-                                <p className="font-semibold text-navy-700">No tax returns found</p>
-                                <p className="text-sm text-navy-400">Click &quot;Generate Return&quot; to create a new SPT.</p>
-                            </div>
-                        </td>
-                    </tr>
-                )}
+            <DataTable
+                columns={[
+                    t("table.period"),
+                    t("table.taxType"),
+                    { label: t("table.outputTax"), align: "end" },
+                    { label: t("table.inputTax"), align: "end" },
+                    { label: t("table.netPayable"), align: "end" },
+                    t("table.status"),
+                    "",
+                ]}
+            >
+                <TableStateRow
+                    isLoading={isLoading}
+                    count={filtered.length}
+                    columns={7}
+                    emptyMessage={t("empty")}
+                />
                 {filtered.map((ret) => (
                     <TaxReturnRow key={ret.id} ret={ret} onClick={() => router.push(`/finance/tax-returns/${ret.id}`)} />
                 ))}
@@ -131,38 +127,31 @@ export default function TaxReturnsPage() {
 }
 
 function TaxReturnRow({ ret, onClick }: { ret: TaxReturn; onClick: () => void }) {
+    const t = useTranslations("finance.taxReturns")
     const output = parseFloat(ret.total_output)
     const input = parseFloat(ret.total_input)
     const payable = parseFloat(ret.total_payable)
 
     return (
-        <tr
-            onClick={onClick}
-            className="hover:bg-navy-50/50 transition-colors cursor-pointer"
-        >
-            <td className="px-6 py-4">
-                <div className="font-semibold text-navy-900">{formatDateID(ret.period_start)}</div>
-                <div className="text-xs text-navy-400">to {formatDateID(ret.period_end)}</div>
+        <tr onClick={onClick} className="cursor-pointer">
+            <td>
+                <div className="font-semibold text-ink">{formatDateID(ret.period_start)}</div>
+                <div className="text-xs text-ink-faint">{t("periodTo", { date: formatDateID(ret.period_end) })}</div>
             </td>
-            <td className="px-6 py-4">
-                <span className={cn(
-                    "inline-flex px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
-                    ret.tax_type === 'ppn'
-                        ? "bg-teal-50 text-teal-700"
-                        : "bg-indigo-50 text-indigo-700"
-                )}>
-                    {ret.tax_type === 'ppn' ? 'PPN' : 'PPh 23'}
-                </span>
+            <td>
+                <StatusPill tone={ret.tax_type === 'ppn' ? 'teal' : 'orange'}>
+                    {t(`typeShort.${ret.tax_type === 'ppn' ? 'ppn' : 'pph23'}`)}
+                </StatusPill>
             </td>
-            <td className="px-6 py-4 text-navy-700 text-right font-medium">{formatIDR(output)}</td>
-            <td className="px-6 py-4 text-navy-700 text-right font-medium">{formatIDR(input)}</td>
-            <td className={cn("px-6 py-4 text-right font-bold", payable > 0 ? "text-rose-600" : "text-teal-600")}>
+            <td className="text-right font-medium text-ink-secondary">{formatIDR(output)}</td>
+            <td className="text-right font-medium text-ink-secondary">{formatIDR(input)}</td>
+            <td className={cn("text-right font-bold", payable > 0 ? "text-error-strong" : "text-success-strong")}>
                 {formatIDR(payable)}
             </td>
-            <td className="px-6 py-4">
+            <td>
                 <StatusBadge status={ret.status} />
             </td>
-            <td className="px-6 py-4 text-navy-400">
+            <td className="text-ink-faint">
                 <Icon name="chevron_right" className="text-lg" />
             </td>
         </tr>
@@ -170,6 +159,9 @@ function TaxReturnRow({ ret, onClick }: { ret: TaxReturn; onClick: () => void })
 }
 
 function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; companyId: number | null }) {
+    const t = useTranslations("finance.taxReturns.drawer")
+    const tToast = useTranslations("finance.taxReturns.toast")
+    const tCommon = useTranslations("common")
     const generateReturn = useGenerateTaxReturn()
     const router = useRouter()
 
@@ -190,81 +182,73 @@ function GenerateReturnDrawer({ onClose, companyId }: { onClose: () => void; com
         if (!companyId) return
         generateReturn.mutate(data, {
             onSuccess: (res) => {
-                toast.success("Tax return generated successfully")
+                toast.success(tToast("generated"))
                 onClose()
                 if (res.data?.tax_return?.id) {
                     router.push(`/finance/tax-returns/${res.data.tax_return.id}`)
                 }
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to generate tax return")
+                toast.error(err?.message || tToast("generateFailed"))
             },
         })
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
-                    <div>
-                        <h2 className="text-lg font-bold text-navy-900">Generate Tax Return</h2>
-                        <p className="text-sm text-navy-500 mt-0.5">Compute SPT from posted transactions</p>
-                    </div>
-                    <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
-                        <Icon name="close" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-                    <SelectDescription
-                        label="Tax Type"
-                        error={errors.tax_type?.message}
-                        value={taxType}
-                        options={[
-                            { value: "ppn", label: "PPN", description: "Value Added Tax return for taxable sales and purchases." },
-                            { value: "pph23", label: "PPh 23", description: "Withholding Tax return for applicable vendor payments." },
-                        ]}
-                        {...register("tax_type", { required: "Tax type is required" })}
-                    />
-
-                    <div className="bg-navy-50/60 rounded-xl p-4 border border-navy-100">
-                        <p className="text-sm font-semibold text-navy-700 mb-3 flex items-center gap-2">
-                            <Icon name="calendar_month" className="text-base text-navy-400" />
-                            Reporting Period
-                        </p>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputDate
-                                label="Period Start"
-                                error={errors.period_start?.message}
-                                {...register("period_start", { required: "Start date is required" })}
-                            />
-                            <InputDate
-                                label="Period End"
-                                error={errors.period_end?.message}
-                                {...register("period_end", { required: "End date is required" })}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-                        <div className="flex gap-2">
-                            <Icon name="info" className="text-base text-amber-600 flex-shrink-0 mt-0.5" />
-                            <p>The system will scan all posted invoices and bills within the selected date range and compute the tax totals automatically.</p>
-                        </div>
-                    </div>
-                </form>
-
-                <div className="p-6 border-t border-navy-100 bg-navy-50/50 flex gap-3 justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button
-                        onClick={handleSubmit(onSubmit)}
-                        disabled={generateReturn.isPending}
-                        className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
-                    >
-                        {generateReturn.isPending ? "Generating..." : "Generate Return"}
+        <Modal
+            open
+            onClose={onClose}
+            variant="drawer"
+            size="md"
+            title={t("title")}
+            description={t("description")}
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>{tCommon("cancel")}</Button>
+                    <Button onClick={handleSubmit(onSubmit)} disabled={generateReturn.isPending}>
+                        {generateReturn.isPending ? t("generating") : t("generate")}
                     </Button>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                <SelectDescription
+                    label={t("taxType")}
+                    error={errors.tax_type?.message}
+                    value={taxType}
+                    options={[
+                        { value: "ppn", label: "PPN", description: t("typeDescPpn") },
+                        { value: "pph23", label: "PPh 23", description: t("typeDescPph23") },
+                    ]}
+                    {...register("tax_type", { required: t("taxTypeRequired") })}
+                />
+
+                <div className="rounded-lg bg-surface-muted p-4">
+                    <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink-secondary">
+                        <Icon name="calendar_month" className="text-base text-ink-faint" />
+                        {t("reportingPeriod")}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputDate
+                            label={t("periodStart")}
+                            error={errors.period_start?.message}
+                            {...register("period_start", { required: t("startRequired") })}
+                        />
+                        <InputDate
+                            label={t("periodEnd")}
+                            error={errors.period_end?.message}
+                            {...register("period_end", { required: t("endRequired") })}
+                        />
+                    </div>
                 </div>
-            </EnterTransition>
-        </div>
+
+                <div className="rounded-lg bg-warning-soft p-4 text-sm text-warning-strong">
+                    <div className="flex gap-2">
+                        <Icon name="info" className="mt-0.5 shrink-0 text-base" />
+                        <p>{t("info")}</p>
+                    </div>
+                </div>
+            </form>
+        </Modal>
     )
 }

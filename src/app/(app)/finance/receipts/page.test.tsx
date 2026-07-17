@@ -19,6 +19,18 @@ vi.mock("@/features/finance/api-payments", () => ({
     usePayments: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.receipts.filters.status.label": "Status",
+            "finance.receipts.filters.from": "Receipt Date From",
+            "finance.receipts.filters.to": "Receipt Date To",
+        }
+        return labels[fullKey] ?? fullKey
+    },
+}))
+
 describe("finance receipts page", () => {
     it("passes inbound receipt date range filters to the payments API hook", () => {
         vi.mocked(usePayments).mockReturnValue({
@@ -28,10 +40,10 @@ describe("finance receipts page", () => {
 
         render(<ReceiptsPage />)
 
-        fireEvent.change(screen.getByLabelText("Receipt date from"), {
+        fireEvent.change(screen.getByLabelText("Receipt Date From"), {
             target: { value: "2026-06-01" },
         })
-        fireEvent.change(screen.getByLabelText("Receipt date to"), {
+        fireEvent.change(screen.getByLabelText("Receipt Date To"), {
             target: { value: "2026-06-30" },
         })
 

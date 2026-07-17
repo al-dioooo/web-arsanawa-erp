@@ -2,16 +2,23 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import type { ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card, CardLabel, CardValue } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
 import { Field, SelectField } from "@/components/ui/field"
-import { SearchableSelect } from "@/components/ui/searchable-select"
 import { InputDate } from "@/components/ui/input-date"
 import { MotionLinkItem } from "@/components/ui/motion-link"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
-import { InventoryPageHeader, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
+import { InventoryPageHeader } from "@/features/inventory/inventory-layout"
 import {
     getStockMovement,
     listProductUnits,
@@ -25,12 +32,11 @@ import {
 } from "@/features/inventory/inventory-api"
 import type { ProductUnit, StockLot, StockMovement } from "@/features/inventory/inventory-types"
 import { compactDateTime } from "@/lib/format"
-import { cn } from "@/lib/utils"
 
 type RequestOptions = { token: string; companyId: number }
 type Branch = { id: number; name: string }
 const STOCK_OVERVIEW_PATH = "/inventory/stock"
-const MISSING_CONTEXT_MESSAGE = "Select an active company, branch, and Product Unit before recording stock."
+const LOTS_PER_PAGE = 50
 
 function today(): string {
     return new Date().toISOString().slice(0, 10)
@@ -53,8 +59,7 @@ function moneyLabel(value: string | number | null | undefined): string {
     return idrFormatter.format(Number.isFinite(numeric) ? numeric : 0)
 }
 
-function productUnitLabel(unit?: ProductUnit | null): string {
-    if (!unit) return "No Product Unit"
+function productUnitLabel(unit: ProductUnit): string {
     return unit.product?.name ? `${unit.sku} · ${unit.product.name}` : unit.sku
 }
 
@@ -100,6 +105,7 @@ function useStockActionSubmit() {
 }
 
 function useStockOptions() {
+    const t = useTranslations("inventory.stock")
     const { token, activeCompanyId, organizationContext } = useSession()
     const [productUnits, setProductUnits] = useState<ProductUnit[]>([])
     const [error, setError] = useState<string | null>(null)
@@ -111,6 +117,8 @@ function useStockOptions() {
 
     const branches = useMemo<Branch[]>(() => organizationContext?.branches ?? [], [organizationContext?.branches])
 
+    const optionsError = t("optionsError")
+
     useEffect(() => {
         let active = true
         void Promise.resolve().then(async () => {
@@ -120,7 +128,7 @@ function useStockOptions() {
                 if (active) setProductUnits(response.data.product_units)
             } catch (caught) {
                 if (active) {
-                    const message = caught instanceof Error ? caught.message : "Unable to load product units."
+                    const message = readableError(caught, optionsError)
                     setError(message)
                     toast.error(message)
                 }
@@ -130,7 +138,7 @@ function useStockOptions() {
         return () => {
             active = false
         }
-    }, [requestOptions])
+    }, [optionsError, requestOptions])
 
     return {
         requestOptions,
@@ -142,7 +150,7 @@ function useStockOptions() {
     }
 }
 
-function PageHeader({
+function StockPageHeader({
     title,
     description,
     isCompanyScoped,
@@ -151,24 +159,18 @@ function PageHeader({
     title: string
     description: string
     isCompanyScoped?: boolean
-    status?: string
+    status?: ReactNode
 }) {
+    const t = useTranslations("inventory.stock")
+
     return (
         <InventoryPageHeader
-            eyebrow="Inventory · Stock Movement"
+            eyebrow={t("eyebrow")}
             title={title}
             description={description}
             isCompanyScoped={isCompanyScoped}
-            status={status ? <StatusPill tone="neutral">{status}</StatusPill> : undefined}
+            status={status}
         />
-    )
-}
-
-function ActionLink({ href, icon, label, description }: { href: string; icon: string; label: string; description: string }) {
-    return (
-        <MotionLinkItem href={href} icon={icon} label={label} className="rounded-2xl">
-            {description}
-        </MotionLinkItem>
     )
 }
 
@@ -187,25 +189,29 @@ function StockSelectors({
     onBranchChange: (value: number) => void
     onProductUnitChange: (value: number) => void
 }) {
+    const t = useTranslations("inventory.stock")
+
     return (
         <div className="grid gap-3 md:grid-cols-2">
-            <SelectField label="Branch" value={branchId ?? ""} onChange={(event) => onBranchChange(Number(event.target.value))}>
+            <SelectField label={t("selectors.branch")} value={branchId ?? ""} onChange={(event) => onBranchChange(Number(event.target.value))}>
                 {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>{branch.name}</option>
                 ))}
             </SelectField>
             <SearchableSelect
-                label="Product Unit"
+                label={t("selectors.productUnit")}
                 value={productUnitId ?? ""}
                 onChange={(value) => onProductUnitChange(Number(value))}
                 options={productUnits.map((unit) => ({ value: unit.id, label: productUnitLabel(unit) }))}
-                placeholder="Select product unit"
+                placeholder={t("selectors.productUnitPlaceholder")}
             />
         </div>
     )
 }
 
 export function StockOverviewView() {
+    const t = useTranslations("inventory.stock")
+    const navT = useTranslations("inventory.nav")
     const { requestOptions, branches, productUnits, defaultBranchId, defaultProductUnitId } = useStockOptions()
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
@@ -223,6 +229,8 @@ export function StockOverviewView() {
         }
     }, [branchId, defaultBranchId, defaultProductUnitId, productUnitId])
 
+    const overviewError = t("overview.error")
+
     useEffect(() => {
         let active = true
         void Promise.resolve().then(async () => {
@@ -231,56 +239,67 @@ export function StockOverviewView() {
                 const loaded = await loadStockSnapshot(requestOptions, branchId, productUnitId)
                 if (active) setSnapshot(loaded)
             } catch (caught) {
-                if (active) {
-                    const message = caught instanceof Error ? caught.message : "Unable to load stock overview."
-                    toast.error(message)
-                }
+                if (active) toast.error(readableError(caught, overviewError))
             }
         })
         return () => {
             active = false
         }
-    }, [branchId, productUnitId, requestOptions])
+    }, [branchId, overviewError, productUnitId, requestOptions])
 
     return (
         <div className="grid gap-6">
-            <PageHeader title="Stock Overview" description="Review valuation, on-hand levels, active lots, and recent immutable stock movements." isCompanyScoped={Boolean(requestOptions)} />
-            <section className={cn(inventorySurfaceClass, "p-5")}>
+            <StockPageHeader title={t("overview.title")} description={t("overview.subtitle")} isCompanyScoped={Boolean(requestOptions)} />
+            <Card as="section" padding="md">
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
-            </section>
+            </Card>
             <section className="grid gap-4 md:grid-cols-3">
-                <div className={cn(inventorySurfaceClass, "p-5")}>
-                    <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Active Context Value</p>
-                    <p className="mt-2 font-brand text-2xl font-bold text-navy-950">{moneyLabel(snapshot.totalValue)}</p>
-                </div>
-                <div className={cn(inventorySurfaceClass, "p-5")}>
-                    <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Selected On Hand</p>
-                    <p className="mt-2 font-brand text-2xl font-bold text-teal-700">{numberLabel(snapshot.selectedOnHand)}</p>
-                </div>
-                <div className={cn(inventorySurfaceClass, "p-5")}>
-                    <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Active Lots</p>
-                    <p className="mt-2 font-brand text-2xl font-bold text-orange-500">{snapshot.lotTotal}</p>
-                </div>
+                <Card padding="md">
+                    <CardLabel>{t("overview.contextValue")}</CardLabel>
+                    <CardValue className="mt-2">{moneyLabel(snapshot.totalValue)}</CardValue>
+                </Card>
+                <Card padding="md">
+                    <CardLabel>{t("overview.selectedOnHand")}</CardLabel>
+                    <CardValue className="mt-2 text-brand-ink">{numberLabel(snapshot.selectedOnHand)}</CardValue>
+                </Card>
+                <Card padding="md">
+                    <CardLabel>{t("overview.activeLots")}</CardLabel>
+                    <CardValue className="mt-2">{snapshot.lotTotal}</CardValue>
+                </Card>
             </section>
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <ActionLink href="/inventory/stock/lots" icon="local_offer" label="Stock Lots" description="Inspect batch balances, expiry dates, and costs." />
-                <ActionLink href="/inventory/stock/movements" icon="history" label="Movement Ledger" description="Audit immutable stock movement records." />
-                <ActionLink href="/inventory/stock/receipts/new" icon="add" label="New Receipt" description="Receive stock into a branch by Product Unit." />
-                <ActionLink href="/inventory/stock/issues/new" icon="remove_circle" label="New Issue" description="Issue stock out of a branch by Product Unit." />
-                <ActionLink href="/inventory/stock/adjustments/new" icon="sync_alt" label="New Adjustment" description="Correct counts with signed stock adjustments." />
-                <ActionLink href="/inventory/stock/transfers/new" icon="swap_horiz" label="New Transfer" description="Move Product Unit stock between branches." />
+                <MotionLinkItem href="/inventory/stock/lots" icon="local_offer" label={navT("stockLots")}>
+                    {t("overview.links.lots")}
+                </MotionLinkItem>
+                <MotionLinkItem href="/inventory/stock/movements" icon="history" label={navT("movements")}>
+                    {t("overview.links.movements")}
+                </MotionLinkItem>
+                <MotionLinkItem href="/inventory/stock/receipts/new" icon="add" label={navT("newReceipt")}>
+                    {t("overview.links.receipt")}
+                </MotionLinkItem>
+                <MotionLinkItem href="/inventory/stock/issues/new" icon="remove_circle" label={navT("newIssue")}>
+                    {t("overview.links.issue")}
+                </MotionLinkItem>
+                <MotionLinkItem href="/inventory/stock/adjustments/new" icon="sync_alt" label={navT("newAdjustment")}>
+                    {t("overview.links.adjustment")}
+                </MotionLinkItem>
+                <MotionLinkItem href="/inventory/stock/transfers/new" icon="swap_horiz" label={navT("newTransfer")}>
+                    {t("overview.links.transfer")}
+                </MotionLinkItem>
             </section>
         </div>
     )
 }
 
 export function StockLotsView() {
+    const t = useTranslations("inventory.stock")
     const { requestOptions, branches, productUnits, defaultBranchId, defaultProductUnitId } = useStockOptions()
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
     const [lots, setLots] = useState<StockLot[]>([])
     const [page, setPage] = useState(1)
-    const [lastPage, setLastPage] = useState(1)
+    const [total, setTotal] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -295,24 +314,30 @@ export function StockLotsView() {
         }
     }, [branchId, defaultBranchId, defaultProductUnitId, productUnitId])
 
+    const lotsError = t("lots.error")
+
     const loadLots = useCallback(async () => {
-        if (!requestOptions) return
+        if (!requestOptions) {
+            setIsLoading(false)
+            return
+        }
+        setIsLoading(true)
         try {
             const loaded = await loadStockLots(requestOptions, {
                 branch_id: branchId,
                 product_unit_id: productUnitId,
                 page,
-                per_page: 50,
+                per_page: LOTS_PER_PAGE,
             })
             setLots(loaded.lots)
-            setLastPage(loaded.pagination.last_page)
+            setTotal(loaded.pagination.total)
             setLoadError(null)
         } catch (caught) {
-            const message = caught instanceof Error ? caught.message : "Unable to load stock lots."
-            setLoadError(message)
-            toast.error(message)
+            setLoadError(readableError(caught, lotsError))
+        } finally {
+            setIsLoading(false)
         }
-    }, [branchId, page, productUnitId, requestOptions])
+    }, [branchId, lotsError, page, productUnitId, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -324,60 +349,62 @@ export function StockLotsView() {
         }
     }, [loadLots])
 
+    const showSkeleton = isLoading && lots.length === 0
+
     return (
         <div className="grid gap-6">
-            <PageHeader title="Stock Lots" description="Track open batches, remaining quantities, and Product Unit cost context." isCompanyScoped={Boolean(requestOptions)} />
-            <section className={cn(inventorySurfaceClass, "p-5")}>
+            <StockPageHeader title={t("lots.title")} description={t("lots.subtitle")} isCompanyScoped={Boolean(requestOptions)} />
+            <Card as="section" padding="md">
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
-            </section>
-            <section className="grid gap-3">
-                {loadError && (
-                    <div className={cn(inventorySurfaceClass, "flex items-center justify-between gap-3 p-4")}>
-                        <p className="text-sm font-semibold text-error">{loadError}</p>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void loadLots()}>
-                            Retry
-                        </Button>
-                    </div>
-                )}
-                {!loadError && lots.map((lot) => (
-                    <article key={lot.id} className={cn(inventorySurfaceClass, "p-4")}>
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                                <p className="font-bold text-navy-950">{lot.lot_number ?? `Lot #${lot.id}`}</p>
-                                <p className="mt-1 text-sm font-semibold text-teal-700">{lot.product_unit?.sku ?? lot.product_unit_id}</p>
-                            </div>
-                            <div className="text-sm text-navy-600 sm:text-right">
-                                <p>{numberLabel(lot.remaining_quantity)} remaining</p>
-                                <p>{moneyLabel(lot.unit_cost)}</p>
-                            </div>
-                        </div>
-                    </article>
+            </Card>
+            <DataTable
+                minWidth={560}
+                columns={[
+                    t("lots.columns.lot"),
+                    t("lots.columns.productUnit"),
+                    { label: t("lots.columns.remaining"), align: "end" },
+                    { label: t("lots.columns.unitCost"), align: "end" },
+                ]}
+                footer={total > LOTS_PER_PAGE ? (
+                    <TablePagination
+                        page={page}
+                        pageSize={LOTS_PER_PAGE}
+                        total={total}
+                        onPageChange={setPage}
+                        label={(range) => t("lots.pageInfo", range)}
+                    />
+                ) : undefined}
+            >
+                <TableStateRow
+                    isLoading={showSkeleton}
+                    isError={Boolean(loadError)}
+                    error={loadError ? new Error(loadError) : undefined}
+                    count={lots.length}
+                    columns={4}
+                    emptyMessage={t("lots.empty")}
+                    onRetry={() => void loadLots()}
+                />
+                {!loadError && !showSkeleton && lots.map((lot) => (
+                    <tr key={lot.id}>
+                        <td className="font-semibold text-ink">{lot.lot_number ?? t("lots.lotNumber", { id: lot.id })}</td>
+                        <td className="font-medium text-brand-ink">{lot.product_unit?.sku ?? lot.product_unit_id}</td>
+                        <td className="text-end tabular-nums">{numberLabel(lot.remaining_quantity)}</td>
+                        <td className="text-end tabular-nums">{moneyLabel(lot.unit_cost)}</td>
+                    </tr>
                 ))}
-                {!loadError && lots.length === 0 && <p className={cn(inventorySurfaceClass, "p-6 text-center text-sm font-semibold text-navy-400")}>No lots registered for this context.</p>}
-                {lastPage > 1 && (
-                    <div className="flex items-center justify-end gap-2">
-                        <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
-                            Previous
-                        </Button>
-                        <span className="text-xs font-semibold text-navy-500">
-                            Page {page} of {lastPage}
-                        </span>
-                        <Button type="button" variant="outline" size="sm" disabled={page >= lastPage} onClick={() => setPage((current) => current + 1)}>
-                            Next
-                        </Button>
-                    </div>
-                )}
-            </section>
+            </DataTable>
         </div>
     )
 }
 
 export function StockMovementsView() {
+    const t = useTranslations("inventory.stock")
     const { requestOptions, branches, productUnits, defaultBranchId, defaultProductUnitId } = useStockOptions()
     const [branchId, setBranchId] = useState<number | null>(null)
     const [productUnitId, setProductUnitId] = useState<number | null>(null)
     const [movements, setMovements] = useState<StockMovement[]>([])
     const [total, setTotal] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
     const [loadError, setLoadError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -392,19 +419,25 @@ export function StockMovementsView() {
         }
     }, [branchId, defaultBranchId, defaultProductUnitId, productUnitId])
 
+    const movementsError = t("movements.error")
+
     const loadMovements = useCallback(async () => {
-        if (!requestOptions) return
+        if (!requestOptions) {
+            setIsLoading(false)
+            return
+        }
+        setIsLoading(true)
         try {
             const loaded = await loadStockMovements(requestOptions, { branch_id: branchId, product_unit_id: productUnitId, per_page: 50 })
             setMovements(loaded.movements)
             setTotal(loaded.total)
             setLoadError(null)
         } catch (caught) {
-            const message = caught instanceof Error ? caught.message : "Unable to load stock movements."
-            setLoadError(message)
-            toast.error(message)
+            setLoadError(readableError(caught, movementsError))
+        } finally {
+            setIsLoading(false)
         }
-    }, [branchId, productUnitId, requestOptions])
+    }, [branchId, movementsError, productUnitId, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -416,63 +449,64 @@ export function StockMovementsView() {
         }
     }, [loadMovements])
 
+    const showSkeleton = isLoading && movements.length === 0
+
     return (
         <div className="grid gap-6">
-            <PageHeader title="Movement Ledger" description="Read-only stock movement audit trail for receipts, issues, adjustments, and transfers." isCompanyScoped={Boolean(requestOptions)} status={`${movements.length} of ${total}`} />
-            <section className={cn(inventorySurfaceClass, "p-5")}>
+            <StockPageHeader
+                title={t("movements.title")}
+                description={t("movements.subtitle")}
+                isCompanyScoped={Boolean(requestOptions)}
+                status={<StatusPill tone="neutral">{t("movements.count", { count: movements.length, total })}</StatusPill>}
+            />
+            <Card as="section" padding="md">
                 <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
-            </section>
-            <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
-                <table className="w-full min-w-[720px] text-left text-sm">
-                    <thead className="bg-navy-50/40 text-xs font-bold uppercase tracking-wider text-navy-500">
-                        <tr>
-                            <th className="px-4 py-3">Movement</th>
-                            <th className="px-4 py-3">Product Unit</th>
-                            <th className="px-4 py-3">Type</th>
-                            <th className="px-4 py-3">Qty</th>
-                            <th className="px-4 py-3">Occurred At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loadError && (
-                            <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center">
-                                    <p className="text-sm font-semibold text-error">{loadError}</p>
-                                    <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void loadMovements()}>
-                                        Retry
-                                    </Button>
-                                </td>
-                            </tr>
-                        )}
-                        {!loadError && movements.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-sm font-semibold text-navy-400">
-                                    No movements recorded for this context.
-                                </td>
-                            </tr>
-                        )}
-                        {!loadError && movements.map((movement) => (
-                            <tr key={movement.id} className="border-t border-navy-100">
-                                <td className="px-4 py-3 font-bold text-teal-700">
-                                    <Link href={`/inventory/stock/movements/${movement.id}`}>Movement #{movement.id}</Link>
-                                </td>
-                                <td className="px-4 py-3 font-semibold text-navy-900">{movement.product_unit?.sku ?? movement.product_unit_id}</td>
-                                <td className="px-4 py-3 text-navy-700">{movement.type.replaceAll("_", " ").toUpperCase()}</td>
-                                <td className="px-4 py-3 text-navy-700">{numberLabel(movement.quantity)}</td>
-                                <td className="px-4 py-3 text-navy-600">{compactDateTime(movement.occurred_at)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            </Card>
+            <DataTable
+                minWidth={720}
+                columns={[
+                    t("movements.columns.movement"),
+                    t("movements.columns.productUnit"),
+                    t("movements.columns.type"),
+                    { label: t("movements.columns.qty"), align: "end" },
+                    t("movements.columns.occurredAt"),
+                ]}
+            >
+                <TableStateRow
+                    isLoading={showSkeleton}
+                    isError={Boolean(loadError)}
+                    error={loadError ? new Error(loadError) : undefined}
+                    count={movements.length}
+                    columns={5}
+                    emptyMessage={t("movements.empty")}
+                    onRetry={() => void loadMovements()}
+                />
+                {!loadError && !showSkeleton && movements.map((movement) => (
+                    <tr key={movement.id}>
+                        <td className="font-semibold">
+                            <Link className="text-brand-ink transition-colors hover:underline" href={`/inventory/stock/movements/${movement.id}`}>
+                                {t("movements.movementNumber", { id: movement.id })}
+                            </Link>
+                        </td>
+                        <td className="font-medium text-ink">{movement.product_unit?.sku ?? movement.product_unit_id}</td>
+                        <td>{movement.type.replaceAll("_", " ").toUpperCase()}</td>
+                        <td className="text-end tabular-nums">{numberLabel(movement.quantity)}</td>
+                        <td className="text-ink-muted">{compactDateTime(movement.occurred_at)}</td>
+                    </tr>
+                ))}
+            </DataTable>
         </div>
     )
 }
 
 export function StockMovementDetailView({ movementId }: { movementId: number }) {
+    const t = useTranslations("inventory.stock")
+    const rootT = useTranslations()
     const { requestOptions } = useStockOptions()
     const [movement, setMovement] = useState<StockMovement | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
+
+    const detailError = t("detail.error")
 
     const loadMovement = useCallback(async () => {
         if (!requestOptions) return
@@ -481,11 +515,11 @@ export function StockMovementDetailView({ movementId }: { movementId: number }) 
             setMovement(response.data.movement)
             setLoadError(null)
         } catch (caught) {
-            const message = caught instanceof Error ? caught.message : "Unable to load the stock movement."
+            const message = readableError(caught, detailError)
             setLoadError(message)
             toast.error(message)
         }
-    }, [movementId, requestOptions])
+    }, [detailError, movementId, requestOptions])
 
     useEffect(() => {
         let active = true
@@ -499,43 +533,54 @@ export function StockMovementDetailView({ movementId }: { movementId: number }) 
 
     return (
         <div className="grid gap-6">
-            <PageHeader title={`Movement #${movementId}`} description="Immutable movement audit details. Stock movements cannot be edited or deleted from the UI." isCompanyScoped={Boolean(requestOptions)} />
+            <StockPageHeader
+                title={t("movements.movementNumber", { id: movementId })}
+                description={t("detail.subtitle")}
+                isCompanyScoped={Boolean(requestOptions)}
+            />
             {movement ? (
-                <section className={cn("grid gap-4 p-5 md:grid-cols-2", inventorySurfaceClass)}>
+                <Card as="section" padding="md" className="grid gap-4 md:grid-cols-2">
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Product Unit</p>
-                        <p className="mt-1 font-bold text-navy-950">{movement.product_unit?.sku ?? movement.product_unit_id}</p>
+                        <CardLabel>{t("detail.productUnit")}</CardLabel>
+                        <p className="mt-1 font-bold text-ink">{movement.product_unit?.sku ?? movement.product_unit_id}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Type</p>
-                        <p className="mt-1 font-bold text-navy-950">{movement.type.replaceAll("_", " ").toUpperCase()}</p>
+                        <CardLabel>{t("detail.type")}</CardLabel>
+                        <p className="mt-1 font-bold text-ink">{movement.type.replaceAll("_", " ").toUpperCase()}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Quantity</p>
-                        <p className="mt-1 font-bold text-navy-950">{numberLabel(movement.quantity)}</p>
+                        <CardLabel>{t("detail.quantity")}</CardLabel>
+                        <p className="mt-1 font-bold text-ink tabular-nums">{numberLabel(movement.quantity)}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Unit Cost</p>
-                        <p className="mt-1 font-bold text-navy-950">{moneyLabel(movement.unit_cost)}</p>
+                        <CardLabel>{t("detail.unitCost")}</CardLabel>
+                        <p className="mt-1 font-bold text-ink tabular-nums">{moneyLabel(movement.unit_cost)}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Occurred At</p>
-                        <p className="mt-1 font-bold text-navy-950">{compactDateTime(movement.occurred_at)}</p>
+                        <CardLabel>{t("detail.occurredAt")}</CardLabel>
+                        <p className="mt-1 font-bold text-ink">{compactDateTime(movement.occurred_at)}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-500">Notes</p>
-                        <p className="mt-1 font-bold text-navy-950">{movement.notes ?? "No notes"}</p>
+                        <CardLabel>{t("detail.notes")}</CardLabel>
+                        <p className="mt-1 font-bold text-ink">{movement.notes ?? t("detail.noNotes")}</p>
                     </div>
-                </section>
+                </Card>
             ) : loadError ? (
-                <div className={cn(inventorySurfaceClass, "flex items-center justify-between gap-3 p-6")}>
+                <Card padding="lg" className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-error">{loadError}</p>
                     <Button type="button" variant="outline" size="sm" onClick={() => void loadMovement()}>
-                        Retry
+                        {rootT("common.retry")}
                     </Button>
-                </div>
+                </Card>
             ) : (
-                <p className={cn(inventorySurfaceClass, "p-6 text-sm font-semibold text-navy-400")}>Loading movement detail...</p>
+                <Card as="section" padding="md" className="grid gap-4 md:grid-cols-2" aria-busy="true">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                        <div key={index}>
+                            <Skeleton className="h-3 w-28" />
+                            <Skeleton className="mt-2 h-5 w-40" />
+                        </div>
+                    ))}
+                </Card>
             )}
         </div>
     )
@@ -556,8 +601,8 @@ function StockFormShell({
 }) {
     return (
         <div className="grid gap-6">
-            <PageHeader title={title} description={description} isCompanyScoped={isCompanyScoped} />
-            <form className={cn("grid gap-4 p-5", inventorySurfaceClass)} onSubmit={onSubmit}>{children}</form>
+            <StockPageHeader title={title} description={description} isCompanyScoped={isCompanyScoped} />
+            <Card as="form" padding="md" className="grid gap-4" onSubmit={onSubmit}>{children}</Card>
         </div>
     )
 }
@@ -589,6 +634,7 @@ function useFormDefaults() {
 }
 
 export function StockReceiptView() {
+    const t = useTranslations("inventory.stock")
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
     const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [quantity, setQuantity] = useState("")
@@ -596,12 +642,16 @@ export function StockReceiptView() {
     const [lotNumber, setLotNumber] = useState("")
     const [receivedAt, setReceivedAt] = useState(today())
 
+    const missingContext = t("missingContext")
+    const successMessage = t("receipt.success")
+    const failureMessage = t("receipt.failure")
+
     const submit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         await submitStockAction({
-            contextError: !requestOptions || !branchId || !productUnitId ? MISSING_CONTEXT_MESSAGE : null,
-            successMessage: "Stock receipt recorded successfully.",
-            failureMessage: "Failed to record stock receipt.",
+            contextError: !requestOptions || !branchId || !productUnitId ? missingContext : null,
+            successMessage,
+            failureMessage,
             action: () => recordReceipt(requestOptions as RequestOptions, {
                 branch_id: branchId as number,
                 product_unit_id: productUnitId as number,
@@ -611,28 +661,26 @@ export function StockReceiptView() {
                 received_at: receivedAt,
             }),
         })
-    }, [branchId, lotNumber, productUnitId, quantity, receivedAt, requestOptions, submitStockAction, unitCost])
+    }, [branchId, failureMessage, lotNumber, missingContext, productUnitId, quantity, receivedAt, requestOptions, submitStockAction, successMessage, unitCost])
 
     return (
-        <div className="grid gap-6">
-            <PageHeader title="New Receipt" description="Receive stock into a branch using a Product Unit sellable SKU." isCompanyScoped={Boolean(requestOptions)} />
-            <form className={cn("grid gap-4 p-5", inventorySurfaceClass)} onSubmit={submit}>
-                <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
-                <div className="grid gap-3 md:grid-cols-2">
-                    <Field label="Quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
-                    <Field label="Unit Cost (IDR)" type="number" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} required />
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                    <Field label="Lot Number" value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} />
-                    <InputDate label="Received At" value={receivedAt} onChange={(event) => setReceivedAt(event.target.value)} required />
-                </div>
-                <Button type="submit" size="xl" disabled={isSubmitting}>Record Receipt</Button>
-            </form>
-        </div>
+        <StockFormShell title={t("receipt.title")} description={t("receipt.subtitle")} isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
+            <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
+            <div className="grid gap-3 md:grid-cols-2">
+                <Field label={t("receipt.quantity")} type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
+                <Field label={t("receipt.unitCost")} type="number" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} required />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+                <Field label={t("receipt.lotNumber")} value={lotNumber} onChange={(event) => setLotNumber(event.target.value)} />
+                <InputDate label={t("receipt.receivedAt")} value={receivedAt} onChange={(event) => setReceivedAt(event.target.value)} required />
+            </div>
+            <Button type="submit" size="xl" disabled={isSubmitting}>{t("receipt.submit")}</Button>
+        </StockFormShell>
     )
 }
 
 export function StockIssueView() {
+    const t = useTranslations("inventory.stock")
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
     const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [quantity, setQuantity] = useState("")
@@ -641,9 +689,9 @@ export function StockIssueView() {
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         await submitStockAction({
-            contextError: !requestOptions || !branchId || !productUnitId ? MISSING_CONTEXT_MESSAGE : null,
-            successMessage: "Stock issue recorded successfully.",
-            failureMessage: "Failed to record stock issue.",
+            contextError: !requestOptions || !branchId || !productUnitId ? t("missingContext") : null,
+            successMessage: t("issue.success"),
+            failureMessage: t("issue.failure"),
             action: () => recordIssue(requestOptions as RequestOptions, {
                 branch_id: branchId as number,
                 product_unit_id: productUnitId as number,
@@ -654,16 +702,17 @@ export function StockIssueView() {
     }
 
     return (
-        <StockFormShell title="New Issue" description="Issue Product Unit stock out of a branch." isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
+        <StockFormShell title={t("issue.title")} description={t("issue.subtitle")} isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
-            <Field label="Issue quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
-            <Field label="Issue notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" size="xl" disabled={isSubmitting}>Record Issue</Button>
+            <Field label={t("issue.quantity")} type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
+            <Field label={t("issue.notes")} value={notes} onChange={(event) => setNotes(event.target.value)} />
+            <Button type="submit" size="xl" disabled={isSubmitting}>{t("issue.submit")}</Button>
         </StockFormShell>
     )
 }
 
 export function StockAdjustmentView() {
+    const t = useTranslations("inventory.stock")
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
     const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [quantity, setQuantity] = useState("")
@@ -673,9 +722,9 @@ export function StockAdjustmentView() {
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         await submitStockAction({
-            contextError: !requestOptions || !branchId || !productUnitId ? MISSING_CONTEXT_MESSAGE : null,
-            successMessage: "Stock adjustment recorded successfully.",
-            failureMessage: "Failed to record stock adjustment.",
+            contextError: !requestOptions || !branchId || !productUnitId ? t("missingContext") : null,
+            successMessage: t("adjustment.success"),
+            failureMessage: t("adjustment.failure"),
             action: () => recordAdjustment(requestOptions as RequestOptions, {
                 branch_id: branchId as number,
                 product_unit_id: productUnitId as number,
@@ -687,19 +736,20 @@ export function StockAdjustmentView() {
     }
 
     return (
-        <StockFormShell title="New Adjustment" description="Correct Product Unit stock with a signed quantity." isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
+        <StockFormShell title={t("adjustment.title")} description={t("adjustment.subtitle")} isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
             <div className="grid gap-3 md:grid-cols-2">
-                <Field label="Adjustment quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
-                <Field label="Adjustment cost" type="number" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} />
+                <Field label={t("adjustment.quantity")} type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
+                <Field label={t("adjustment.cost")} type="number" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} />
             </div>
-            <Field label="Adjustment notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" size="xl" disabled={isSubmitting}>Record Adjustment</Button>
+            <Field label={t("adjustment.notes")} value={notes} onChange={(event) => setNotes(event.target.value)} />
+            <Button type="submit" size="xl" disabled={isSubmitting}>{t("adjustment.submit")}</Button>
         </StockFormShell>
     )
 }
 
 export function StockTransferView() {
+    const t = useTranslations("inventory.stock")
     const { requestOptions, branches, productUnits, branchId, productUnitId, setBranchId, setProductUnitId } = useFormDefaults()
     const { isSubmitting, submitStockAction } = useStockActionSubmit()
     const [toBranchId, setToBranchId] = useState<number | null>(null)
@@ -723,12 +773,12 @@ export function StockTransferView() {
         event.preventDefault()
         await submitStockAction({
             contextError: !requestOptions || !branchId || !productUnitId
-                ? MISSING_CONTEXT_MESSAGE
+                ? t("missingContext")
                 : !toBranchId
-                    ? "Select a destination branch before recording stock."
+                    ? t("transfer.missingDestination")
                     : null,
-            successMessage: "Stock transfer recorded successfully.",
-            failureMessage: "Failed to record stock transfer.",
+            successMessage: t("transfer.success"),
+            failureMessage: t("transfer.failure"),
             action: () => recordTransfer(requestOptions as RequestOptions, {
                 from_branch_id: branchId as number,
                 to_branch_id: toBranchId as number,
@@ -739,16 +789,16 @@ export function StockTransferView() {
     }
 
     return (
-        <StockFormShell title="New Transfer" description="Move Product Unit stock between branches." isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
+        <StockFormShell title={t("transfer.title")} description={t("transfer.subtitle")} isCompanyScoped={Boolean(requestOptions)} onSubmit={(event) => void submit(event)}>
             <StockSelectors branches={branches} productUnits={productUnits} branchId={branchId} productUnitId={productUnitId} onBranchChange={setBranchId} onProductUnitChange={setProductUnitId} />
-            <SelectField label="Destination branch" value={toBranchId ?? ""} onChange={(event) => setToBranchId(Number(event.target.value))}>
+            <SelectField label={t("transfer.destination")} value={toBranchId ?? ""} onChange={(event) => setToBranchId(Number(event.target.value))}>
                 {branches.filter((branch) => branch.id !== branchId).map((branch) => (
                     <option key={branch.id} value={branch.id}>{branch.name}</option>
                 ))}
             </SelectField>
-            <Field label="Transfer quantity" type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
-            <Field label="Transfer notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
-            <Button type="submit" size="xl" disabled={isSubmitting || !toBranchId}>Record Transfer</Button>
+            <Field label={t("transfer.quantity")} type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} required />
+            <Field label={t("transfer.notes")} value={notes} onChange={(event) => setNotes(event.target.value)} />
+            <Button type="submit" size="xl" disabled={isSubmitting || !toBranchId}>{t("transfer.submit")}</Button>
         </StockFormShell>
     )
 }

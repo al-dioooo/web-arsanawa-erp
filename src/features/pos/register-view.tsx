@@ -1,13 +1,16 @@
 "use client"
 
 import { toast } from "sonner"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Dialog } from "@/components/ui/dialog"
+import { Card } from "@/components/ui/card"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
+import { Modal } from "@/components/ui/modal"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "@/features/auth/session-provider"
 import { CartPanel, type CartItem, type CateringFields } from "@/features/pos/components/cart-panel"
 import { PaymentDialog } from "@/features/pos/components/payment-dialog"
@@ -51,6 +54,14 @@ const EMPTY_CATERING: CateringFields = {
 export function RegisterView() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const t = useTranslations("pos.register")
+    const rootT = useTranslations()
+    // Latest translator for effects that must not re-run when the translator
+    // identity changes (e.g. the sale_id resume effect).
+    const tRef = useRef(t)
+    useEffect(() => {
+        tRef.current = t
+    })
     const { token, activeCompanyId, activeBranchId, companies } = useSession()
 
     const [products, setProducts] = useState<InventoryProduct[]>([])
@@ -91,6 +102,7 @@ export function RegisterView() {
         ? !!activeBranchId
         : shift?.status === "open" && !!activeBranchId && !!selectedRegister
 
+    const loadErrorFallback = t("loadError")
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
@@ -143,11 +155,11 @@ export function RegisterView() {
                 )
             setPriceMap(Object.fromEntries(entries))
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load register.")
+            toast.error(caught instanceof Error ? caught.message : loadErrorFallback)
         } finally {
             setIsLoading(false)
         }
-    }, [activeBranchId, cateringOnly, requestOptions, selectedRegisterKey])
+    }, [activeBranchId, cateringOnly, requestOptions, selectedRegisterKey, loadErrorFallback])
 
     useEffect(() => {
         let active = true
@@ -199,7 +211,7 @@ export function RegisterView() {
                     (sale.lines ?? []).map((line) => ({
                         productId: 0,
                         variantId: line.product_variant_id,
-                        name: line.description ?? `Variant #${line.product_variant_id}`,
+                        name: line.description ?? tRef.current("variantRef", { id: line.product_variant_id }),
                         variantName: null,
                         sku: `#${line.product_variant_id}`,
                         quantity: toNumber(line.quantity),
@@ -207,7 +219,7 @@ export function RegisterView() {
                     })),
                 )
             })
-            .catch((caught) => toast.error(caught instanceof Error ? caught.message : "Unable to resume sale."))
+            .catch((caught) => toast.error(caught instanceof Error ? caught.message : tRef.current("resumeError")))
 
         return () => {
             active = false
@@ -267,7 +279,7 @@ export function RegisterView() {
             await callback()
             if (successMessage) toast.success(successMessage)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : t("loadError"))
         } finally {
             setIsLoading(false)
         }
@@ -277,12 +289,12 @@ export function RegisterView() {
         if (!requestOptions || !activeBranchId || cart.length === 0) return
         if (!cateringOnly && !selectedRegister) return
         if (!cateringOnly && (!shift || shift.status !== "open" || shift.register_id !== selectedRegister?.id)) {
-            toast.error("Open a shift for the selected register before selling.")
+            toast.error(t("shiftNeeded"))
             return
         }
 
         if (effectiveSaleType === "catering" && (!catering.partnerId || !catering.fulfilmentDate)) {
-            toast.error("Catering orders require a customer and a fulfilment date.")
+            toast.error(t("cateringRequired"))
             return
         }
 
@@ -323,7 +335,7 @@ export function RegisterView() {
             } else {
                 setPaymentOpen(true)
             }
-        }, cateringOnly ? "Catering order confirmed." : undefined)
+        }, cateringOnly ? t("cateringConfirmed") : undefined)
     }
 
     async function handleAddPayment(input: AddPaymentInput) {
@@ -348,7 +360,7 @@ export function RegisterView() {
             await completeSale(requestOptions, draftSale.id)
             resetSale()
             await refreshData()
-        }, "Sale completed.")
+        }, t("saleCompleted"))
     }
 
     async function handleCancel() {
@@ -375,64 +387,80 @@ export function RegisterView() {
         }
     }
 
+    const kpis: {
+        key: string
+        label: string
+        value: string | number
+        detail: string
+        icon: string
+        tone: string
+        hideWhenCateringOnly: boolean
+    }[] = [
+        {
+            key: "activeRegisters",
+            label: t("kpis.activeRegisters"),
+            value: dashboardSummary?.counters.registers.active ?? 0,
+            detail: t("kpis.totalCount", { count: dashboardSummary?.counters.registers.total ?? 0 }),
+            icon: "pos_terminal",
+            tone: "bg-brand-soft text-brand-ink",
+            hideWhenCateringOnly: true,
+        },
+        {
+            key: "openShifts",
+            label: t("kpis.openShifts"),
+            value: dashboardSummary?.counters.shifts.open ?? 0,
+            detail: t("kpis.readyDrawers"),
+            icon: "shifts",
+            tone: "bg-success-soft text-success-strong",
+            hideWhenCateringOnly: true,
+        },
+        {
+            key: "openSales",
+            label: t("kpis.openSales"),
+            value: dashboardSummary?.counters.sales.open ?? 0,
+            detail: t("kpis.openSalesDetail"),
+            icon: "receipt_long",
+            tone: "bg-warning-soft text-warning-strong",
+            hideWhenCateringOnly: false,
+        },
+        {
+            key: "todaySales",
+            label: t("kpis.todaySales"),
+            value: formatIDR(Number(dashboardSummary?.counters.sales.today_total ?? 0)),
+            detail: t("kpis.transactions", { count: dashboardSummary?.counters.sales.today_count ?? 0 }),
+            icon: "payments",
+            tone: "bg-surface-muted text-ink-secondary",
+            hideWhenCateringOnly: false,
+        },
+    ]
+
     return (
         <div className="grid gap-6">
             <PosPageHeader
-                title={cateringOnly ? "Catering Orders" : "POS Dashboard"}
-                subtitle={cateringOnly ? "Create and confirm catering orders without registers, shifts, or counter payments." : "Ring up counter and catering sales. Tap a product to add it to the cart, then take payment."}
+                title={cateringOnly ? t("cateringTitle") : t("title")}
+                subtitle={cateringOnly ? t("cateringSubtitle") : t("subtitle")}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
             />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {[
-                    {
-                        label: "Active Registers",
-                        value: dashboardSummary?.counters.registers.active ?? 0,
-                        detail: `${dashboardSummary?.counters.registers.total ?? 0} total`,
-                        icon: "pos_terminal",
-                        tone: "bg-teal-50 text-teal-700",
-                    },
-                    {
-                        label: "Open Shifts",
-                        value: dashboardSummary?.counters.shifts.open ?? 0,
-                        detail: "Ready drawers",
-                        icon: "shifts",
-                        tone: "bg-emerald-50 text-emerald-700",
-                    },
-                    {
-                        label: "Open Sales",
-                        value: dashboardSummary?.counters.sales.open ?? 0,
-                        detail: "Draft or confirmed",
-                        icon: "receipt_long",
-                        tone: "bg-amber-50 text-amber-600",
-                    },
-                    {
-                        label: "Today Sales",
-                        value: formatIDR(Number(dashboardSummary?.counters.sales.today_total ?? 0)),
-                        detail: `${dashboardSummary?.counters.sales.today_count ?? 0} transactions`,
-                        icon: "payments",
-                        tone: "bg-indigo-50 text-indigo-600",
-                    },
-                ].filter((item) => !cateringOnly || !["Active Registers", "Open Shifts"].includes(item.label)).map((item) => (
-                    <div key={item.label} className="rounded-2xl border border-navy-100 bg-white p-5">
+                {kpis.filter((item) => !cateringOnly || !item.hideWhenCateringOnly).map((item) => (
+                    <Card key={item.key} padding="md">
                         <div className="mb-4 flex items-start justify-between gap-4">
-                            <span className="text-xs font-bold uppercase tracking-wider text-navy-500 font-display">
-                                {item.label}
-                            </span>
-                            <div className={`rounded-xl p-2 ${item.tone}`}>
+                            <span className="type-card-label">{item.label}</span>
+                            <div className={`rounded-md p-2 ${item.tone}`}>
                                 <Icon name={item.icon} className="text-xl" />
                             </div>
                         </div>
                         {isLoading ? (
-                            <div className="h-8 w-28 animate-pulse rounded-lg bg-navy-100" />
+                            <Skeleton className="h-8 w-28" />
                         ) : (
                             <div className="grid gap-1">
-                                <span className="text-2xl font-bold font-display text-navy-900">{item.value}</span>
-                                <span className="text-sm font-medium text-navy-400">{item.detail}</span>
+                                <span className="type-card-value">{item.value}</span>
+                                <span className="text-sm font-medium text-ink-muted">{item.detail}</span>
                             </div>
                         )}
-                    </div>
+                    </Card>
                 ))}
             </div>
 
@@ -445,7 +473,7 @@ export function RegisterView() {
                         onCloseShift={() => router.push("/pos/shifts")}
                     />
 
-                    <div className="grid gap-4 rounded-2xl border border-navy-100 bg-white p-6 lg:grid-cols-[minmax(240px,360px)_1fr]">
+                    <Card padding="lg" className="grid gap-4 lg:grid-cols-[minmax(240px,360px)_1fr]">
                         <RegisterSelector
                             registers={registers}
                             branchId={activeBranchId}
@@ -458,7 +486,7 @@ export function RegisterView() {
                             hasRegister={!!selectedRegister}
                             hasOpenShift={shift?.status === "open" && shift.register_id === selectedRegisterId}
                         />
-                    </div>
+                    </Card>
                 </>
             ) : null}
 
@@ -503,24 +531,23 @@ export function RegisterView() {
             />
 
             {/* Inline open-shift dialog so a cashier can start selling without leaving the register. */}
-            {!cateringOnly ? <Dialog
+            {!cateringOnly ? <Modal
                 open={openShiftForm !== null}
                 onClose={() => setOpenShiftForm(null)}
-                title="Open shift"
-                description="Select a register and record the opening cash float."
+                title={t("openShiftDialog.title")}
+                description={t("openShiftDialog.description")}
                 footer={
                     <>
                         <Button type="button" variant="outline" size="xl" onClick={() => setOpenShiftForm(null)}>
-                            Cancel
+                            {rootT("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
                             form="register-open-shift-form"
                             size="xl"
                             disabled={isLoading || !openShiftForm?.register_id || openShiftForm?.opening_float === ""}
-                            className="bg-teal-700 hover:bg-teal-800 text-white"
                         >
-                            Open shift
+                            {t("openShiftDialog.submit")}
                         </Button>
                     </>
                 }
@@ -540,11 +567,11 @@ export function RegisterView() {
                                 selectRegister(registerId)
                                 setOpenShiftForm(null)
                                 await refreshData()
-                            }, "Shift opened.")
+                            }, t("shiftOpened"))
                         }}
                     >
                         <SearchableSelect
-                            label="Register"
+                            label={t("openShiftDialog.register")}
                             value={openShiftForm.register_id}
                             onChange={(val) =>
                                 setOpenShiftForm((cur) => (cur ? { ...cur, register_id: String(val) } : cur))
@@ -553,10 +580,10 @@ export function RegisterView() {
                             options={registers
                                 .filter((r) => r.is_active && (!activeBranchId || r.branch_id === activeBranchId))
                                 .map((r) => ({ value: r.id, label: `${r.name} (${r.code})` }))}
-                            placeholder="Select register"
+                            placeholder={t("openShiftDialog.selectRegister")}
                         />
                         <Field
-                            label="Opening float"
+                            label={t("openShiftDialog.openingFloat")}
                             type="number"
                             min="0"
                             step="0.01"
@@ -569,7 +596,7 @@ export function RegisterView() {
                         />
                     </form>
                 )}
-            </Dialog> : null}
+            </Modal> : null}
         </div>
     )
 }

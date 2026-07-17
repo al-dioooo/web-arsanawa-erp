@@ -1,9 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field, SelectField } from "@/components/ui/field"
-import { PageHeaderShell } from "@/components/ui/page-header-shell"
+import { PageHeader } from "@/components/ui/page-header"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
 import { CompanyCreateForm } from "@/features/organization/company-create-form"
@@ -12,6 +15,7 @@ import { canManageOrganization } from "@/features/auth/access"
 import { OrganizationAdminPanel } from "@/features/organization/organization-admin-panel"
 
 export function OrganizationView() {
+    const t = useTranslations("organization")
     const {
         activeCompanyId,
         companies,
@@ -53,31 +57,31 @@ export function OrganizationView() {
 
     return (
         <div className="grid gap-6">
-            {/* Header section */}
-            <PageHeaderShell
-                eyebrow="Organization"
-                title={activeCompany?.company.name ?? "Companies & Structure"}
-                subtitle="Manage branches, company memberships, and general organizational structure."
-            >
-                {user?.is_developer ? (
-                    <StatusPill tone="green">Developer</StatusPill>
-                ) : organizationContext?.membership ? (
-                    <StatusPill tone="green">
-                        {organizationContext.membership.role}
-                    </StatusPill>
-                ) : null}
-            </PageHeaderShell>
+            <PageHeader
+                eyebrow={t("eyebrow")}
+                title={activeCompany?.company.name ?? t("fallbackTitle")}
+                subtitle={t("subtitle")}
+                status={
+                    user?.is_developer ? (
+                        <StatusPill tone="green">{t("developer")}</StatusPill>
+                    ) : organizationContext?.membership ? (
+                        <StatusPill tone="green">
+                            {organizationContext.membership.role}
+                        </StatusPill>
+                    ) : null
+                }
+                className="mb-0"
+            />
             {error ? (
-                <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+                <div className="rounded-md bg-error-soft px-4 py-3 text-sm font-medium text-error-strong">
                     {error}
                 </div>
             ) : null}
 
-            {/* Create Company Section */}
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
-                <h2 className="text-lg font-bold text-navy-900 font-display mb-4">Create Company</h2>
+            <Card as="section" padding="lg">
+                <h2 className="type-section mb-4">{t("createCompany.title")}</h2>
                 <CompanyCreateForm />
-            </section>
+            </Card>
 
             <OrganizationAdminPanel
                 companyId={activeCompanyId}
@@ -86,36 +90,39 @@ export function OrganizationView() {
             />
 
             <section className="grid gap-6 xl:grid-cols-2">
-                {/* Branches Manager */}
-                <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                        <h2 className="text-lg font-bold text-navy-900 font-display">Branches</h2>
+                <Card padding="lg">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                        <h2 className="type-section">{t("branches.title")}</h2>
                         <StatusPill tone="neutral">{organizationContext?.branches.length ?? 0}</StatusPill>
                     </div>
 
-                    <div className="grid gap-2 max-h-60 overflow-y-auto pr-1">
+                    <div className="grid max-h-60 gap-2 overflow-y-auto pr-1">
                         {organizationContext?.branches.map((branch) => (
                             <div
                                 key={branch.id}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-navy-100 bg-navy-50/20 px-4 py-3"
+                                className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-4 py-3"
                             >
                                 <div>
-                                    <p className="text-sm font-bold text-navy-900 leading-tight">{branch.name}</p>
-                                    <p className="text-xs text-navy-500 font-medium mt-0.5">{branch.code ?? "No code"}</p>
+                                    <p className="text-sm font-bold leading-tight text-ink">{branch.name}</p>
+                                    <p className="mt-0.5 text-xs font-medium text-ink-muted">
+                                        {branch.code ?? t("branches.noCode")}
+                                    </p>
                                 </div>
-                                {branch.is_primary ? <StatusPill tone="green">Primary</StatusPill> : null}
+                                {branch.is_primary ? (
+                                    <StatusPill tone="green">{t("branches.primary")}</StatusPill>
+                                ) : null}
                             </div>
                         ))}
                         {(!organizationContext?.branches || organizationContext.branches.length === 0) && (
-                            <p className="text-xs text-navy-450 text-center py-6 font-medium">No branches created yet</p>
+                            <EmptyState compact icon="corporate_fare" title={t("branches.empty")} />
                         )}
                     </div>
 
-                    <form onSubmit={submitBranch} className="mt-6 pt-6 border-t border-navy-100/55 grid gap-4">
-                        <h3 className="text-sm font-bold text-navy-900 font-display">Add New Branch</h3>
+                    <form onSubmit={submitBranch} className="mt-6 grid gap-4 border-t border-line pt-6">
+                        <h3 className="type-section text-sm">{t("branches.addTitle")}</h3>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <Field
-                                label="Branch name"
+                                label={t("branches.name")}
                                 value={branchForm.name}
                                 onChange={(event) =>
                                     setBranchForm((current) => ({ ...current, name: event.target.value }))
@@ -123,7 +130,7 @@ export function OrganizationView() {
                                 required
                             />
                             <Field
-                                label="Code"
+                                label={t("branches.code")}
                                 value={branchForm.code}
                                 onChange={(event) =>
                                     setBranchForm((current) => ({ ...current, code: event.target.value }))
@@ -131,18 +138,17 @@ export function OrganizationView() {
                                 placeholder="HQ"
                             />
                         </div>
-                        <Button type="submit" variant="secondary" size="xl" className="w-full cursor-pointer" disabled={!activeCompanyId || isLoading}>
-                            Add Branch
+                        <Button type="submit" variant="secondary" size="xl" className="w-full" disabled={!activeCompanyId || isLoading}>
+                            {t("branches.submit")}
                         </Button>
                     </form>
-                </div>
+                </Card>
 
-                {/* Add Member Manager */}
-                <div className="rounded-2xl border border-navy-100 bg-white p-6 flex flex-col">
-                    <h2 className="text-lg font-bold text-navy-900 font-display mb-4">Add Member</h2>
-                    <form onSubmit={submitMembership} className="grid gap-4 flex-1">
+                <Card padding="lg" className="flex flex-col">
+                    <h2 className="type-section mb-4">{t("members.title")}</h2>
+                    <form onSubmit={submitMembership} className="grid flex-1 gap-4">
                         <Field
-                            label="User ID"
+                            label={t("members.userId")}
                             type="number"
                             min="1"
                             value={membershipForm.user_id}
@@ -151,12 +157,11 @@ export function OrganizationView() {
                             }
                             required
                         />
-                        <p className="-mt-2 text-xs font-medium text-navy-400">
-                            The account ID of the person to add. Double-check it — assignments apply
-                            immediately. Existing members can be picked by name under Branch Roles.
+                        <p className="-mt-2 text-xs font-medium text-ink-muted">
+                            {t("members.userIdHint")}
                         </p>
                         <SearchableSelect
-                            label="Branch Assignment"
+                            label={t("members.branch")}
                             value={membershipForm.branch_id}
                             onChange={(val) =>
                                 setMembershipForm((current) => ({ ...current, branch_id: String(val) }))
@@ -165,25 +170,25 @@ export function OrganizationView() {
                                 value: branch.id,
                                 label: branch.name
                             })) || []}
-                            placeholder="No branch assignment (Company-wide)"
+                            placeholder={t("members.branchPlaceholder")}
                         />
                         <SelectField
-                            label="System Role"
+                            label={t("members.role")}
                             value={membershipForm.role}
                             onChange={(event) =>
                                 setMembershipForm((current) => ({ ...current, role: event.target.value }))
                             }
                         >
-                            <option value="member">Member</option>
-                            <option value="admin">Admin</option>
+                            <option value="member">{t("members.roleMember")}</option>
+                            <option value="admin">{t("members.roleAdmin")}</option>
                         </SelectField>
                         <div className="mt-auto pt-6">
-                            <Button type="submit" variant="secondary" size="xl" className="w-full cursor-pointer" disabled={!activeCompanyId || isLoading}>
-                                Add Member
+                            <Button type="submit" variant="secondary" size="xl" className="w-full" disabled={!activeCompanyId || isLoading}>
+                                {t("members.submit")}
                             </Button>
                         </div>
                     </form>
-                </div>
+                </Card>
             </section>
         </div>
     )

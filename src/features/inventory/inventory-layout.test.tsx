@@ -22,11 +22,65 @@ import {
     inspectProductImport,
     previewProductImport,
     downloadProductImportTemplate,
+    useInventoryDashboardSummary,
 } from "@/features/inventory/inventory-api"
 
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: vi.fn() }),
     useSearchParams: () => new URLSearchParams(),
+}))
+
+// The rebuilt dashboard and master-data views consume next-intl in this
+// suite; echoing the en.json copy for the asserted keys keeps assertions
+// readable without dragging in the full dictionaries.
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, string | number>) => {
+        const labels: Record<string, string> = {
+            "inventory.dashboard.title": "Dashboard Inventory",
+            "inventory.dashboard.status.scoped": "Terhubung ke perusahaan",
+            "inventory.dashboard.newProduct": "Produk Baru",
+            "inventory.catalogue.title": "Product Catalogue",
+            "inventory.catalogue.filters.category": "Category",
+            "inventory.catalogue.createProduct.category": "Category",
+            "inventory.catalogue.createProduct.nonePlaceholder": "None",
+            "inventory.pricing.title": "Pricing Management",
+            "inventory.promotions.title": "Promotions & Rewards",
+            "inventory.stock.overview.title": "Stock Overview",
+            "inventory.stock.receipt.title": "New Receipt",
+            "inventory.stock.receipt.submit": "Record Receipt",
+            "common.companyScoped": "Company scoped",
+            "common.noCompany": "No company",
+            "common.save": "Save",
+            "common.cancel": "Cancel",
+            "common.delete": "Delete",
+            "common.edit": "Edit",
+            "inventory.master.kinds.products.title": "Products",
+            "inventory.master.kinds.products.singular": "Product",
+            "inventory.master.kinds.categories.title": "Product Categories",
+            "inventory.master.kinds.categories.singular": "Product Category",
+            "inventory.master.heading.create": "New {name}",
+            "inventory.master.heading.edit": "Edit {name}",
+            "inventory.master.heading.detail": "{name} Detail",
+            "inventory.master.list.searchLabel": "Search {name}",
+            "inventory.master.list.recordCount": "{count} records",
+            "inventory.master.table.view": "View {name}",
+            "inventory.master.table.edit": "Edit {name}",
+            "inventory.master.table.collapse": "Collapse {name}",
+            "inventory.master.table.expand": "Expand {name}",
+            "inventory.master.table.empty": "No records found.",
+            "inventory.master.rootCategory": "Root category",
+            "inventory.master.form.parentCategory": "Parent Category",
+            "inventory.master.form.category": "Category",
+            "inventory.master.form.noCategory": "No category",
+            "inventory.master.form.image.remoteUrl": "Remote image URL",
+            "inventory.master.form.image.previewAlt": "Remote product preview",
+            "inventory.master.actions.import": "Import Products",
+            "inventory.master.import.title": "Import Products",
+        }
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const template = labels[fullKey] ?? fullKey
+        return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values?.[token] ?? ""))
+    },
 }))
 
 vi.mock("@/features/auth/session-provider", () => ({
@@ -74,6 +128,7 @@ vi.mock("@/features/inventory/inventory-api", () => ({
     listVariantMasters: vi.fn(),
     loadInventory: vi.fn(),
     loadInventoryDashboardSummary: vi.fn(),
+    useInventoryDashboardSummary: vi.fn(),
     loadStockLots: vi.fn(),
     loadStockMovements: vi.fn(),
     loadStockSnapshot: vi.fn(),
@@ -189,7 +244,7 @@ function mockInventoryApi() {
     vi.mocked(listBrands).mockResolvedValue({ brands: [] })
     vi.mocked(listUnitsOfMeasure).mockResolvedValue({ units: inventory.units })
     vi.mocked(listProducts).mockResolvedValue({ products: [], productTotal: 0 })
-    vi.mocked(loadInventoryDashboardSummary).mockResolvedValue({
+    const dashboardSummary = {
         counters: {
             products: { total: 0, active: 0, inactive: 0 },
             product_units: { total: 0, active: 0 },
@@ -197,7 +252,13 @@ function mockInventoryApi() {
             stock_movements: { total: 0, unsettled: 0 },
             stock_value: "0.0000",
         },
-    })
+    }
+    vi.mocked(loadInventoryDashboardSummary).mockResolvedValue(dashboardSummary)
+    vi.mocked(useInventoryDashboardSummary).mockReturnValue({
+        data: dashboardSummary,
+        isLoading: false,
+        isError: false,
+    } as unknown as ReturnType<typeof useInventoryDashboardSummary>)
     vi.mocked(listVariantGroups).mockResolvedValue({
         data: { variant_groups: [], pagination: { total: 0 } },
         message: "OK",
@@ -226,21 +287,27 @@ function headerFor(name: string) {
 }
 
 function expectDashboardHeader(name: string) {
-    expect(headerFor(name)).toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white", "p-6")
-    expect(headerFor(name)).not.toHaveClass("border-b", "pb-5")
+    expect(headerFor(name)).toHaveClass("mb-6", "flex", "flex-col", "gap-4")
+    expect(headerFor(name)).not.toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white", "border-b", "pb-5")
 }
 
 describe("inventory layout unification", () => {
-    it("keeps the dashboard header and primary action as the source contract", async () => {
+    it("keeps the dashboard header and primary action as the source contract", () => {
         mockSession()
         mockInventoryApi()
 
         render(<InventoryDashboardView />)
 
-        await waitFor(() => expect(screen.getByRole("heading", { name: "Inventory Dashboard" })).toBeInTheDocument())
-        expectDashboardHeader("Inventory Dashboard")
-        expect(screen.getByText("Company scoped")).toBeInTheDocument()
-        expect(screen.getByRole("link", { name: "New Product" })).toHaveClass("h-11", "rounded-md", "bg-teal-700", "px-6")
+        // Title-on-background: no card chrome on the rebuilt header.
+        const header = headerFor("Dashboard Inventory")
+        expect(header).toHaveClass("flex", "flex-col", "gap-4")
+        expect(header).not.toHaveClass("rounded-2xl", "border", "border-navy-100", "bg-white", "border-b", "pb-5")
+        expect(screen.getByText("Terhubung ke perusahaan")).toBeInTheDocument()
+
+        const action = screen.getByRole("link", { name: "Produk Baru" })
+        expect(action).toHaveAttribute("href", "/inventory/master/products")
+        expect(action).toHaveClass("bg-brand", "rounded-md")
+        expect(action).not.toHaveClass("bg-teal-700")
     })
 
     it("renders catalogue pricing and promotions with the dashboard header surface", async () => {
@@ -275,7 +342,7 @@ describe("inventory layout unification", () => {
         await waitFor(() => expect(screen.getByRole("heading", { name: "Products" })).toBeInTheDocument())
         expectDashboardHeader("Products")
         expect(screen.getByText("Company scoped")).toBeInTheDocument()
-        expect(screen.getByRole("button", { name: "New Product" })).toHaveClass("h-11")
+        expect(screen.getByRole("link", { name: "New Product" })).toHaveClass("h-11")
     })
 
     it("upgrades stock pages and submit actions to the same dashboard layout system", async () => {

@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { InputDate } from "@/components/ui/input-date"
 import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { TableStateRow } from "@/features/finance/components/table-state-row"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { DataTable } from "@/components/ui/data-table"
+import { TableStateRow } from "@/components/ui/table-state-row"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { SelectDescription } from "@/components/ui/select-description"
 import { useSession } from "@/features/auth/session-provider"
 import { usePayments, type PaymentFilters } from "@/features/finance/api-payments"
@@ -17,6 +18,8 @@ import Link from "next/link"
 
 export default function ReceiptsPage() {
     const router = useRouter()
+    const t = useTranslations("finance.receipts")
+    const rootT = useTranslations()
     const { activeCompanyId } = useSession()
     const [filters, setFilters] = useState<PaymentFilters>({ payment_type: "inbound" })
     const { data: receipts = [], isLoading, isError, error, refetch } = usePayments(activeCompanyId, filters)
@@ -25,9 +28,10 @@ export default function ReceiptsPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Receipts (Penerimaan)"
+                title={t("title")}
                 primaryAction={{
-                    label: "+ New Receipt",
+                    label: t("new"),
+                    icon: "add",
                     onClick: () => router.push('/finance/receipts/new')
                 }}
             />
@@ -35,22 +39,21 @@ export default function ReceiptsPage() {
             <FilterBar>
                 <div className="flex w-full flex-wrap items-end gap-3">
                     <SelectDescription
-                        label="Status"
+                        label={t("filters.status.label")}
                         value={filters.status ?? ""}
                         onChange={(event) => setFilters((current) => ({
                             ...current,
                             status: event.target.value as PaymentFilters["status"],
                         }))}
                         options={[
-                            { value: "", label: "All Statuses", description: "Show receipts in every posting state." },
-                            { value: "draft", label: "Draft", description: "Receipts that are still being prepared." },
-                            { value: "posted", label: "Posted", description: "Receipts posted to the ledger." },
-                            { value: "void", label: "Void", description: "Receipts canceled after creation." },
+                            { value: "", label: t("filters.status.all"), description: t("filters.status.allDesc") },
+                            { value: "draft", label: t("filters.status.draft"), description: t("filters.status.draftDesc") },
+                            { value: "posted", label: t("filters.status.posted"), description: t("filters.status.postedDesc") },
+                            { value: "void", label: t("filters.status.void"), description: t("filters.status.voidDesc") },
                         ]}
                     />
                     <InputDate
-                        label="Receipt Date From"
-                        aria-label="Receipt date from"
+                        label={t("filters.from")}
                         value={filters.start_date ?? ""}
                         onChange={(event) => setFilters((current) => ({
                             ...current,
@@ -58,8 +61,7 @@ export default function ReceiptsPage() {
                         }))}
                     />
                     <InputDate
-                        label="Receipt Date To"
-                        aria-label="Receipt date to"
+                        label={t("filters.to")}
                         value={filters.end_date ?? ""}
                         onChange={(event) => setFilters((current) => ({
                             ...current,
@@ -72,34 +74,43 @@ export default function ReceiptsPage() {
                             variant="outline"
                             onClick={() => setFilters({ payment_type: "inbound" })}
                         >
-                            Clear
+                            {rootT("common.clear")}
                         </Button>
                     ) : null}
                 </div>
             </FilterBar>
 
-            <DataTable columns={["Receipt No.", "Customer", "Date", "Bank/Cash", "Amount", "Status"]}>
+            <DataTable
+                columns={[
+                    t("columns.number"),
+                    t("columns.customer"),
+                    t("columns.date"),
+                    t("columns.account"),
+                    { label: t("columns.amount"), align: "end" },
+                    t("columns.status"),
+                ]}
+            >
                 <TableStateRow
                     isLoading={isLoading}
                     isError={isError}
                     error={error}
                     count={receipts.length}
                     columns={6}
-                    emptyMessage="No incoming receipts found. Create one to get started."
+                    emptyMessage={t("empty")}
                     onRetry={() => refetch()}
                 />
                 {receipts.map((receipt) => (
-                    <tr key={receipt.id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                            <Link href={`/finance/payments/${receipt.id}`} className="font-semibold text-teal-600 hover:text-teal-700 hover:underline">
+                    <tr key={receipt.id}>
+                        <td>
+                            <Link href={`/finance/payments/${receipt.id}`} className="font-semibold text-brand-ink hover:underline">
                                 {receipt.payment_number}
                             </Link>
                         </td>
-                        <td className="px-6 py-4 text-navy-900">{receipt.partner?.name || `Customer #${receipt.partner_id}`}</td>
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(receipt.payment_date)}</td>
-                        <td className="px-6 py-4 text-navy-700">{`Account #${receipt.cash_account_id}`}</td>
-                        <td className="px-6 py-4 font-medium text-teal-600 text-right">{formatIDR(parseFloat(receipt.amount))}</td>
-                        <td className="px-6 py-4">
+                        <td className="text-ink">{receipt.partner?.name || t("customerFallback", { id: receipt.partner_id })}</td>
+                        <td className="text-ink-secondary">{formatDateID(receipt.payment_date)}</td>
+                        <td className="text-ink-secondary">{t("accountFallback", { id: receipt.cash_account_id })}</td>
+                        <td className="text-end font-medium text-brand-ink tabular-nums">{formatIDR(parseFloat(receipt.amount))}</td>
+                        <td>
                             <StatusBadge status={receipt.status} />
                         </td>
                     </tr>

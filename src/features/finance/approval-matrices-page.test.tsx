@@ -17,6 +17,18 @@ vi.mock("@/features/finance/api-approvals", () => ({
     useCompanyMembers: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.approvals.matrices.actions.edit": "Ubah Aturan",
+            "finance.approvals.matrices.actions.delete": "Hapus Aturan",
+        }
+
+        return labels[fullKey] ?? fullKey
+    },
+}))
+
 describe("approval matrices page", () => {
     it("renders accessible tooltips for approval rule actions", () => {
         vi.mocked(approvalsApi.useApprovalMatrices).mockReturnValue({
@@ -57,7 +69,7 @@ describe("approval matrices page", () => {
 
         render(<ApprovalMatricesPage />)
 
-        expect(screen.getByText("Edit Rule")).toBeInTheDocument()
-        expect(screen.getByText("Delete Rule")).toBeInTheDocument()
+        expect(screen.getByText("Ubah Aturan")).toBeInTheDocument()
+        expect(screen.getByText("Hapus Aturan")).toBeInTheDocument()
     })
 })

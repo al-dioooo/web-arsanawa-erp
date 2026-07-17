@@ -61,12 +61,12 @@ export function ProgressBar() {
     if (!state.loading) return null
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-[9999] h-[3px] bg-teal-500/10 pointer-events-none">
+        <div className="fixed top-0 left-0 right-0 z-[9999] h-0.75 bg-transparent pointer-events-none">
             <div
-                className="h-full bg-orange-500 transition-all duration-150 ease-out"
+                className="h-full bg-brand transition-all duration-150 ease-out"
                 style={{
                     width: `${state.progress}%`,
-                    boxShadow: "0 0 10px rgba(244, 123, 80, 0.5)"
+                    boxShadow: "0 0 10px color-mix(in srgb, var(--brand) 50%, transparent)"
                 }}
             />
         </div>

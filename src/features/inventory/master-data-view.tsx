@@ -4,15 +4,25 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import type { Dispatch, FormEvent, SetStateAction } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { SpreadsheetImportDialog } from "@/components/imports/spreadsheet-import-dialog"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { useConfirm } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { SearchableSelect } from "@/components/ui/searchable-select"
-import { StatusPill } from "@/components/ui/status-pill"
-import { Tooltip } from "@/components/ui/tooltip"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { fieldControlClassName } from "@/components/ui/form-control"
 import { Icon } from "@/components/ui/icon"
+import { Input } from "@/components/ui/input"
+import { PageHeader } from "@/components/ui/page-header"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
+import { Tooltip } from "@/components/ui/tooltip"
+import { SpreadsheetImportDialog } from "@/components/imports/spreadsheet-import-dialog"
 import { useSession } from "@/features/auth/session-provider"
 import { CategoryLeveledSelect } from "@/features/inventory/components/category-leveled-select"
 import { ProductVariantManager } from "@/features/inventory/components/product-variant-manager"
@@ -23,7 +33,6 @@ import {
     flattenCategoryTree,
     type CategoryTreeNode,
 } from "@/features/inventory/category-tree"
-import { InventoryPageHeader, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
 import {
     createBrand,
     createCategory,
@@ -126,14 +135,15 @@ const emptyForm: FormState = {
     is_active: true,
 }
 
-const configs: Record<InventoryMasterKind, { title: string; singular: string; base: string; icon: string }> = {
-    categories: { title: "Product Categories", singular: "Product Category", base: "/inventory/master/categories", icon: "account_tree" },
-    brands: { title: "Product Brands", singular: "Product Brand", base: "/inventory/master/brands", icon: "sell" },
-    units: { title: "Units of Measure", singular: "Unit of Measure", base: "/inventory/master/units-of-measure", icon: "straighten" },
-    products: { title: "Products", singular: "Product", base: "/inventory/master/products", icon: "inventory_2" },
-    "product-units": { title: "Product Units", singular: "Product Unit", base: "/inventory/master/product-units", icon: "qr_code_2" },
-    "variant-groups": { title: "Variant Groups", singular: "Variant Group", base: "/inventory/master/variant-groups", icon: "category" },
-    variants: { title: "Variants", singular: "Variant", base: "/inventory/master/variants", icon: "tune" },
+/** `key` addresses the per-kind copy under `inventory.master.kinds.*`. */
+const configs: Record<InventoryMasterKind, { key: string; base: string; icon: string }> = {
+    categories: { key: "categories", base: "/inventory/master/categories", icon: "account_tree" },
+    brands: { key: "brands", base: "/inventory/master/brands", icon: "sell" },
+    units: { key: "units", base: "/inventory/master/units-of-measure", icon: "straighten" },
+    products: { key: "products", base: "/inventory/master/products", icon: "inventory_2" },
+    "product-units": { key: "productUnits", base: "/inventory/master/product-units", icon: "qr_code_2" },
+    "variant-groups": { key: "variantGroups", base: "/inventory/master/variant-groups", icon: "category" },
+    variants: { key: "variants", base: "/inventory/master/variants", icon: "tune" },
 }
 
 export function InventoryMasterDataView({
@@ -146,6 +156,9 @@ export function InventoryMasterDataView({
     id?: string
 }) {
     const router = useRouter()
+    const t = useTranslations("inventory.master")
+    const commonT = useTranslations("common")
+    const [confirm, confirmDialog] = useConfirm()
     const { token, activeCompanyId, organizationContext } = useSession()
     const branches = useMemo(() => organizationContext?.branches ?? [], [organizationContext?.branches])
     const [categories, setCategories] = useState<Category[]>([])
@@ -162,6 +175,8 @@ export function InventoryMasterDataView({
     const [imageInput, setImageInput] = useState<ImageInputState>({ remoteUrl: "", altText: "", file: null })
 
     const config = configs[kind]
+    const title = t(`kinds.${config.key}.title`)
+    const singular = t(`kinds.${config.key}.singular`)
     const itemId = id ? Number(id) : null
     const requestOptions = useMemo(() => {
         if (!token || !activeCompanyId) return null
@@ -205,11 +220,11 @@ export function InventoryMasterDataView({
             if (masters) setVariants(masters.data.variants)
             if (unitsResponse) setProductUnits(unitsResponse.data.product_units)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load inventory master data.")
+            toast.error(caught instanceof Error ? caught.message : t("toast.loadError"))
         } finally {
             setIsLoading(false)
         }
-    }, [kind, requestOptions])
+    }, [kind, requestOptions, t])
 
     useEffect(() => {
         let active = true
@@ -221,14 +236,27 @@ export function InventoryMasterDataView({
         }
     }, [refreshData])
 
+    const rowLabels = useMemo(
+        () => ({
+            rootCategory: t("rootCategory"),
+            brand: t("meta.brand"),
+            sellableSku: t("meta.sellableSku"),
+        }),
+        [t],
+    )
+
     const rows = useMemo(() => {
         const scopedCategories = kind === "categories" ? categoriesWithAncestorsForQuery(categories, query) : categories
-        const source = getRows(kind, { categories: scopedCategories, brands, units, products, variantGroups, variants, productUnits })
+        const source = getRows(
+            kind,
+            { categories: scopedCategories, brands, units, products, variantGroups, variants, productUnits },
+            rowLabels,
+        )
         if (kind === "categories") return source
         if (!query) return source
         const lowered = query.toLowerCase()
         return source.filter((row) => row.search.toLowerCase().includes(lowered))
-    }, [brands, categories, kind, productUnits, products, query, units, variantGroups, variants])
+    }, [brands, categories, kind, productUnits, products, query, rowLabels, units, variantGroups, variants])
 
     const active = itemId ? rows.find((row) => row.id === itemId)?.raw : null
 
@@ -265,10 +293,10 @@ export function InventoryMasterDataView({
             }
 
             await refreshData()
-            toast.success(`${config.singular} saved.`)
+            toast.success(t("toast.saved", { name: singular }))
             router.push(config.base)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to save master data.")
+            toast.error(caught instanceof Error ? caught.message : t("toast.saveError"))
         } finally {
             setIsLoading(false)
         }
@@ -276,51 +304,75 @@ export function InventoryMasterDataView({
 
     async function deleteEntityFromDetail() {
         if (!requestOptions || !itemId) return
-        if (!confirm(`Delete this ${config.singular.toLowerCase()}?`)) return
+
+        const ok = await confirm({
+            title: t("detail.deleteTitle", { name: singular }),
+            message: t("detail.deleteMessage"),
+            confirmLabel: commonT("delete"),
+            cancelLabel: commonT("cancel"),
+            danger: true,
+        })
+        if (!ok) return
 
         setIsLoading(true)
 
         try {
             await deleteEntity(kind, requestOptions, itemId)
             await refreshData()
-            toast.success(`${config.singular} deleted.`)
+            toast.success(t("toast.deleted", { name: singular }))
             router.push(config.base)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to delete master data.")
+            toast.error(caught instanceof Error ? caught.message : t("toast.deleteError"))
         } finally {
             setIsLoading(false)
         }
     }
 
+    const heading =
+        mode === "create"
+            ? t("heading.create", { name: singular })
+            : mode === "edit"
+              ? t("heading.edit", { name: singular })
+              : mode === "detail"
+                ? t("heading.detail", { name: singular })
+                : title
+
     return (
         <div className="grid gap-6">
-            <InventoryPageHeader
-                eyebrow="Inventory Master"
-                icon={config.icon}
-                title={heading(config, mode)}
-                description={descriptionFor(kind)}
-                isCompanyScoped={Boolean(activeCompanyId)}
+            {confirmDialog}
+            <PageHeader
+                dataAttribute="data-inventory-page-header"
+                eyebrow={(
+                    <>
+                        <Icon name={config.icon} size={16} />
+                        <span>{t("eyebrow")}</span>
+                    </>
+                )}
+                title={heading}
+                subtitle={t(`kinds.${config.key}.description`)}
+                status={
+                    <StatusPill tone={activeCompanyId ? "green" : "amber"}>
+                        {activeCompanyId ? commonT("companyScoped") : commonT("noCompany")}
+                    </StatusPill>
+                }
+                backHref={mode !== "list" ? config.base : undefined}
+                backLabel={t("backToList")}
                 actions={(
                     <>
-                        {mode !== "list" && (
-                            <Link href={config.base}>
-                                <Button variant="secondary" size="xl" type="button">Back to List</Button>
-                            </Link>
-                        )}
                         {mode === "list" && kind === "products" && requestOptions && (
                             <Button type="button" variant="outline" size="xl" onClick={() => setImportOpen(true)}>
                                 <Icon name="description" size={18} />
-                                Import Products
+                                {t("actions.import")}
                             </Button>
                         )}
                         {mode === "list" && (
-                            <Link href={`${config.base}/new`}>
-                                <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">New {config.singular}</Button>
+                            <Link href={`${config.base}/new`} className={buttonVariants({ size: "xl" })}>
+                                {t("heading.create", { name: singular })}
                             </Link>
                         )}
                         {mode === "detail" && itemId && (
-                            <Link href={`${config.base}/${itemId}/edit`}>
-                                <Button type="button" size="xl" className="bg-teal-700 text-white hover:bg-teal-800">Edit</Button>
+                            <Link href={`${config.base}/${itemId}/edit`} className={buttonVariants({ size: "xl" })}>
+                                {commonT("edit")}
                             </Link>
                         )}
                     </>
@@ -331,8 +383,8 @@ export function InventoryMasterDataView({
                 <SpreadsheetImportDialog
                     open={importOpen}
                     onClose={() => setImportOpen(false)}
-                    title="Import Products"
-                    description="Upload or inspect a public Google Sheets product template, preview row validation, then queue the import."
+                    title={t("import.title")}
+                    description={t("import.description")}
                     operations={{
                         downloadTemplate: (format) => downloadProductImportTemplate(requestOptions, format),
                         inspect: (input) => inspectProductImport(requestOptions, input),
@@ -344,18 +396,26 @@ export function InventoryMasterDataView({
             ) : null}
 
             {mode === "list" && (
-                <section className="grid gap-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <section>
+                    <FilterBar
+                        end={<StatusPill tone="neutral">{t("list.recordCount", { count: rows.length })}</StatusPill>}
+                    >
                         <Input
-                            label={`Search ${config.title}`}
+                            label={t("list.searchLabel", { name: title })}
                             value={query}
                             onChange={(event) => setQuery(event.target.value)}
-                            placeholder={`Search ${config.title.toLowerCase()}`}
+                            placeholder={t("list.searchLabel", { name: title })}
                             className="w-full md:min-w-80"
                         />
-                        <StatusPill tone="neutral">{`${rows.length} records`}</StatusPill>
-                    </div>
-                    <MasterTable kind={kind} base={config.base} rows={rows} query={query} isLoading={isLoading} />
+                    </FilterBar>
+                    <MasterTable
+                        kind={kind}
+                        base={config.base}
+                        rows={rows}
+                        query={query}
+                        isLoading={isLoading}
+                        singular={singular}
+                    />
                 </section>
             )}
 
@@ -377,7 +437,7 @@ export function InventoryMasterDataView({
             )}
 
             {(mode === "create" || mode === "edit") && (
-                <form onSubmit={submitForm} className={cn("grid gap-5 p-5", inventorySurfaceClass)}>
+                <Card as="form" onSubmit={submitForm} className="grid gap-5">
                     <FormFields
                         kind={kind}
                         mode={mode}
@@ -393,15 +453,15 @@ export function InventoryMasterDataView({
                     {["products", "product-units"].includes(kind) ? (
                         <ProductImageInput value={imageInput} onChange={setImageInput} />
                     ) : null}
-                    <div className="flex justify-end gap-3 border-t border-navy-100 pt-4">
-                        <Link href={config.base}>
-                            <Button type="button" variant="secondary" size="xl">Cancel</Button>
+                    <div className="flex justify-end gap-3 border-t border-line pt-4">
+                        <Link href={config.base} className={buttonVariants({ variant: "secondary", size: "xl" })}>
+                            {commonT("cancel")}
                         </Link>
-                        <Button type="submit" size="xl" disabled={isLoading} className="bg-teal-700 text-white hover:bg-teal-800">
-                            {isLoading ? "Saving..." : "Save"}
+                        <Button type="submit" size="xl" disabled={isLoading}>
+                            {isLoading ? t("form.saving") : commonT("save")}
                         </Button>
                     </div>
-                </form>
+                </Card>
             )}
         </div>
     )
@@ -419,6 +479,12 @@ type MasterRow = {
     image?: { url: string; alt_text?: string | null }
 }
 
+type RowLabels = {
+    rootCategory: string
+    brand: string
+    sellableSku: string
+}
+
 function getRows(
     kind: InventoryMasterKind,
     data: {
@@ -430,21 +496,22 @@ function getRows(
         variants: VariantMaster[]
         productUnits: ProductUnit[]
     },
+    labels: RowLabels,
 ) {
     const categoryOptions = flattenCategoryTree(data.categories)
     const rowsByKind = {
         categories: categoryOptions.map((option) => ({
             id: option.category.id,
             title: option.category.name,
-            meta: option.parentBreadcrumb || "Root category",
+            meta: option.parentBreadcrumb || labels.rootCategory,
             status: option.category.is_active,
             search: `${option.category.name} ${option.breadcrumb} ${option.category.path}`,
             raw: option.category,
         })),
-        brands: data.brands.map((item) => row(item.id, item.name, "Brand", item.is_active, item.name, item)),
+        brands: data.brands.map((item) => row(item.id, item.name, labels.brand, item.is_active, item.name, item)),
         units: data.units.map((item) => row(item.id, item.name, item.code, item.is_active, `${item.name} ${item.code}`, item)),
         products: data.products.map((item) => row(item.id, item.name, item.status, item.status === "active", item.name, item)),
-        "product-units": data.productUnits.map((item) => row(item.id, item.sku, item.name ?? "Sellable SKU", item.is_active, `${item.sku} ${item.name ?? ""}`, item)),
+        "product-units": data.productUnits.map((item) => row(item.id, item.sku, item.name ?? labels.sellableSku, item.is_active, `${item.sku} ${item.name ?? ""}`, item)),
         "variant-groups": data.variantGroups.map((item) => row(item.id, item.name, item.unit?.code ?? item.code, item.is_active, `${item.name} ${item.code}`, item)),
         variants: data.variants.map((item) => row(item.id, item.name, item.group?.name ?? item.code, item.is_active, `${item.name} ${item.code}`, item)),
     } satisfies Record<InventoryMasterKind, MasterRow[]>
@@ -457,107 +524,115 @@ function row(id: number, title: string, meta: string, status: boolean, search: s
     return { id, title, meta, status, search, raw, image }
 }
 
+const rowActionClass =
+    "flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+
 function MasterTable({
     kind,
     base,
     rows,
     query,
     isLoading = false,
+    singular,
 }: {
     kind: InventoryMasterKind
     base: string
     rows: MasterRow[]
     query: string
     isLoading?: boolean
+    singular: string
 }) {
+    const t = useTranslations("inventory.master")
+
     if (kind === "categories") {
-        return <CategoryTreeTable base={base} rows={rows} query={query} isLoading={isLoading} />
+        return <CategoryTreeTable base={base} rows={rows} query={query} isLoading={isLoading} singular={singular} />
     }
 
     return (
-        <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
-            <table className="w-full min-w-[620px] text-left text-sm">
-                <thead className="border-b border-navy-100 bg-navy-50/60 text-xs uppercase tracking-wider text-navy-500">
-                    <tr>
-                        <th className="px-5 py-3 font-bold">Name</th>
-                        <th className="px-5 py-3 font-bold">Context</th>
-                        <th className="px-5 py-3 font-bold">Status</th>
-                        <th className="px-5 py-3 font-bold">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-navy-50">
-                    {rows.map((item) => (
-                        <tr key={item.id} className="hover:bg-navy-50/40">
-                            <td className="px-5 py-4 font-bold text-navy-950">
-                                <div className="flex items-center gap-3">
-                                    {item.image ? (
-                                        <img
-                                            src={item.image.url}
-                                            alt={item.image.alt_text || item.title}
-                                            loading="lazy"
-                                            decoding="async"
-                                            className="h-10 w-10 rounded-md border border-navy-100 object-cover"
-                                        />
-                                    ) : null}
-                                    <span>{item.title}</span>
-                                </div>
-                            </td>
-                            <td className="px-5 py-4 text-navy-500">{item.meta}</td>
-                            <td className="px-5 py-4">
-                                <StatusPill tone={item.status ? "green" : "neutral"}>{item.status ? "active" : "inactive"}</StatusPill>
-                            </td>
-                            <td className="px-5 py-4">
-                                <div className="flex gap-2">
-                                    <Tooltip label="View Product">
-                                        <Link href={`${base}/${item.id}`} aria-label="View Product" className="flex h-8 w-8 items-center justify-center rounded-md bg-navy-50 text-navy-700 hover:bg-navy-100">
-                                            <Icon name="open_in_new" size={16} />
-                                        </Link>
-                                    </Tooltip>
-                                    <Tooltip label="Edit Product">
-                                        <Link href={`${base}/${item.id}/edit`} aria-label="Edit Product" className="flex h-8 w-8 items-center justify-center rounded-md bg-teal-50 text-teal-800 hover:bg-teal-100">
-                                            <Icon name="edit" size={16} />
-                                        </Link>
-                                    </Tooltip>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                    {isLoading && rows.length === 0
-                        ? Array.from({ length: 4 }).map((_, row) => (
-                            <tr key={row} aria-hidden="true">
-                                {Array.from({ length: 4 }).map((__, cell) => (
-                                    <td key={cell} className="px-5 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
-                                ))}
-                            </tr>
-                        ))
-                        : rows.length === 0 && (
-                            <tr>
-                                <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
-                            </tr>
-                        )}
-                </tbody>
-            </table>
-        </div>
+        <DataTable
+            columns={[t("table.name"), t("table.context"), t("table.status"), t("table.actions")]}
+            minWidth={620}
+        >
+            <TableStateRow
+                isLoading={isLoading && rows.length === 0}
+                count={rows.length}
+                columns={4}
+                emptyMessage={t("table.empty")}
+            />
+            {rows.map((item) => (
+                <tr key={item.id}>
+                    <td className="font-semibold text-ink">
+                        <div className="flex items-center gap-3">
+                            {item.image ? (
+                                <img
+                                    src={item.image.url}
+                                    alt={item.image.alt_text || item.title}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-10 w-10 rounded-md border border-line object-cover"
+                                />
+                            ) : null}
+                            <span>{item.title}</span>
+                        </div>
+                    </td>
+                    <td className="text-ink-muted">{item.meta}</td>
+                    <td>
+                        <StatusPill tone={item.status ? "green" : "neutral"}>
+                            {item.status ? t("status.active") : t("status.inactive")}
+                        </StatusPill>
+                    </td>
+                    <td>
+                        <div className="flex gap-2">
+                            <Tooltip label={t("table.view", { name: singular })}>
+                                <Link
+                                    href={`${base}/${item.id}`}
+                                    aria-label={t("table.view", { name: singular })}
+                                    className={cn(rowActionClass, "bg-surface-muted text-ink-secondary hover:bg-brand-soft hover:text-brand-ink")}
+                                >
+                                    <Icon name="open_in_new" size={16} />
+                                </Link>
+                            </Tooltip>
+                            <Tooltip label={t("table.edit", { name: singular })}>
+                                <Link
+                                    href={`${base}/${item.id}/edit`}
+                                    aria-label={t("table.edit", { name: singular })}
+                                    className={cn(rowActionClass, "bg-brand-soft text-brand-ink hover:bg-brand-soft/70")}
+                                >
+                                    <Icon name="edit" size={16} />
+                                </Link>
+                            </Tooltip>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+        </DataTable>
     )
 }
 
+/**
+ * P5 surface: the leveled category tree keeps its hand-rolled table so the
+ * expand/collapse interaction stays exactly as-is — only tokens migrated.
+ */
 function CategoryTreeTable({
     base,
     rows,
     query,
     isLoading = false,
+    singular,
 }: {
     base: string
     rows: MasterRow[]
     query: string
     isLoading?: boolean
+    singular: string
 }) {
+    const t = useTranslations("inventory.master")
     const categories = useMemo(() => rows.map((row) => row.raw as Category), [rows])
     const tree = useMemo(() => buildCategoryTree(categories), [categories])
     const parentIds = useMemo(() => expandableCategoryIds(categories), [categories])
     const categoryMeta = useMemo(() => {
-        return new Map(flattenCategoryTree(categories).map((option) => [option.category.id, option.parentBreadcrumb || "Root category"]))
-    }, [categories])
+        return new Map(flattenCategoryTree(categories).map((option) => [option.category.id, option.parentBreadcrumb || t("rootCategory")]))
+    }, [categories, t])
     const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set())
     const effectiveExpandedIds = useMemo(() => {
         if (query.trim()) {
@@ -572,29 +647,29 @@ function CategoryTreeTable({
     const visibleRows = visibleCategoryRows(tree, effectiveExpandedIds)
 
     return (
-        <div className={cn("overflow-x-auto", inventorySurfaceClass)}>
-            <table className="w-full min-w-[620px] text-left text-sm">
-                <thead className="border-b border-navy-100 bg-navy-50/60 text-xs uppercase tracking-wider text-navy-500">
+        <div className="overflow-x-auto rounded-lg bg-surface shadow-card">
+            <table className="w-full min-w-[620px] text-left text-sm text-ink-secondary">
+                <thead className="border-b border-line bg-surface-muted/50">
                     <tr>
-                        <th className="px-5 py-3 font-bold">Name</th>
-                        <th className="px-5 py-3 font-bold">Context</th>
-                        <th className="px-5 py-3 font-bold">Status</th>
-                        <th className="px-5 py-3 font-bold">Actions</th>
+                        <th className="px-5 py-3 type-card-label uppercase tracking-wider whitespace-nowrap">{t("table.name")}</th>
+                        <th className="px-5 py-3 type-card-label uppercase tracking-wider whitespace-nowrap">{t("table.context")}</th>
+                        <th className="px-5 py-3 type-card-label uppercase tracking-wider whitespace-nowrap">{t("table.status")}</th>
+                        <th className="px-5 py-3 type-card-label uppercase tracking-wider whitespace-nowrap">{t("table.actions")}</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-navy-50">
+                <tbody className="divide-y divide-line">
                     {visibleRows.map(({ node, depth }) => {
                         const hasChildren = node.children.length > 0
                         const expanded = effectiveExpandedIds.has(node.id)
 
                         return (
-                            <tr key={node.id} className="hover:bg-navy-50/40">
-                                <td className="px-5 py-4 font-bold text-navy-950">
+                            <tr key={node.id} className="transition-colors hover:bg-surface-muted/60">
+                                <td className="px-5 py-4 font-bold text-ink">
                                     <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 22}px` }}>
                                         {hasChildren ? (
                                             <button
                                                 type="button"
-                                                aria-label={expanded ? `Collapse ${node.name}` : `Expand ${node.name}`}
+                                                aria-label={expanded ? t("table.collapse", { name: node.name }) : t("table.expand", { name: node.name })}
                                                 onClick={() => {
                                                     setCollapsedIds((current) => {
                                                         const next = new Set(current)
@@ -607,30 +682,40 @@ function CategoryTreeTable({
                                                         return next
                                                     })
                                                 }}
-                                                className="flex h-7 w-7 items-center justify-center rounded-md text-navy-400 transition hover:bg-navy-100 hover:text-navy-700"
+                                                className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint transition hover:bg-surface-muted hover:text-ink-secondary"
                                             >
                                                 <Icon name="chevron_right" size={16} className={cn("transition-transform", expanded ? "rotate-90" : "")} />
                                             </button>
                                         ) : (
                                             <span className="h-7 w-7" aria-hidden="true" />
                                         )}
-                                        {depth > 0 ? <span className="h-6 w-px bg-navy-100" aria-hidden="true" /> : null}
+                                        {depth > 0 ? <span className="h-6 w-px bg-line" aria-hidden="true" /> : null}
                                         <span>{node.name}</span>
                                     </div>
                                 </td>
-                                <td className="px-5 py-4 text-navy-500">{categoryMeta.get(node.id) ?? "Root category"}</td>
+                                <td className="px-5 py-4 text-ink-muted">{categoryMeta.get(node.id) ?? t("rootCategory")}</td>
                                 <td className="px-5 py-4">
-                                    <StatusPill tone={node.is_active ? "green" : "neutral"}>{node.is_active ? "active" : "inactive"}</StatusPill>
+                                    <StatusPill tone={node.is_active ? "green" : "neutral"}>
+                                        {node.is_active ? t("status.active") : t("status.inactive")}
+                                    </StatusPill>
                                 </td>
                                 <td className="px-5 py-4">
                                     <div className="flex gap-2">
-                                        <Tooltip label="View Product Category">
-                                            <Link href={`${base}/${node.id}`} aria-label="View Product Category" className="flex h-8 w-8 items-center justify-center rounded-md bg-navy-50 text-navy-700 hover:bg-navy-100">
+                                        <Tooltip label={t("table.view", { name: singular })}>
+                                            <Link
+                                                href={`${base}/${node.id}`}
+                                                aria-label={t("table.view", { name: singular })}
+                                                className={cn(rowActionClass, "bg-surface-muted text-ink-secondary hover:bg-brand-soft hover:text-brand-ink")}
+                                            >
                                                 <Icon name="open_in_new" size={16} />
                                             </Link>
                                         </Tooltip>
-                                        <Tooltip label="Edit Product Category">
-                                            <Link href={`${base}/${node.id}/edit`} aria-label="Edit Product Category" className="flex h-8 w-8 items-center justify-center rounded-md bg-teal-50 text-teal-800 hover:bg-teal-100">
+                                        <Tooltip label={t("table.edit", { name: singular })}>
+                                            <Link
+                                                href={`${base}/${node.id}/edit`}
+                                                aria-label={t("table.edit", { name: singular })}
+                                                className={cn(rowActionClass, "bg-brand-soft text-brand-ink hover:bg-brand-soft/70")}
+                                            >
                                                 <Icon name="edit" size={16} />
                                             </Link>
                                         </Tooltip>
@@ -643,13 +728,13 @@ function CategoryTreeTable({
                         ? Array.from({ length: 4 }).map((_, row) => (
                             <tr key={row} aria-hidden="true">
                                 {Array.from({ length: 4 }).map((__, cell) => (
-                                    <td key={cell} className="px-5 py-4"><div className="h-4 animate-pulse rounded bg-navy-100" /></td>
+                                    <td key={cell} className="px-5 py-4"><Skeleton className="h-4" /></td>
                                 ))}
                             </tr>
                         ))
                         : visibleRows.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="px-5 py-8 text-center text-navy-400">No records found.</td>
+                                <td colSpan={4} className="px-5 py-8 text-center text-ink-muted">{t("table.empty")}</td>
                             </tr>
                         )}
                 </tbody>
@@ -683,41 +768,51 @@ function DetailPanel({
     active: MasterEntity | null
     onDelete: () => void
 }) {
+    const t = useTranslations("inventory.master")
+    const commonT = useTranslations("common")
+
     if (!active) {
-        return <div className={cn("p-8 text-center text-navy-400", inventorySurfaceClass)}>Record not found.</div>
+        return (
+            <Card>
+                <EmptyState compact icon="search_off" title={t("detail.notFound")} />
+            </Card>
+        )
     }
 
-    const details = detailRows(kind, active)
+    const details = detailRows(kind, active, {
+        active: t("status.active"),
+        inactive: t("status.inactive"),
+    })
     const images = "images" in active ? active.images ?? [] : []
 
     return (
-        <section className={cn("grid gap-4 p-5", inventorySurfaceClass)}>
+        <Card as="section" className="grid gap-4">
             {images.length > 0 ? (
-                <div className="flex flex-wrap gap-3 border-b border-navy-50 pb-4">
+                <div className="flex flex-wrap gap-3 border-b border-line pb-4">
                     {images.map((image) => (
                         <img
                             key={image.id}
                             src={image.url}
-                            alt={image.alt_text || "Product image"}
+                            alt={image.alt_text || t("detail.imageAlt")}
                             loading="lazy"
                             decoding="async"
-                            className="h-24 w-24 rounded-md border border-navy-100 object-cover"
+                            className="h-24 w-24 rounded-md border border-line object-cover"
                         />
                     ))}
                 </div>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2">
-                {details.map(([label, value]) => (
-                    <div key={label} className="border-b border-navy-50 pb-3">
-                        <p className="text-xs font-bold uppercase tracking-wider text-navy-400">{label}</p>
-                        <p className="mt-1 font-semibold text-navy-900">{value || "-"}</p>
+                {details.map(([key, value]) => (
+                    <div key={key} className="border-b border-line pb-3">
+                        <p className="type-card-label">{t(`detail.${key}`)}</p>
+                        <p className="mt-1 font-semibold text-ink">{value || "-"}</p>
                     </div>
                 ))}
             </div>
-            <div className="flex justify-end border-t border-navy-100 pt-4">
-                <Button type="button" variant="destructive" onClick={onDelete}>Delete</Button>
+            <div className="flex justify-end border-t border-line pt-4">
+                <Button type="button" variant="destructive" onClick={onDelete}>{commonT("delete")}</Button>
             </div>
-        </section>
+        </Card>
     )
 }
 
@@ -744,62 +839,63 @@ function FormFields({
     variantGroups: VariantGroup[]
     variants: VariantMaster[]
 }) {
+    const t = useTranslations("inventory.master")
     const set = (key: keyof FormState, value: string | boolean | string[]) => setForm((current) => ({ ...current, [key]: value }))
 
     return (
         <div className="grid gap-4 md:grid-cols-2">
             {["categories", "brands", "units", "products", "product-units", "variant-groups", "variants"].includes(kind) && (
-                <Field label={kind === "units" ? "Unit Name" : "Name"} value={form.name} onChange={(event) => set("name", event.target.value)} required={kind !== "product-units"} />
+                <Field label={kind === "units" ? t("form.unitName") : t("form.name")} value={form.name} onChange={(event) => set("name", event.target.value)} required={kind !== "product-units"} />
             )}
             {["units", "variant-groups", "variants"].includes(kind) && (
-                <Field label="Code" value={form.code} onChange={(event) => set("code", event.target.value)} required />
+                <Field label={t("form.code")} value={form.code} onChange={(event) => set("code", event.target.value)} required />
             )}
             {kind === "categories" && (
                 <CategoryLeveledSelect
-                    label="Parent Category"
+                    label={t("form.parentCategory")}
                     value={form.parent_id}
                     onChange={(value) => set("parent_id", String(value))}
                     categories={categories}
                     mode="all"
-                    emptyLabel="Root category"
-                    placeholder="Root category"
+                    emptyLabel={t("rootCategory")}
+                    placeholder={t("rootCategory")}
                 />
             )}
             {kind === "products" && (
                 <>
-                    <SearchableSelect label="Base Unit" value={form.base_uom_id} onChange={(value) => set("base_uom_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
-                    <CategoryLeveledSelect label="Category" value={form.category_id} onChange={(value) => set("category_id", String(value))} categories={categories} mode="leaf" emptyLabel="No category" placeholder="No category" />
-                    <SearchableSelect label="Brand" value={form.brand_id} onChange={(value) => set("brand_id", String(value))} options={brands.map((brand) => ({ value: brand.id, label: brand.name }))} />
+                    <SearchableSelect label={t("form.baseUnit")} value={form.base_uom_id} onChange={(value) => set("base_uom_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
+                    <CategoryLeveledSelect label={t("form.category")} value={form.category_id} onChange={(value) => set("category_id", String(value))} categories={categories} mode="leaf" emptyLabel={t("form.noCategory")} placeholder={t("form.noCategory")} />
+                    <SearchableSelect label={t("form.brand")} value={form.brand_id} onChange={(value) => set("brand_id", String(value))} options={brands.map((brand) => ({ value: brand.id, label: brand.name }))} />
                     {mode === "create" && (
                         <>
-                            <Field label="Initial variant SKU" value={form.sku} onChange={(event) => set("sku", event.target.value)} required />
-                            <Field label="Initial variant name" value={form.variant_name} onChange={(event) => set("variant_name", event.target.value)} />
+                            <Field label={t("form.initialSku")} value={form.sku} onChange={(event) => set("sku", event.target.value)} required />
+                            <Field label={t("form.initialVariantName")} value={form.variant_name} onChange={(event) => set("variant_name", event.target.value)} />
                         </>
                     )}
                 </>
             )}
             {kind === "variant-groups" && (
                 <>
-                    <SearchableSelect label="Linked Unit of Measure" value={form.unit_of_measure_id} onChange={(value) => set("unit_of_measure_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
-                    <Field label="Description" value={form.description} onChange={(event) => set("description", event.target.value)} />
+                    <SearchableSelect label={t("form.linkedUnit")} value={form.unit_of_measure_id} onChange={(value) => set("unit_of_measure_id", String(value))} required options={units.map((unit) => ({ value: unit.id, label: `${unit.name} (${unit.code})` }))} />
+                    <Field label={t("form.description")} value={form.description} onChange={(event) => set("description", event.target.value)} />
                 </>
             )}
             {kind === "variants" && (
                 <>
-                    <SearchableSelect label="Variant Group" value={form.variant_group_id} onChange={(value) => set("variant_group_id", String(value))} required options={variantGroups.map((group) => ({ value: group.id, label: group.name }))} />
-                    <Field label="Position" type="number" value={form.position} onChange={(event) => set("position", event.target.value)} />
+                    <SearchableSelect label={t("form.variantGroup")} value={form.variant_group_id} onChange={(value) => set("variant_group_id", String(value))} required options={variantGroups.map((group) => ({ value: group.id, label: group.name }))} />
+                    <Field label={t("form.position")} type="number" value={form.position} onChange={(event) => set("position", event.target.value)} />
                 </>
             )}
             {kind === "product-units" && (
                 <>
-                    <SearchableSelect label="Product" value={form.product_id} onChange={(value) => set("product_id", String(value))} required options={products.map((product) => ({ value: product.id, label: product.name }))} />
-                    <Field label="SKU" value={form.sku} onChange={(event) => set("sku", event.target.value)} required />
-                    <Field label="Barcode" value={form.barcode} onChange={(event) => set("barcode", event.target.value)} />
+                    <SearchableSelect label={t("form.product")} value={form.product_id} onChange={(value) => set("product_id", String(value))} required options={products.map((product) => ({ value: product.id, label: product.name }))} />
+                    <Field label={t("form.sku")} value={form.sku} onChange={(event) => set("sku", event.target.value)} required />
+                    <Field label={t("form.barcode")} value={form.barcode} onChange={(event) => set("barcode", event.target.value)} />
                     <div className="grid gap-2 md:col-span-2">
-                        <p className="text-sm font-bold text-navy-700">Selected Variants</p>
-                        <div className="grid gap-2 rounded-lg border border-navy-100 p-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <p className="text-sm font-semibold text-ink-secondary">{t("form.selectedVariants")}</p>
+                        <div className="grid gap-2 rounded-lg bg-surface-muted p-3 sm:grid-cols-2 lg:grid-cols-3">
                             {variants.map((variant) => (
-                                <label key={variant.id} className="flex items-center gap-2 text-sm font-semibold text-navy-700">
+                                <label key={variant.id} className="flex items-center gap-2 text-sm font-semibold text-ink-secondary">
                                     <input
                                         type="checkbox"
                                         checked={form.variant_ids.includes(String(variant.id))}
@@ -816,9 +912,9 @@ function FormFields({
                     </div>
                 </>
             )}
-            <label className="flex items-center gap-2 text-sm font-bold text-navy-700">
+            <label className="flex items-center gap-2 text-sm font-semibold text-ink-secondary">
                 <input type="checkbox" checked={form.is_active} onChange={(event) => set("is_active", event.target.checked)} />
-                Active
+                {t("form.active")}
             </label>
         </div>
     )
@@ -831,46 +927,47 @@ function ProductImageInput({
     value: ImageInputState
     onChange: Dispatch<SetStateAction<ImageInputState>>
 }) {
+    const t = useTranslations("inventory.master.form.image")
+
     return (
-        <div className="grid gap-4 rounded-xl border border-navy-100 bg-navy-50/30 p-4 md:grid-cols-2">
+        <Card inset padding="sm" className="grid gap-4 md:grid-cols-2">
             <Field
-                label="Remote image URL"
+                label={t("remoteUrl")}
                 value={value.remoteUrl}
                 onChange={(event) => onChange((current) => ({ ...current, remoteUrl: event.target.value }))}
                 placeholder="https://example.com/menu.jpg"
             />
             <Field
-                label="Image alt text"
+                label={t("altText")}
                 value={value.altText}
                 onChange={(event) => onChange((current) => ({ ...current, altText: event.target.value }))}
-                placeholder="Product image description"
+                placeholder={t("altPlaceholder")}
             />
-            <label className="grid gap-1.5 text-sm font-medium text-navy-700">
-                <span className="text-sm font-semibold text-navy-700">Image file</span>
+            <Field label={t("file")}>
                 <input
-                    aria-label="Image file"
+                    aria-label={t("file")}
                     type="file"
                     accept="image/*"
                     onChange={(event) => onChange((current) => ({ ...current, file: event.target.files?.[0] ?? null }))}
-                    className="min-h-11 rounded-md border border-navy-100 bg-white px-3 py-2 text-sm text-navy-900"
+                    className={cn(fieldControlClassName, "py-2")}
                 />
-            </label>
+            </Field>
             <div className="flex items-end">
                 {value.remoteUrl ? (
                     <img
                         src={value.remoteUrl}
-                        alt="Remote product preview"
+                        alt={t("previewAlt")}
                         loading="lazy"
                         decoding="async"
-                        className="h-24 w-24 rounded-md border border-navy-100 object-cover"
+                        className="h-24 w-24 rounded-md border border-line object-cover"
                     />
                 ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-md border border-dashed border-navy-200 text-xs font-semibold text-navy-400">
-                        Preview
+                    <div className="flex h-24 w-24 items-center justify-center rounded-md border border-dashed border-line text-xs font-semibold text-ink-faint">
+                        {t("preview")}
                     </div>
                 )}
             </div>
-        </div>
+        </Card>
     )
 }
 
@@ -973,30 +1070,26 @@ async function saveImageIfNeeded(
     }
 }
 
-function detailRows(kind: InventoryMasterKind, entity: MasterEntity): Array<[string, string]> {
-    const common = "is_active" in entity ? (entity.is_active ? "Active" : "Inactive") : "status" in entity ? entity.status : "Active"
-    if (kind === "categories") return [["Name", (entity as Category).name], ["Path", (entity as Category).path], ["Status", common]]
-    if (kind === "brands") return [["Name", (entity as Brand).name], ["Status", common]]
-    if (kind === "units") return [["Name", (entity as UnitOfMeasure).name], ["Code", (entity as UnitOfMeasure).code], ["Status", common]]
-    if (kind === "products") return [["Name", (entity as InventoryProduct).name], ["Status", (entity as InventoryProduct).status], ["Base Unit ID", String((entity as InventoryProduct).base_uom_id)]]
-    if (kind === "variant-groups") return [["Name", (entity as VariantGroup).name], ["Code", (entity as VariantGroup).code], ["Unit", (entity as VariantGroup).unit?.name ?? String((entity as VariantGroup).unit_of_measure_id)], ["Status", common]]
-    if (kind === "variants") return [["Name", (entity as VariantMaster).name], ["Code", (entity as VariantMaster).code], ["Group", (entity as VariantMaster).group?.name ?? String((entity as VariantMaster).variant_group_id)], ["Status", common]]
+/**
+ * Returns `[detailLabelKey, value]` pairs; keys resolve under
+ * `inventory.master.detail.*` at render time.
+ */
+function detailRows(
+    kind: InventoryMasterKind,
+    entity: MasterEntity,
+    statusLabels: { active: string; inactive: string },
+): Array<[string, string]> {
+    const common = "is_active" in entity
+        ? (entity.is_active ? statusLabels.active : statusLabels.inactive)
+        : "status" in entity
+          ? entity.status
+          : statusLabels.active
+    if (kind === "categories") return [["name", (entity as Category).name], ["path", (entity as Category).path], ["status", common]]
+    if (kind === "brands") return [["name", (entity as Brand).name], ["status", common]]
+    if (kind === "units") return [["name", (entity as UnitOfMeasure).name], ["code", (entity as UnitOfMeasure).code], ["status", common]]
+    if (kind === "products") return [["name", (entity as InventoryProduct).name], ["status", (entity as InventoryProduct).status], ["baseUnitId", String((entity as InventoryProduct).base_uom_id)]]
+    if (kind === "variant-groups") return [["name", (entity as VariantGroup).name], ["code", (entity as VariantGroup).code], ["unit", (entity as VariantGroup).unit?.name ?? String((entity as VariantGroup).unit_of_measure_id)], ["status", common]]
+    if (kind === "variants") return [["name", (entity as VariantMaster).name], ["code", (entity as VariantMaster).code], ["group", (entity as VariantMaster).group?.name ?? String((entity as VariantMaster).variant_group_id)], ["status", common]]
     const productUnit = entity as ProductUnit
-    return [["SKU", productUnit.sku], ["Name", productUnit.name ?? ""], ["Product", productUnit.product?.name ?? String(productUnit.product_id)], ["Variants", productUnit.variants.map((variant) => variant.name).join(", ")], ["Status", common]]
-}
-
-function heading(config: { title: string; singular: string }, mode: Mode) {
-    if (mode === "create") return `New ${config.singular}`
-    if (mode === "edit") return `Edit ${config.singular}`
-    if (mode === "detail") return `${config.singular} Detail`
-    return config.title
-}
-
-function descriptionFor(kind: InventoryMasterKind) {
-    if (kind === "categories") return "Model product type, series, model, and other product hierarchy levels with nested categories."
-    if (kind === "product-units") return "Manage final sellable SKU records by selecting a product and its variant values."
-    if (kind === "variant-groups") return "Define reusable variant dimensions and link each group to its unit of measure context."
-    if (kind === "variants") return "Manage reusable company-wide variant values used by Product Units."
-    if (kind === "units") return "Maintain counting units such as pax, box, tray, pieces, kilograms, or liters."
-    return "Maintain inventory master data with separated list, detail, create, and edit workflows."
+    return [["sku", productUnit.sku], ["name", productUnit.name ?? ""], ["product", productUnit.product?.name ?? String(productUnit.product_id)], ["variants", productUnit.variants.map((variant) => variant.name).join(", ")], ["status", common]]
 }

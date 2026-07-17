@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { NextIntlClientProvider } from "next-intl"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import messages from "../../../messages/en.json"
 import { PartnersView } from "@/features/partners/partners-view"
 import {
     useCreatePartner,
@@ -24,6 +26,14 @@ vi.mock("@/features/partners/partners-api", () => ({
     useCreatePartnerAddress: vi.fn(),
     useDeletePartnerAddress: vi.fn(),
 }))
+
+function renderView() {
+    return render(
+        <NextIntlClientProvider locale="en" messages={messages}>
+            <PartnersView />
+        </NextIntlClientProvider>,
+    )
+}
 
 const createPartner = vi.fn()
 const updatePartner = vi.fn()
@@ -139,7 +149,7 @@ describe("PartnersView", () => {
     })
 
     it("lists partners and creates a new partner from the workspace", () => {
-        render(<PartnersView />)
+        renderView()
 
         expect(screen.getByRole("heading", { name: "Partners" })).toBeInTheDocument()
         expect(screen.getByText("Acme Customer")).toBeInTheDocument()
@@ -164,7 +174,7 @@ describe("PartnersView", () => {
     })
 
     it("edits partners and maintains contacts and addresses from the detail panel", async () => {
-        render(<PartnersView />)
+        renderView()
 
         fireEvent.click(screen.getByRole("button", { name: "Acme Customer" }))
 
@@ -197,14 +207,15 @@ describe("PartnersView", () => {
         })
 
         fireEvent.click(screen.getByRole("button", { name: "Delete contact Buyer Contact" }))
-        expect(deleteContact).toHaveBeenCalledWith({ partnerId: 5, contactId: 8 })
+        fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Delete" }))
+        await waitFor(() => expect(deleteContact).toHaveBeenCalledWith({ partnerId: 5, contactId: 8 }))
 
         fireEvent.click(screen.getByRole("button", { name: "Delete address HQ" }))
-        expect(deleteAddress).toHaveBeenCalledWith({ partnerId: 5, addressId: 9 })
+        fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Delete" }))
+        await waitFor(() => expect(deleteAddress).toHaveBeenCalledWith({ partnerId: 5, addressId: 9 }))
 
         fireEvent.click(screen.getByRole("button", { name: "Delete partner" }))
-        await screen.findByRole("dialog")
-        fireEvent.click(screen.getByRole("button", { name: "Delete" }))
+        fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Delete" }))
         await waitFor(() => expect(deletePartner).toHaveBeenCalledWith(5))
     })
 })

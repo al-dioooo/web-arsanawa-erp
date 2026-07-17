@@ -2,18 +2,24 @@
 
 import { useRouter } from "next/navigation"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { useSession } from "@/features/auth/session-provider"
-import { useCreateJournalEntry } from "@/features/finance/api-journals"
-import { useCOA, usePeriods, type COAAccount } from "@/features/finance/api"
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
 import { Field } from "@/components/ui/field"
+import { fieldControlClassName } from "@/components/ui/form-control"
+import { Icon } from "@/components/ui/icon"
 import { Input } from "@/components/ui/input"
 import { InputDate } from "@/components/ui/input-date"
+import { PageHeader } from "@/components/ui/page-header"
 import { SearchableSelect } from "@/components/ui/searchable-select"
-import { Icon } from "@/components/ui/icon"
+import { useSession } from "@/features/auth/session-provider"
+import { useCOA, usePeriods, type COAAccount } from "@/features/finance/api"
+import { useCreateJournalEntry } from "@/features/finance/api-journals"
 import { formatIDR } from "@/lib/format"
-import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 type JournalLineForm = {
     account_id: string
@@ -31,6 +37,8 @@ type JournalForm = {
 export default function NewJournalPage() {
     const router = useRouter()
     const { activeCompanyId } = useSession()
+    const t = useTranslations("finance.journals.form")
+    const tCommon = useTranslations("common")
 
     // Data dependencies
     const { data: accounts = [] } = useCOA(activeCompanyId)
@@ -86,27 +94,27 @@ export default function NewJournalPage() {
 
     const onSubmit = (data: JournalForm) => {
         if (!matchedPeriod) {
-            toast.error("No accounting period found for the selected date")
+            toast.error(t("noPeriodToast"))
             return
         }
 
         if (data.lines.length < 2) {
-            toast.error("A journal entry must have at least 2 lines")
+            toast.error(t("minLines"))
             return
         }
 
         if (data.lines.some(l => !l.account_id)) {
-            toast.error("Please select an account for all lines")
+            toast.error(t("accountsMissing"))
             return
         }
 
         if (totalDebit !== totalCredit) {
-            toast.error(`Journal entry is unbalanced. Debits and Credits must match (Diff: ${formatIDR(difference)})`)
+            toast.error(t("unbalancedToast", { diff: formatIDR(difference) }))
             return
         }
 
         if (totalDebit <= 0) {
-            toast.error("Total Debit/Credit must be greater than 0")
+            toast.error(t("zeroToast"))
             return
         }
 
@@ -130,7 +138,7 @@ export default function NewJournalPage() {
 
         createJournal.mutate(payload, {
             onSuccess: (res) => {
-                toast.success("Journal entry created successfully as Draft")
+                toast.success(t("success"))
                 if (res.data?.journal_entry?.id) {
                     router.push(`/finance/journals/${res.data.journal_entry.id}`)
                 } else {
@@ -138,191 +146,206 @@ export default function NewJournalPage() {
                 }
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to create journal entry")
+                toast.error(err?.message || t("error"))
             }
         })
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-6xl pb-20">
+        <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-6xl pb-10">
             <PageHeader
-                title="New Journal Entry"
-                primaryAction={{
-                    label: createJournal.isPending ? "Creating..." : "Save Draft",
-                    onClick: () => {},
-                    disabled: createJournal.isPending
-                }}
+                backHref="/finance/journals"
+                backLabel={tCommon("back")}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-navy-100 p-6">
-                    <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
-                        <Icon name="description" /> Entry Details
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <Card padding="lg" className="md:col-span-2">
+                    <h2 className="type-section mb-4 flex items-center gap-2">
+                        <Icon name="description" size={18} className="text-ink-faint" /> {t("detailsTitle")}
                     </h2>
                     <div className="grid grid-cols-1 gap-4">
-                        <Field label="Description / Notes" error={errors.description?.message}>
+                        <Field label={t("description")} error={errors.description?.message}>
                             <textarea
                                 rows={2}
-                                className="w-full p-3 rounded-xl border border-navy-200 outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-shadow bg-navy-50/30 resize-none text-sm"
-                                placeholder="Write the journal purpose or explanation..."
-                                {...register("description", { required: "Description is required", maxLength: 500 })}
+                                className={cn(fieldControlClassName, "resize-none py-2.5")}
+                                placeholder={t("descriptionPlaceholder")}
+                                {...register("description", { required: t("descriptionRequired"), maxLength: 500 })}
                             />
                         </Field>
                     </div>
-                </div>
+                </Card>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6 flex flex-col justify-between">
+                <Card padding="lg" className="flex flex-col justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
-                            <Icon name="calendar_today" /> Date & Period
+                        <h2 className="type-section mb-4 flex items-center gap-2">
+                            <Icon name="calendar_today" size={18} className="text-ink-faint" /> {t("dateTitle")}
                         </h2>
                         <InputDate
-                            label="Entry Date"
+                            label={t("entryDate")}
                             error={errors.entry_date?.message}
-                            {...register("entry_date", { required: "Date is required" })}
+                            {...register("entry_date", { required: t("dateRequired") })}
                         />
                     </div>
 
-                    <div className="mt-3 p-3 rounded-xl bg-navy-50/50 border border-navy-100 text-xs flex items-center gap-2">
-                        <Icon name="info" className="text-teal-600" />
+                    <div className="mt-3 flex items-center gap-2 rounded-md bg-surface-muted p-3 text-xs">
+                        <Icon name="info" size={16} className="text-brand-ink" />
                         <div>
-                            <span className="font-semibold text-navy-500">Period:</span>{" "}
-                            <span className="font-bold text-navy-700">
-                                {matchedPeriod ? matchedPeriod.name : "No matching period found"}
+                            <span className="font-semibold text-ink-muted">{t("periodLabel")}:</span>{" "}
+                            <span className="font-bold text-ink-secondary">
+                                {matchedPeriod ? matchedPeriod.name : t("noPeriod")}
                             </span>
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-6 mb-6 overflow-x-auto">
-                <h2 className="text-lg font-bold text-navy-900 mb-4 flex items-center gap-2">
-                    <Icon name="format_list_bulleted" /> Journal Lines
-                </h2>
+            <DataTable
+                className="mb-6"
+                minWidth={700}
+                toolbar={
+                    <h2 className="type-section flex items-center gap-2">
+                        <Icon name="format_list_bulleted" size={18} className="text-ink-faint" /> {t("linesTitle")}
+                    </h2>
+                }
+                columns={[
+                    { label: t("account"), className: "w-1/3" },
+                    { label: t("lineDescription"), className: "w-1/3" },
+                    { label: t("debit"), align: "end", className: "w-28" },
+                    { label: t("credit"), align: "end", className: "w-28" },
+                    { label: "", className: "w-10" },
+                ]}
+                footer={
+                    <div className="flex items-center justify-between gap-4 p-4">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => append({ account_id: "", description: "", debit: 0, credit: 0 })}
+                        >
+                            <Icon name="add" size={16} className="me-1" /> {t("addLine")}
+                        </Button>
 
-                <table className="w-full min-w-[700px] text-left border-collapse">
-                    <thead>
-                        <tr className="border-b border-navy-200 text-sm text-navy-500">
-                            <th className="pb-3 font-semibold w-1/3">Account</th>
-                            <th className="pb-3 font-semibold px-2 w-1/3">Description</th>
-                            <th className="pb-3 font-semibold px-2 w-28 text-right">Debit</th>
-                            <th className="pb-3 font-semibold px-2 w-28 text-right">Credit</th>
-                            <th className="pb-3 w-10"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {fields.map((field, index) => (
-                            <tr key={field.id} className="border-b border-navy-50 last:border-0 group">
-                                <td className="py-3 pr-2">
-                                    <Controller
-                                        name={`lines.${index}.account_id` as const}
-                                        control={control}
-                                        render={({ field: { value, onChange } }) => (
-                                            <SearchableSelect
-                                                value={value}
-                                                onChange={(val) => onChange(String(val))}
-                                                options={postableAccounts.map(a => ({ label: `${a.code} - ${a.name}`, value: String(a.id) }))}
-                                                placeholder="Select Account..."
-                                            />
-                                        )}
-                                    />
-                                </td>
-                                <td className="py-3 px-2">
-                                    <Input
-                                        label={`Line ${index + 1} description`}
-                                        hideLabel
-                                        type="text"
-                                        placeholder="Line description (optional)..."
-                                        {...register(`lines.${index}.description` as const)}
-                                    />
-                                </td>
-                                <td className="py-3 px-2">
-                                    <Input
-                                        label={`Line ${index + 1} debit`}
-                                        hideLabel
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        className="text-right"
-                                        {...register(`lines.${index}.debit` as const, { valueAsNumber: true })}
-                                    />
-                                </td>
-                                <td className="py-3 px-2">
-                                    <Input
-                                        label={`Line ${index + 1} credit`}
-                                        hideLabel
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        className="text-right"
-                                        {...register(`lines.${index}.credit` as const, { valueAsNumber: true })}
-                                    />
-                                </td>
-                                <td className="py-3 pl-2 text-right">
-                                    {fields.length > 2 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => remove(index)}
-                                            className="p-2 text-navy-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                                            tabIndex={-1}
-                                        >
-                                            <Icon name="delete" />
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                <div className="mt-4 flex justify-between items-center">
-                    <Button 
-                        type="button" 
-                        variant="secondary" 
-                        onClick={() => append({ account_id: "", description: "", debit: 0, credit: 0 })}
-                        className="text-sm font-semibold h-9 px-4 rounded-lg"
-                    >
-                        + Add Line
-                    </Button>
-
-                    <div className="flex gap-4 items-center">
-                        <div className="text-right">
-                            <span className="text-xs text-navy-400 font-semibold uppercase block">Total Debit</span>
-                            <span className="text-sm font-bold text-navy-800">{formatIDR(totalDebit)}</span>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-xs text-navy-400 font-semibold uppercase block">Total Credit</span>
-                            <span className="text-sm font-bold text-navy-800">{formatIDR(totalCredit)}</span>
+                        <div className="flex items-center gap-4">
+                            <div className="text-end">
+                                <span className="type-card-label block">{t("totalDebit")}</span>
+                                <span className="text-sm font-bold text-ink tabular-nums">
+                                    {formatIDR(totalDebit)}
+                                </span>
+                            </div>
+                            <div className="text-end">
+                                <span className="type-card-label block">{t("totalCredit")}</span>
+                                <span className="text-sm font-bold text-ink tabular-nums">
+                                    {formatIDR(totalCredit)}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                }
+            >
+                {fields.map((field, index) => (
+                    <tr key={field.id} className="group">
+                        <td className="py-3">
+                            <Controller
+                                name={`lines.${index}.account_id` as const}
+                                control={control}
+                                render={({ field: { value, onChange } }) => (
+                                    <SearchableSelect
+                                        value={value}
+                                        onChange={(val) => onChange(String(val))}
+                                        options={postableAccounts.map(a => ({ label: `${a.code} - ${a.name}`, value: String(a.id) }))}
+                                        placeholder={t("accountPlaceholder")}
+                                    />
+                                )}
+                            />
+                        </td>
+                        <td className="py-3">
+                            <Input
+                                label={t("lineDescriptionLabel", { number: index + 1 })}
+                                hideLabel
+                                type="text"
+                                placeholder={t("lineDescriptionPlaceholder")}
+                                {...register(`lines.${index}.description` as const)}
+                            />
+                        </td>
+                        <td className="py-3">
+                            <Input
+                                label={t("lineDebitLabel", { number: index + 1 })}
+                                hideLabel
+                                type="number"
+                                min="0"
+                                step="any"
+                                className="text-end"
+                                {...register(`lines.${index}.debit` as const, { valueAsNumber: true })}
+                            />
+                        </td>
+                        <td className="py-3">
+                            <Input
+                                label={t("lineCreditLabel", { number: index + 1 })}
+                                hideLabel
+                                type="number"
+                                min="0"
+                                step="any"
+                                className="text-end"
+                                {...register(`lines.${index}.credit` as const, { valueAsNumber: true })}
+                            />
+                        </td>
+                        <td className="py-3 text-end">
+                            {fields.length > 2 && (
+                                <button
+                                    type="button"
+                                    onClick={() => remove(index)}
+                                    aria-label={t("removeLine", { number: index + 1 })}
+                                    className="p-2 text-ink-faint opacity-0 transition-colors group-hover:opacity-100 hover:text-error"
+                                    tabIndex={-1}
+                                >
+                                    <Icon name="delete" size={18} />
+                                </button>
+                            )}
+                        </td>
+                    </tr>
+                ))}
+            </DataTable>
 
-            <div className={`p-4 rounded-2xl border flex items-center justify-between gap-4 transition-colors ${
-                isBalanced 
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-800" 
-                    : "bg-amber-50 border-amber-100 text-amber-800"
-            }`}>
+            <div
+                className={cn(
+                    "flex items-center justify-between gap-4 rounded-lg p-4 transition-colors",
+                    isBalanced
+                        ? "bg-success-soft text-success-strong"
+                        : "bg-warning-soft text-warning-strong",
+                )}
+            >
                 <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${isBalanced ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-                        <Icon name={isBalanced ? "check_circle" : "warning"} className="text-lg" />
+                    <div
+                        className={cn(
+                            "flex size-9 items-center justify-center rounded-md text-white",
+                            isBalanced ? "bg-success-strong" : "bg-warning-strong",
+                        )}
+                    >
+                        <Icon name={isBalanced ? "check_circle" : "warning"} size={18} />
                     </div>
                     <div>
-                        <p className="font-bold text-sm">
-                            {isBalanced ? "Journal Entry Balanced" : "Journal Entry Unbalanced"}
+                        <p className="text-sm font-bold">
+                            {isBalanced ? t("balanced") : t("unbalanced")}
                         </p>
                         <p className="text-xs opacity-90">
-                            {isBalanced 
-                                ? "Everything is set! You can save this journal entry as a draft."
-                                : totalDebit === 0 
-                                    ? "Add debit and credit values greater than 0." 
-                                    : `Debit total must equal Credit total. Current difference is ${formatIDR(difference)}.`
+                            {isBalanced
+                                ? t("balancedHint")
+                                : totalDebit === 0
+                                    ? t("zeroHint")
+                                    : t("differenceHint", { diff: formatIDR(difference) })
                             }
                         </p>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" className="hidden" />
+            {/* Sticky action footer */}
+            <div className="sticky bottom-0 z-10 mt-6 flex items-center justify-end gap-3 border-t border-line bg-surface/80 px-4 py-4 backdrop-blur">
+                <Button type="submit" size="lg" disabled={createJournal.isPending}>
+                    {createJournal.isPending ? t("creating") : t("saveDraft")}
+                </Button>
+            </div>
         </form>
     )
 }

@@ -2,6 +2,7 @@
 
 import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
 import { PosPageHeader } from "@/features/pos/components/pos-page-header"
 import { ReceiptPreview } from "@/features/pos/components/receipt-preview"
@@ -10,6 +11,7 @@ import { getSale, loadCustomers, listRegisters, type Customer, type PosRequestOp
 import type { Register, Sale } from "@/features/pos/pos-types"
 
 export function ReceiptView({ saleId }: { saleId: number }) {
+    const t = useTranslations("pos.receipt")
     const { token, activeCompanyId } = useSession()
     const [sale, setSale] = useState<Sale | null>(null)
     const [customers, setCustomers] = useState<Customer[]>([])
@@ -21,6 +23,7 @@ export function ReceiptView({ saleId }: { saleId: number }) {
         return { token, companyId: activeCompanyId }
     }, [token, activeCompanyId])
 
+    const loadErrorFallback = t("loadError")
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
@@ -34,11 +37,11 @@ export function ReceiptView({ saleId }: { saleId: number }) {
             setCustomers(loadedCustomers)
             setRegisters(loadedRegisters)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load receipt.")
+            toast.error(caught instanceof Error ? caught.message : loadErrorFallback)
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions, saleId])
+    }, [requestOptions, saleId, loadErrorFallback])
 
     useEffect(() => {
         let active = true
@@ -57,7 +60,7 @@ export function ReceiptView({ saleId }: { saleId: number }) {
     return (
         <div className="grid gap-6 print:block">
             <PosPageHeader
-                title="Receipt"
+                title={t("title")}
                 subtitle={sale?.sale_number ?? undefined}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}

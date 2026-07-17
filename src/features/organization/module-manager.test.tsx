@@ -8,7 +8,21 @@ vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))
 
+// The home dashboard (rendered by the `/` route) pulls per-module summaries —
+// keep them idle so this suite exercises only the launcher/entitlement logic.
+vi.mock("@/features/home/home-api", () => ({
+    useInventoryDashboardSummary: () => ({ data: undefined, isLoading: false, isError: false }),
+    usePosDashboardSummary: () => ({ data: undefined, isLoading: false, isError: false }),
+}))
+
+vi.mock("@/features/finance/api", () => ({
+    useFinanceDashboardSummary: () => ({ data: undefined, isLoading: false, isError: false }),
+}))
+
 vi.mock("next-intl", () => ({
+    useFormatter: () => ({
+        dateTime: () => "Kamis, 17 Juli 2026",
+    }),
     useTranslations: () => (key: string, values?: Record<string, string | number>) => {
         const labels: Record<string, string> = {
             "console.eyebrow": "Console",
@@ -41,6 +55,20 @@ vi.mock("next-intl", () => ({
             "modules.platformSettings": "Platform Settings",
             "modules.moduleManager": "Module Manager",
             "modules.apiKeys": "API Keys",
+            // ModulesView uses the namespaced organization.modules.* dictionary;
+            // the namespace argument is dropped by this mock, so bare keys land here.
+            "eyebrow": "Module Manager",
+            "title": `${values?.company ?? ""} Modules`,
+            "fallbackTitle": "Select a company context",
+            "subtitle": "Enable or disable core business modules for this company. Enabling a module grants access to authorized memberships.",
+            "availableTitle": "Available Modules",
+            "active": "Active",
+            "disabled": "Disabled",
+            "description": `Manage ${values?.module ?? ""} operations, analytics, and tenant database mappings.`,
+            "enable": "Enable Module",
+            "disable": "Disable Module",
+            "enableAria": `Enable ${values?.module ?? ""} module`,
+            "disableAria": `Disable ${values?.module ?? ""} module`,
         }
 
         return labels[key] ?? key

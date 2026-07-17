@@ -2,12 +2,16 @@
 
 import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { useConfirm } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { PosPageHeader } from "@/features/pos/components/pos-page-header"
 import {
@@ -40,6 +44,8 @@ const EMPTY_FORM: RegisterForm = {
 }
 
 export function RegistersView() {
+    const t = useTranslations("pos.registers")
+    const rootT = useTranslations()
     const { token, activeCompanyId, organizationContext } = useSession()
     const branches = organizationContext?.branches ?? []
 
@@ -54,6 +60,7 @@ export function RegistersView() {
         return { token, companyId: activeCompanyId }
     }, [token, activeCompanyId])
 
+    const loadErrorFallback = t("loadError")
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
@@ -65,11 +72,11 @@ export function RegistersView() {
             setRegisters(loadedRegisters)
             setAccounts(loadedAccounts)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load registers.")
+            toast.error(caught instanceof Error ? caught.message : loadErrorFallback)
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions])
+    }, [requestOptions, loadErrorFallback])
 
     useEffect(() => {
         let active = true
@@ -89,7 +96,7 @@ export function RegistersView() {
             toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : rootT("common.requestFailed"))
         } finally {
             setIsLoading(false)
         }
@@ -120,168 +127,161 @@ export function RegistersView() {
                 form.id
                     ? updateRegister(requestOptions!, form.id, payload)
                     : createRegister(requestOptions!, payload),
-            form.id ? "Register updated." : "Register created.",
+            form.id ? t("updated") : t("created"),
         ).then(() => setForm(EMPTY_FORM))
     }
 
-    const branchName = (id: number) => branches.find((b) => b.id === id)?.name ?? `Branch #${id}`
+    const branchName = (id: number) => branches.find((b) => b.id === id)?.name ?? t("branchRef", { id })
 
     return (
         <div className="grid gap-6">
             {confirmDialog}
             <PosPageHeader
-                title="Registers"
-                subtitle="Manage POS registers per branch. Each register can be linked to a cash account for settlement."
+                title={t("title")}
+                subtitle={t("subtitle")}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
             />
 
-            <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-                <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                    <h2 className="mb-4 flex items-center gap-2 border-b border-navy-50 pb-3 text-lg font-bold text-navy-900 font-display">
-                        <Icon name="storefront" className="text-teal-700" />
-                        <span>Registers ({registers.length})</span>
-                    </h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[560px] border-separate border-spacing-0 text-left text-sm">
-                            <thead>
-                                <tr className="bg-navy-50/30 text-xs font-bold uppercase tracking-wider text-navy-500">
-                                    <th className="border-b border-navy-100 px-4 py-3 font-display">Name</th>
-                                    <th className="border-b border-navy-100 px-4 py-3 font-display">Code</th>
-                                    <th className="border-b border-navy-100 px-4 py-3 font-display">Branch</th>
-                                    <th className="border-b border-navy-100 px-4 py-3 font-display">Status</th>
-                                    <th className="border-b border-navy-100 px-4 py-3 font-display text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {registers.map((register) => (
-                                    <tr key={register.id} className="transition-colors hover:bg-navy-50/20">
-                                        <td className="border-b border-navy-100/50 px-4 py-3 font-bold text-navy-900">
-                                            {register.name}
-                                        </td>
-                                        <td className="border-b border-navy-100/50 px-4 py-3 text-navy-700">
-                                            <code className="rounded border border-navy-100 bg-navy-50 px-1.5 py-0.5 text-xs font-semibold text-teal-800">
-                                                {register.code}
-                                            </code>
-                                        </td>
-                                        <td className="border-b border-navy-100/50 px-4 py-3 text-navy-700 font-medium">
-                                            {branchName(register.branch_id)}
-                                        </td>
-                                        <td className="border-b border-navy-100/50 px-4 py-3">
-                                            <StatusPill tone={register.is_active ? "green" : "neutral"}>
-                                                {register.is_active ? "Active" : "Inactive"}
-                                            </StatusPill>
-                                        </td>
-                                        <td className="border-b border-navy-100/50 px-4 py-3 text-right">
-                                            <div className="flex justify-end gap-1">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    onClick={() => editRegister(register)}
-                                                >
-                                                    <Icon name="edit" size={16} />
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    disabled={isLoading}
-                                                    onClick={async () => {
-                                                        const ok = await confirm({
-                                                            title: `Delete register “${register.name}”?`,
-                                                            message: "This register will be permanently removed.",
-                                                            confirmLabel: "Delete register",
-                                                            danger: true,
-                                                        })
-                                                        if (ok) {
-                                                            void runMutation(
-                                                                () => deleteRegister(requestOptions!, register.id),
-                                                                "Register deleted.",
-                                                            )
-                                                        }
-                                                    }}
-                                                >
-                                                    <Icon name="delete" size={16} className="text-rose-500" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {registers.length === 0 && (
-                                    <tr>
-                                        <td colSpan={5} className="bg-navy-50/10 py-8 text-center font-medium text-navy-400">
-                                            No registers yet.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div className="grid items-start gap-6 xl:grid-cols-[1fr_380px]">
+                <DataTable
+                    columns={[
+                        t("columns.name"),
+                        t("columns.code"),
+                        t("columns.branch"),
+                        t("columns.status"),
+                        { label: t("columns.actions"), align: "end" },
+                    ]}
+                    minWidth={560}
+                    toolbar={
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name="storefront" className="text-brand-ink" />
+                            <span>{t("listTitle", { count: registers.length })}</span>
+                        </h2>
+                    }
+                >
+                    {registers.map((register) => (
+                        <tr key={register.id}>
+                            <td className="px-6 py-4 font-bold text-ink">{register.name}</td>
+                            <td>
+                                <code className="rounded-sm bg-surface-muted px-1.5 py-0.5 text-xs font-semibold text-brand-ink">
+                                    {register.code}
+                                </code>
+                            </td>
+                            <td>{branchName(register.branch_id)}</td>
+                            <td>
+                                <StatusPill tone={register.is_active ? "green" : "neutral"}>
+                                    {register.is_active ? t("active") : t("inactive")}
+                                </StatusPill>
+                            </td>
+                            <td className="text-end">
+                                <div className="flex justify-end gap-1">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={rootT("common.edit")}
+                                        onClick={() => editRegister(register)}
+                                    >
+                                        <Icon name="edit" size={16} />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={rootT("common.delete")}
+                                        disabled={isLoading}
+                                        onClick={async () => {
+                                            const ok = await confirm({
+                                                title: t("deleteTitle", { name: register.name }),
+                                                message: t("deleteMessage"),
+                                                confirmLabel: t("deleteConfirm"),
+                                                danger: true,
+                                            })
+                                            if (ok) {
+                                                void runMutation(
+                                                    () => deleteRegister(requestOptions!, register.id),
+                                                    t("deleted"),
+                                                )
+                                            }
+                                        }}
+                                    >
+                                        <Icon name="delete" size={16} className="text-error" />
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                    <TableStateRow
+                        isLoading={isLoading && registers.length === 0}
+                        count={registers.length}
+                        columns={5}
+                        emptyMessage={t("empty")}
+                    />
+                </DataTable>
 
-                <form className="flex flex-col gap-4 rounded-2xl border border-navy-100 bg-white p-6" onSubmit={submitForm}>
-                    <div className="flex items-center justify-between border-b border-navy-50 pb-3">
-                        <h2 className="flex items-center gap-2 text-lg font-bold text-navy-900 font-display">
-                            <Icon name={form.id ? "edit" : "add"} className="text-teal-700" />
-                            <span>{form.id ? "Edit register" : "New register"}</span>
+                <Card as="form" padding="lg" className="flex flex-col gap-4" onSubmit={submitForm}>
+                    <div className="flex items-center justify-between border-b border-line pb-3">
+                        <h2 className="type-section flex items-center gap-2">
+                            <Icon name={form.id ? "edit" : "add"} className="text-brand-ink" />
+                            <span>{form.id ? t("form.editTitle") : t("form.newTitle")}</span>
                         </h2>
                         {form.id && (
                             <Button type="button" variant="ghost" size="sm" onClick={() => setForm(EMPTY_FORM)}>
-                                Cancel
+                                {rootT("common.cancel")}
                             </Button>
                         )}
                     </div>
                     <Field
-                        label="Name"
+                        label={t("form.name")}
                         value={form.name}
                         onChange={(event) => setForm((cur) => ({ ...cur, name: event.target.value }))}
-                        placeholder="e.g. Front Counter"
+                        placeholder={t("form.namePlaceholder")}
                         required
                     />
                     <Field
-                        label="Code"
+                        label={t("form.code")}
                         value={form.code}
                         onChange={(event) => setForm((cur) => ({ ...cur, code: event.target.value }))}
-                        placeholder="e.g. REG-01"
+                        placeholder={t("form.codePlaceholder")}
                         required
                     />
                     <SearchableSelect
-                        label="Branch"
+                        label={t("form.branch")}
                         value={form.branch_id}
                         onChange={(val) => setForm((cur) => ({ ...cur, branch_id: String(val) }))}
                         required
                         options={branches.map((branch) => ({ value: branch.id, label: branch.name }))}
-                        placeholder="Select branch"
+                        placeholder={t("form.selectBranch")}
                     />
                     <SearchableSelect
-                        label="Cash account (optional)"
+                        label={t("form.cashAccount")}
                         value={form.cash_account_id}
                         onChange={(val) => setForm((cur) => ({ ...cur, cash_account_id: String(val) }))}
                         options={accounts.map((account) => ({
                             value: account.id,
                             label: `${account.code} · ${account.name}`,
                         }))}
-                        placeholder="None"
+                        placeholder={t("form.none")}
                     />
-                    <label className="flex items-center gap-2 text-sm font-medium text-navy-700">
+                    <label className="flex items-center gap-2 text-sm font-medium text-ink-secondary">
                         <input
                             type="checkbox"
                             checked={form.is_active}
                             onChange={(event) => setForm((cur) => ({ ...cur, is_active: event.target.checked }))}
-                            className="h-4 w-4 rounded border-navy-200 text-teal-700 focus:ring-teal-700/30"
+                            className="h-4 w-4 rounded-sm accent-brand"
                         />
-                        Active
+                        {t("form.active")}
                     </label>
                     <Button
                         type="submit"
                         size="xl"
                         disabled={isLoading || !form.name || !form.code || !form.branch_id}
-                        className="w-full bg-teal-700 hover:bg-teal-800 text-white"
+                        className="w-full"
                     >
-                        {form.id ? "Save changes" : "Create register"}
+                        {form.id ? t("form.save") : t("form.create")}
                     </Button>
-                </form>
+                </Card>
             </div>
         </div>
     )

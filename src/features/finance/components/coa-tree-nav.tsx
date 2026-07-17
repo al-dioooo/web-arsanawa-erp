@@ -26,19 +26,19 @@ export function COATreeNav({ targetRoute, accentColor }: Props) {
     if (!token || !activeCompanyId) return null
 
     if (isLoading) {
-        return <div className="mt-1 ml-9 pl-3 text-[11px] text-navy-400 font-medium">Loading accounts…</div>
+        return <div className="mt-1 ml-9 pl-3 text-[11px] text-ink-faint font-medium">Loading accounts…</div>
     }
 
     if (isError) {
-        return <div className="mt-1 ml-9 pl-3 text-[11px] text-rose-500 font-medium">Failed to load accounts</div>
+        return <div className="mt-1 ml-9 pl-3 text-[11px] text-error font-medium">Failed to load accounts</div>
     }
 
     if (tree.length === 0) {
-        return <div className="mt-1 ml-9 pl-3 text-[11px] text-navy-400 font-medium">No accounts yet</div>
+        return <div className="mt-1 ml-9 pl-3 text-[11px] text-ink-faint font-medium">No accounts yet</div>
     }
 
     return (
-        <ul className="mt-1 ml-7 grid gap-0.5 border-l border-navy-100 pl-2">
+        <ul className="mt-1 ml-7 grid gap-0.5 border-l border-line pl-2">
             {tree.map((node) => (
                 <COANode
                     key={node.id}
@@ -77,7 +77,7 @@ function COANode({ node, targetRoute, accentColor, selectedAccountId, inCOA }: N
                     type="button"
                     aria-label={expanded ? "Collapse" : "Expand"}
                     onClick={() => setExpanded((prev) => !prev)}
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded text-navy-400 transition-transform duration-150 ${hasChildren ? "hover:bg-navy-100 hover:text-navy-700" : "invisible"} ${expanded ? "rotate-90" : ""}`}
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded text-ink-faint transition-transform duration-150 ${hasChildren ? "hover:bg-surface-muted hover:text-ink-secondary" : "invisible"} ${expanded ? "rotate-90" : ""}`}
                 >
                     <ChevronRightIcon className="w-3.5 h-3.5" />
                 </button>
@@ -93,7 +93,7 @@ function COANode({ node, targetRoute, accentColor, selectedAccountId, inCOA }: N
                 </Link>
             </div>
             {hasChildren && expanded && (
-                <ul className="mt-0.5 ml-3 grid gap-0.5 border-l border-navy-100 pl-2">
+                <ul className="mt-0.5 ml-3 grid gap-0.5 border-l border-line pl-2">
                     {node.children!.map((child) => (
                         <COANode
                             key={child.id}

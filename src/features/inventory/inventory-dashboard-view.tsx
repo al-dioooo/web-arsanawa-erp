@@ -1,162 +1,194 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { toast } from "sonner"
-import { Icon } from "@/components/ui/icon"
-import { useSession } from "@/features/auth/session-provider"
-import { loadInventoryDashboardSummary, type InventoryRequestOptions } from "@/features/inventory/inventory-api"
-import { InventoryPageHeader, inventoryPrimaryActionLinkClass, inventorySurfaceClass } from "@/features/inventory/inventory-layout"
-import type { InventoryDashboardSummary } from "@/features/inventory/inventory-types"
-import { formatIDR } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 
+import { buttonVariants } from "@/components/ui/button"
+import { Icon } from "@/components/ui/icon"
+import { MotionLinkItem } from "@/components/ui/motion-link"
+import { PageHeader } from "@/components/ui/page-header"
+import { StaggerGroup, StaggerItem } from "@/components/ui/stagger"
+import { StatCard } from "@/components/ui/stat-card"
+import { StatusPill } from "@/components/ui/status-pill"
+import { useSession } from "@/features/auth/session-provider"
+import { NeedsAttentionCard, type AttentionRow } from "@/features/home/components/needs-attention-card"
+import { useInventoryDashboardSummary } from "@/features/inventory/inventory-api"
+import { toNumber } from "@/lib/money"
+
+// Module-level Intl-bound formatters: referentially stable across renders,
+// as useCountUp (inside StatCard) requires.
+const idrFormatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+})
+const formatIdrValue = idrFormatter.format.bind(idrFormatter)
+const countFormatter = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 })
+const formatCountValue = countFormatter.format.bind(countFormatter)
+
+/** Master-data quick links; labels reuse the shared `inventory.nav` keys. */
 const quickActions = [
-    { href: "/inventory/master/products", label: "Products", icon: "inventory_products", tone: "bg-teal-50 text-teal-700" },
-    { href: "/inventory/master/categories", label: "Product Categories", icon: "inventory_categories", tone: "bg-orange-50 text-orange-600" },
-    { href: "/inventory/master/brands", label: "Product Brands", icon: "inventory_brands", tone: "bg-amber-50 text-amber-600" },
-    { href: "/inventory/master/units-of-measure", label: "Units of Measure", icon: "inventory_units", tone: "bg-indigo-50 text-indigo-600" },
-    { href: "/inventory/master/product-units", label: "Product Units", icon: "inventory_product_units", tone: "bg-emerald-50 text-emerald-700" },
-    { href: "/inventory/master/variant-groups", label: "Variant Groups", icon: "inventory_variant_groups", tone: "bg-sky-50 text-sky-700" },
-    { href: "/inventory/master/variants", label: "Variants", icon: "inventory_variants", tone: "bg-violet-50 text-violet-700" },
-]
+    { href: "/inventory/master/products", icon: "inventory_products", labelKey: "products" },
+    { href: "/inventory/master/categories", icon: "inventory_categories", labelKey: "categories" },
+    { href: "/inventory/master/brands", icon: "inventory_brands", labelKey: "brands" },
+    { href: "/inventory/master/units-of-measure", icon: "inventory_units", labelKey: "unitsOfMeasure" },
+    { href: "/inventory/master/product-units", icon: "inventory_product_units", labelKey: "productUnits" },
+    { href: "/inventory/master/variant-groups", icon: "inventory_variant_groups", labelKey: "variantGroups" },
+    { href: "/inventory/master/variants", icon: "inventory_variants", labelKey: "variantList" },
+] as const
 
 export function InventoryDashboardView() {
-    const { token, activeCompanyId } = useSession()
-    const [summary, setSummary] = useState<InventoryDashboardSummary | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
+    const { activeCompanyId } = useSession()
+    const t = useTranslations("inventory.dashboard")
+    const navT = useTranslations("inventory.nav")
 
-    const requestOptions = useMemo<InventoryRequestOptions | null>(() => {
-        if (!token || !activeCompanyId) return null
-        return { token, companyId: activeCompanyId }
-    }, [activeCompanyId, token])
+    const hasCompany = Boolean(activeCompanyId)
+    const summary = useInventoryDashboardSummary(hasCompany)
+    const counters = summary.data?.counters
 
-    const refreshSummary = useCallback(async () => {
-        if (!requestOptions) return
-
-        setIsLoading(true)
-        try {
-            setSummary(await loadInventoryDashboardSummary(requestOptions))
-        } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load inventory dashboard.")
-        } finally {
-            setIsLoading(false)
+    const attentionRows: AttentionRow[] = []
+    if (counters) {
+        if (counters.stock_movements.unsettled > 0) {
+            attentionRows.push({
+                key: "unsettled-movements",
+                icon: "inventory_movements",
+                label: t("needsAttention.unsettledMovements"),
+                count: counters.stock_movements.unsettled,
+                href: "/inventory/stock/movements",
+            })
         }
-    }, [requestOptions])
-
-    useEffect(() => {
-        let active = true
-        void Promise.resolve().then(() => {
-            if (active) void refreshSummary()
-        })
-        return () => {
-            active = false
+        if (counters.stock_lots.expiring_soon > 0) {
+            attentionRows.push({
+                key: "expiring-lots",
+                icon: "inventory_stock_lots",
+                label: t("needsAttention.expiringLots"),
+                count: counters.stock_lots.expiring_soon,
+                href: "/inventory/stock/lots",
+            })
         }
-    }, [refreshSummary])
-
-    const counters = summary?.counters
-    const kpis = [
-        {
-            label: "Products",
-            value: counters?.products.total ?? 0,
-            detail: `${counters?.products.active ?? 0} active`,
-            icon: "inventory_products",
-            tone: "bg-teal-50 text-teal-700",
-            href: "/inventory/master/products",
-        },
-        {
-            label: "Sellable SKUs",
-            value: counters?.product_units.total ?? 0,
-            detail: `${counters?.product_units.active ?? 0} active`,
-            icon: "inventory_product_units",
-            tone: "bg-emerald-50 text-emerald-700",
-            href: "/inventory/master/product-units",
-        },
-        {
-            label: "Stock Value",
-            value: formatIDR(Number(counters?.stock_value ?? 0)),
-            detail: `${counters?.stock_lots.active ?? 0} active lots`,
-            icon: "account_balance",
-            tone: "bg-amber-50 text-amber-600",
-            href: "/inventory/stock",
-            wide: true,
-        },
-        {
-            label: "Unsettled Movements",
-            value: counters?.stock_movements.unsettled ?? 0,
-            detail: `${counters?.stock_movements.total ?? 0} ledger rows`,
-            icon: "inventory_transfer",
-            tone: "bg-rose-50 text-rose-600",
-            href: "/inventory/stock/movements",
-        },
-    ]
+    }
 
     return (
         <div className="grid gap-6">
-            <InventoryPageHeader
-                title="Inventory Dashboard"
-                description="Track catalogue readiness, sellable SKUs, stock value, and movement work that still needs attention."
-                isCompanyScoped={Boolean(activeCompanyId)}
-                actions={(
-                    <Link href="/inventory/master/products" className={inventoryPrimaryActionLinkClass}>
-                        New Product
+            <PageHeader
+                dataAttribute="data-inventory-page-header"
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                status={
+                    <StatusPill tone={hasCompany ? "green" : "amber"}>
+                        {hasCompany ? t("status.scoped") : t("status.noCompany")}
+                    </StatusPill>
+                }
+                actions={
+                    <Link href="/inventory/master/products" className={buttonVariants()}>
+                        {t("newProduct")}
                     </Link>
-                )}
+                }
+                className="mb-0"
             />
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {kpis.map((kpi) => (
-                    <Link
-                        key={kpi.label}
-                        href={kpi.href}
-                        className={cn(
-                            "rounded-2xl border border-navy-100 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-md",
-                            kpi.wide ? "md:col-span-2 xl:col-span-1" : "",
-                        )}
-                    >
-                        <div className="mb-5 flex items-start justify-between gap-4">
-                            <span className="text-xs font-bold uppercase tracking-wider text-navy-500 font-display">
-                                {kpi.label}
-                            </span>
-                            <div className={cn("rounded-xl p-2", kpi.tone)}>
-                                <Icon name={kpi.icon} className="text-xl" />
-                            </div>
-                        </div>
-                        {isLoading ? (
-                            <div className="h-8 w-28 animate-pulse rounded-lg bg-navy-100" />
-                        ) : (
-                            <div className="grid gap-1">
-                                <span className="text-2xl font-bold font-display text-navy-900">{kpi.value}</span>
-                                <span className="text-sm font-medium text-navy-400">{kpi.detail}</span>
-                            </div>
-                        )}
-                    </Link>
-                ))}
-            </div>
+            <StaggerGroup
+                as="section"
+                className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4"
+            >
+                <StaggerItem>
+                    <StatCard
+                        label={t("statCards.products")}
+                        href="/inventory/master/products"
+                        value={counters?.products.total ?? 0}
+                        formatValue={formatCountValue}
+                        isLoading={summary.isLoading}
+                        isError={summary.isError}
+                        errorLabel={t("widgetError")}
+                        badge={
+                            <StatusPill tone="neutral">
+                                {t("statCards.activeCount", { count: counters?.products.active ?? 0 })}
+                            </StatusPill>
+                        }
+                    />
+                </StaggerItem>
+                <StaggerItem>
+                    <StatCard
+                        label={t("statCards.sellableSkus")}
+                        href="/inventory/master/product-units"
+                        value={counters?.product_units.total ?? 0}
+                        formatValue={formatCountValue}
+                        isLoading={summary.isLoading}
+                        isError={summary.isError}
+                        errorLabel={t("widgetError")}
+                        badge={
+                            <StatusPill tone="neutral">
+                                {t("statCards.activeCount", { count: counters?.product_units.active ?? 0 })}
+                            </StatusPill>
+                        }
+                    />
+                </StaggerItem>
+                <StaggerItem>
+                    <StatCard
+                        label={t("statCards.stockValue")}
+                        href="/inventory/stock"
+                        value={toNumber(counters?.stock_value)}
+                        formatValue={formatIdrValue}
+                        isLoading={summary.isLoading}
+                        isError={summary.isError}
+                        errorLabel={t("widgetError")}
+                        badge={
+                            <StatusPill tone="neutral">
+                                {t("statCards.activeLots", { count: counters?.stock_lots.active ?? 0 })}
+                            </StatusPill>
+                        }
+                    />
+                </StaggerItem>
+                <StaggerItem>
+                    <StatCard
+                        label={t("statCards.unsettledMovements")}
+                        href="/inventory/stock/movements"
+                        value={counters?.stock_movements.unsettled ?? 0}
+                        formatValue={formatCountValue}
+                        isLoading={summary.isLoading}
+                        isError={summary.isError}
+                        errorLabel={t("widgetError")}
+                        badge={
+                            <StatusPill tone="neutral">
+                                {t("statCards.ledgerRows", { count: counters?.stock_movements.total ?? 0 })}
+                            </StatusPill>
+                        }
+                    />
+                </StaggerItem>
+            </StaggerGroup>
 
-            <section className={cn(inventorySurfaceClass, "p-6")}>
-                <div className="mb-4 flex items-center justify-between gap-4">
-                    <h2 className="flex items-center gap-2 text-base font-bold text-navy-900 font-display">
-                        <Icon name="bolt" className="text-navy-400" />
-                        Quick Actions
-                    </h2>
-                    <Link href="/inventory/catalogue" className="text-sm font-semibold text-teal-600 hover:text-teal-700">
-                        Open catalogue →
+            {/* The stat row already surfaces the failure four times over — the
+                work queue hides on error instead of faking an all-clear. */}
+            {summary.isError ? null : (
+                <NeedsAttentionCard
+                    title={t("needsAttention.title")}
+                    rows={attentionRows}
+                    isLoading={summary.isLoading}
+                    allClearTitle={t("needsAttention.allClear")}
+                    allClearHint={t("needsAttention.allClearHint")}
+                />
+            )}
+
+            <section className="grid gap-4">
+                <div className="flex items-center justify-between gap-4">
+                    <h2 className="type-section">{t("quickActions.title")}</h2>
+                    <Link
+                        href="/inventory/catalogue"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-brand-ink transition-colors hover:underline"
+                    >
+                        {t("quickActions.openCatalogue")}
+                        <Icon name="chevron_right" size={16} />
                     </Link>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {quickActions.map((action) => (
-                        <Link
+                        <MotionLinkItem
                             key={action.href}
                             href={action.href}
-                            className="group flex min-h-20 items-center gap-3 rounded-xl border border-navy-100 p-4 transition-colors hover:border-teal-300 hover:bg-navy-50/50"
-                        >
-                            <div className={cn("rounded-xl p-2 transition-transform group-hover:scale-105", action.tone)}>
-                                <Icon name={action.icon} className="text-xl" />
-                            </div>
-                            <span className="font-semibold text-navy-800">{action.label}</span>
-                            <Icon name="chevron_right" className="ml-auto text-navy-300" />
-                        </Link>
+                            icon={action.icon}
+                            label={navT(action.labelKey)}
+                        />
                     ))}
                 </div>
             </section>

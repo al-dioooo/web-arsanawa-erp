@@ -4,9 +4,16 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field } from "@/components/ui/field"
-import { PageHeaderShell } from "@/components/ui/page-header-shell"
-import { fieldControlClassName, fieldErrorClassName, fieldLabelClassName } from "@/components/ui/form-control"
+import { PageHeader } from "@/components/ui/page-header"
+import {
+    fieldControlClassName,
+    fieldErrorClassName,
+    fieldLabelClassName,
+    fieldShellClassName,
+} from "@/components/ui/form-control"
 import { SelectDescription } from "@/components/ui/select-description"
 import { StatusPill } from "@/components/ui/status-pill"
 import { cn } from "@/lib/utils"
@@ -24,28 +31,14 @@ import {
 } from "@/features/platform/catering-form-import-config"
 import { WhatsAppSettings } from "@/features/platform/whatsapp-settings"
 
-const moduleOptions = [
-    {
-        value: "finance",
-        label: "finance",
-        description: "Finance defaults for invoices, journals, payments, and tax workflows.",
-    },
-    {
-        value: "inventory",
-        label: "inventory",
-        description: "Inventory defaults for catalogue, stock, pricing, and promotion workflows.",
-    },
-    {
-        value: "pos",
-        label: "pos",
-        description: "Point of Sale defaults for registers, shifts, sales, and receipts.",
-    },
-    {
-        value: "organization",
-        label: "organization",
-        description: "Organization defaults for company, branch, membership, and entitlement workflows.",
-    },
-]
+const moduleDescriptionKeys = {
+    finance: "platform.moduleFinanceDescription",
+    inventory: "platform.moduleInventoryDescription",
+    pos: "platform.modulePosDescription",
+    organization: "platform.moduleOrganizationDescription",
+} as const
+
+const knownModules = Object.keys(moduleDescriptionKeys) as Array<keyof typeof moduleDescriptionKeys>
 
 type SettingDraft = PlatformSetting & {
     value: unknown
@@ -137,35 +130,34 @@ export function PlatformSettingsView() {
 
     return (
         <div className="grid gap-6">
-            <PageHeaderShell
+            <PageHeader
                 eyebrow={t("platform.eyebrow")}
                 title={t("platform.companySettings")}
                 subtitle={t("platform.description")}
+                className="mb-0"
             />
 
             <WhatsAppSettings />
 
             <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-                <div className="rounded-2xl border border-navy-100 bg-white p-6">
+                <Card padding="lg">
                     <div className="mb-5 flex items-center justify-between gap-3">
-                        <h2 className="text-lg font-bold text-navy-900 font-display">
-                            {t("platform.activeCurrencies")}
-                        </h2>
+                        <h2 className="type-section">{t("platform.activeCurrencies")}</h2>
                         <StatusPill tone="neutral">{activeCurrencies.length}</StatusPill>
                     </div>
-                    <p className="mb-4 text-xs leading-relaxed text-navy-500">
+                    <p className="mb-4 text-xs leading-relaxed text-ink-muted">
                         {t("platform.currenciesReadOnly")}
                     </p>
                     <div className="grid gap-2">
                         {activeCurrencies.map((currency) => (
                             <article
                                 key={currency.id}
-                                className="rounded-xl border border-navy-100 bg-navy-50/20 p-4"
+                                className="rounded-md bg-surface-muted p-4"
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <p className="text-sm font-bold text-navy-900">{currency.code}</p>
-                                        <p className="mt-1 text-xs font-medium text-navy-500">
+                                        <p className="text-sm font-bold text-ink">{currency.code}</p>
+                                        <p className="mt-1 text-xs font-medium text-ink-muted">
                                             {currency.name} · {currency.symbol}
                                         </p>
                                     </div>
@@ -176,20 +168,20 @@ export function PlatformSettingsView() {
                             </article>
                         ))}
                         {!currenciesLoading && activeCurrencies.length === 0 ? (
-                            <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                                {t("platform.noActiveCurrencies")}
-                            </p>
+                            <EmptyState
+                                compact
+                                icon="payments"
+                                title={t("platform.noActiveCurrencies")}
+                            />
                         ) : null}
                     </div>
-                </div>
+                </Card>
 
-                <form className="rounded-2xl border border-navy-100 bg-white p-6" onSubmit={submitAll}>
+                <Card as="form" padding="lg" onSubmit={submitAll}>
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                            <h2 className="text-lg font-bold text-navy-900 font-display">
-                                {t("platform.companySettingsList")}
-                            </h2>
-                            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-navy-500">
+                            <h2 className="type-section">{t("platform.companySettingsList")}</h2>
+                            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-ink-muted">
                                 {t("platform.companySettingsListDescription")}
                             </p>
                         </div>
@@ -199,7 +191,6 @@ export function PlatformSettingsView() {
                                 type="submit"
                                 size="xl"
                                 disabled={upsertSettings.isPending || drafts.length === 0}
-                                className="bg-teal-700 text-white hover:bg-teal-800"
                             >
                                 {t("platform.saveAllSettings")}
                             </Button>
@@ -217,21 +208,23 @@ export function PlatformSettingsView() {
                                     label: t("platform.allModules"),
                                     description: t("platform.companySettingsListDescription"),
                                 },
-                                ...moduleOptions,
+                                ...knownModules.map((module) => ({
+                                    value: module,
+                                    label: module,
+                                    description: t(moduleDescriptionKeys[module]),
+                                })),
                             ]}
                         />
                     </div>
 
                     <div className="mt-5 grid gap-5">
                         {visibleDrafts.length === 0 ? (
-                            <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                                {t("platform.noSettings")}
-                            </p>
+                            <EmptyState compact icon="settings" title={t("platform.noSettings")} />
                         ) : null}
                         {groupedDrafts.map(([module, rows]) => (
                             <section key={module} className="grid gap-3">
-                                <div className="flex items-center justify-between gap-3 border-b border-navy-50 pb-2">
-                                    <h3 className="text-sm font-bold uppercase tracking-wider text-navy-500 font-display">
+                                <div className="flex items-center justify-between gap-3 border-b border-line pb-2">
+                                    <h3 className="font-display text-sm font-bold uppercase tracking-wider text-ink-muted">
                                         {module}
                                     </h3>
                                     <StatusPill tone="neutral">{t("platform.settingsCount", { count: rows.length })}</StatusPill>
@@ -252,7 +245,7 @@ export function PlatformSettingsView() {
                             </section>
                         ))}
                     </div>
-                </form>
+                </Card>
             </section>
         </div>
     )
@@ -281,11 +274,11 @@ function SettingEditor({
         : null
 
     return (
-        <article className="grid gap-4 rounded-xl border border-navy-100 bg-navy-50/20 p-4">
+        <article className="grid gap-4 rounded-md bg-surface-muted p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <p className="text-sm font-bold text-navy-900">{setting.key}</p>
-                    <p className="mt-1 text-xs font-medium text-navy-500">
+                    <p className="text-sm font-bold text-ink">{setting.key}</p>
+                    <p className="mt-1 text-xs font-medium text-ink-muted">
                         {setting.branch_id ? `${t("platform.branchId")} #${setting.branch_id}` : t("platform.companyWide")}
                     </p>
                 </div>
@@ -333,14 +326,14 @@ function GenericSettingValueEditor({
 
     if (typeof setting.value === "boolean") {
         return (
-            <label className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-navy-100 bg-white px-3 text-sm font-medium text-navy-700">
+            <label className="flex min-h-11 items-center justify-between gap-3 rounded-md bg-surface px-3 text-sm font-medium text-ink-secondary">
                 <span className="font-semibold">{t("platform.settingValue")}</span>
                 <input
                     aria-label={`${setting.key} value`}
                     type="checkbox"
                     checked={setting.value}
                     onChange={(event) => onValueChange(event.target.checked)}
-                    className="h-5 w-5 accent-teal-700"
+                    className="h-5 w-5 accent-brand"
                 />
             </label>
         )
@@ -414,11 +407,11 @@ function CateringImportSettingsPanel({
     }
 
     return (
-        <div className="grid gap-4 rounded-xl border border-teal-100 bg-white p-4">
+        <div className="grid gap-4 rounded-md bg-surface p-4">
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <h4 className="text-sm font-bold text-navy-900">{t("platform.cateringImportTitle")}</h4>
-                    <p className="mt-1 text-xs leading-relaxed text-navy-500">
+                    <h4 className="text-sm font-bold text-ink">{t("platform.cateringImportTitle")}</h4>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-muted">
                         {t("platform.cateringImportDescription")}
                     </p>
                 </div>
@@ -436,7 +429,7 @@ function CateringImportSettingsPanel({
                         error={errors[fieldErrorKey(settingId, "source_url")]}
                         required
                     />
-                    <p className="mt-1 text-xs leading-relaxed text-navy-500">
+                    <p className="mt-1 text-xs leading-relaxed text-ink-muted">
                         {t("platform.cateringImportSourceUrlHint")}
                     </p>
                 </div>
@@ -476,7 +469,7 @@ function CateringImportSettingsPanel({
                 onChange={(key, value) => setMapValue("menu_type_bundle_skus", key, value)}
             />
             <EditableMappingList
-                title="Field map"
+                title={t("platform.cateringImportFieldMap")}
                 prefix="field_map"
                 rows={fieldMap}
                 emptyLabel="-"
@@ -486,7 +479,7 @@ function CateringImportSettingsPanel({
                 title={t("platform.cateringImportPaymentMap")}
                 prefix="payment_method_map"
                 rows={paymentMap}
-                emptyLabel="No payment"
+                emptyLabel={t("platform.cateringImportNoPayment")}
                 onChange={(key, value) => setMapValue("payment_method_map", key, value)}
             />
         </div>
@@ -510,7 +503,7 @@ function EditableMappingList({
 
     return (
         <div className="grid gap-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-navy-500">{title}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-ink-muted">{title}</p>
             {entries.length > 0 ? (
                 <div className="grid gap-2 md:grid-cols-2">
                     {entries.map(([label, value]) => (
@@ -525,7 +518,7 @@ function EditableMappingList({
                     ))}
                 </div>
             ) : (
-                <p className="rounded-lg bg-navy-50 px-3 py-2 text-xs font-medium text-navy-400">{emptyLabel}</p>
+                <p className="rounded-md bg-surface-muted px-3 py-2 text-xs font-medium text-ink-faint">{emptyLabel}</p>
             )}
         </div>
     )
@@ -545,7 +538,7 @@ function JsonTextArea({
     onChange: (value: string) => void
 }) {
     return (
-        <label className="grid gap-1.5 text-sm font-medium text-navy-700">
+        <label className={fieldShellClassName}>
             <span className={fieldLabelClassName}>{label}</span>
             <textarea
                 aria-label={ariaLabel}
@@ -630,9 +623,8 @@ function normalizeCateringImportConfig(
 }
 
 function groupSettingsByModule(settings: SettingDraft[]): Array<[string, SettingDraft[]]> {
-    const knownModules = moduleOptions.map((option) => option.value)
     const extraModules = Array.from(new Set(settings.map((setting) => setting.module)))
-        .filter((module) => !knownModules.includes(module))
+        .filter((module) => !(knownModules as string[]).includes(module))
         .sort()
 
     return [...knownModules, ...extraModules]

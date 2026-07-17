@@ -1,14 +1,20 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { PageHeader } from "@/features/finance/components/page-header"
 import { useSession } from "@/features/auth/session-provider"
 import { useCOA, usePeriods, type COAAccount } from "@/features/finance/api"
 import { useTrialBalance } from "@/features/finance/api-journals"
 import { formatIDR } from "@/lib/format"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Icon } from "@/components/ui/icon"
+import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 
 export default function CashBankPage() {
+    const t = useTranslations("finance.cashBank")
     const { activeCompanyId } = useSession()
 
     // Fetch COA
@@ -45,29 +51,31 @@ export default function CashBankPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Kas & Bank"
-                subtitle={activePeriod ? `Balances as of period ${activePeriod.name}` : undefined}
+                title={t("title")}
+                subtitle={activePeriod ? t("subtitle", { period: activePeriod.name }) : undefined}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {isLoading && (
-                    <div className="col-span-full py-12 text-center text-navy-500">
-                        Loading bank accounts...
-                    </div>
+                    <>
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <Skeleton key={index} className="h-52 w-full rounded-lg" />
+                        ))}
+                    </>
                 )}
                 {!isLoading && isError && (
-                    <div className="col-span-full py-12 text-center text-rose-600 bg-rose-50 rounded-2xl">
-                        Unable to load balances. Please try again.
+                    <div className="col-span-full">
+                        <EmptyState icon="error_outline" title={t("error")} />
                     </div>
                 )}
                 {!isLoading && !isError && !activePeriod && (
-                    <div className="col-span-full py-12 text-center text-navy-500 bg-navy-50 rounded-2xl">
-                        No accounting period found. Create a period to see balances.
+                    <div className="col-span-full">
+                        <EmptyState icon="calendar_month" title={t("noPeriod")} />
                     </div>
                 )}
                 {!isLoading && !isError && activePeriod && cashBankAccounts.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-navy-500 bg-navy-50 rounded-2xl">
-                        No Kas & Bank accounts configured in Chart of Accounts.
+                    <div className="col-span-full">
+                        <EmptyState icon="account_balance" title={t("noAccounts")} />
                     </div>
                 )}
                 {!isError && activePeriod && cashBankAccounts.map(account => {
@@ -76,34 +84,37 @@ export default function CashBankPage() {
                     const balance = tbLine ? tbLine.debit - tbLine.credit : 0
 
                     return (
-                        <Link
+                        <Card
                             key={account.id}
+                            as={Link}
                             href={`/finance/journals/account/${account.id}`} // Links to Account Ledger (Stage 6)
-                            className="bg-white rounded-2xl border border-navy-100 p-6 shadow-sm hover:shadow-md hover:border-teal-500/50 transition-all group flex flex-col"
+                            padding="lg"
+                            hover
+                            className="group flex flex-col"
                         >
-                            <div className="flex items-start justify-between mb-8">
-                                <div className="p-3 bg-teal-50 text-teal-600 rounded-xl group-hover:scale-110 transition-transform">
-                                    <Icon name="account_balance" className="text-3xl" />
+                            <div className="mb-8 flex items-start justify-between">
+                                <div className="rounded-md bg-brand-soft p-3 text-brand-ink transition-transform group-hover:scale-110">
+                                    <Icon name="account_balance" size={28} />
                                 </div>
-                                <div className="text-xs font-bold text-navy-400 bg-navy-50 px-2 py-1 rounded-md tracking-wider">
+                                <div className="rounded-md bg-surface-muted px-2 py-1 text-xs font-bold tracking-wider text-ink-faint">
                                     {account.code}
                                 </div>
                             </div>
 
                             <div className="flex-1">
-                                <h3 className="text-navy-900 font-semibold mb-1 group-hover:text-teal-600 transition-colors">
+                                <h3 className="mb-1 font-semibold text-ink transition-colors group-hover:text-brand-ink">
                                     {account.name}
                                 </h3>
-                                <div className="text-sm text-navy-500 mb-6">Kas & Bank</div>
+                                <div className="mb-6 text-sm text-ink-muted">{t("categoryLabel")}</div>
 
                                 <div className="mt-auto">
-                                    <div className="text-xs text-navy-400 font-semibold uppercase tracking-wider mb-1">Current Balance</div>
-                                    <div className={`text-2xl font-bold ${balance < 0 ? 'text-rose-600' : 'text-navy-900'}`}>
+                                    <div className="type-card-label mb-1 uppercase tracking-wider">{t("currentBalance")}</div>
+                                    <div className={cn("type-card-value tabular-nums", balance < 0 && "text-error-strong")}>
                                         {formatIDR(balance)}
                                     </div>
                                 </div>
                             </div>
-                        </Link>
+                        </Card>
                     )
                 })}
             </div>

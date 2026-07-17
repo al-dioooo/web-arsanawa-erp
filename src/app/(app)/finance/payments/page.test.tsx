@@ -19,6 +19,18 @@ vi.mock("@/features/finance/api-payments", () => ({
     usePayments: vi.fn(),
 }))
 
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "finance.payments.filters.status.label": "Status",
+            "finance.payments.filters.from": "Payment Date From",
+            "finance.payments.filters.to": "Payment Date To",
+        }
+        return labels[fullKey] ?? fullKey
+    },
+}))
+
 describe("finance payments page", () => {
     it("passes outbound payment date range filters to the payments API hook", () => {
         vi.mocked(usePayments).mockReturnValue({
@@ -28,10 +40,10 @@ describe("finance payments page", () => {
 
         render(<PaymentsPage />)
 
-        fireEvent.change(screen.getByLabelText("Payment date from"), {
+        fireEvent.change(screen.getByLabelText("Payment Date From"), {
             target: { value: "2026-06-01" },
         })
-        fireEvent.change(screen.getByLabelText("Payment date to"), {
+        fireEvent.change(screen.getByLabelText("Payment Date To"), {
             target: { value: "2026-06-30" },
         })
 

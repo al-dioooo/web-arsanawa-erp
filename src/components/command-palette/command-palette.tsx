@@ -9,22 +9,18 @@ import {
 } from "react"
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "motion/react"
+import { AnimatePresence, m } from "motion/react"
 import { Icon } from "@/components/ui/icon"
 import { Highlight, HighlightItem } from "@/components/ui/highlight"
+import { SPRING, transitions } from "@/lib/motion"
 import { useCommandPalette } from "@/lib/search/command-palette-context"
 import { searchRegistry, searchGroups, type SearchItem } from "@/lib/search/registry"
 import { cn } from "@/lib/utils"
 
-// ── Spring presets ────────────────────────────────────────────────────────────
+// ── Motion presets (shared tokens) ────────────────────────────────────────────
 
-const BACKDROP_TRANSITION = { duration: 0.18, ease: [0.4, 0, 0.2, 1] } as const
-const PANEL_TRANSITION = {
-    type: "spring",
-    stiffness: 420,
-    damping: 34,
-    mass: 0.7,
-} as const
+const BACKDROP_TRANSITION = transitions.backdrop
+const PANEL_TRANSITION = SPRING.panel
 
 // ── Filtering ─────────────────────────────────────────────────────────────────
 
@@ -42,39 +38,39 @@ function filterItems(query: string): SearchItem[] {
 // ── Group accent colours ──────────────────────────────────────────────────────
 
 const GROUP_ACCENT: Record<string, string> = {
-    "Quick Actions":      "text-teal-700",
-    "Console":            "text-teal-700",
-    "Finance":            "text-amber-600",
-    "Finance — Reports":  "text-amber-600",
-    "Finance — Settings": "text-amber-600",
-    "Inventory":          "text-orange-500",
-    "Organization":       "text-navy-500",
+    "Quick Actions":      "text-brand-ink",
+    "Console":            "text-brand-ink",
+    "Finance":            "text-accent",
+    "Finance — Reports":  "text-accent",
+    "Finance — Settings": "text-accent",
+    "Inventory":          "text-accent",
+    "Organization":       "text-ink-muted",
 }
 
 // ── Result row ────────────────────────────────────────────────────────────────
 
 function ResultRow({ item }: { item: SearchItem }) {
     return (
-        <div className="group relative z-10 flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-2.5">
+        <div className="group relative z-10 flex cursor-pointer select-none items-center gap-3 rounded-md px-3 py-2.5">
             {/* Icon chip */}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy-100/60 transition-colors group-data-[active=true]:bg-white group-data-[active=true]:shadow-sm group-data-[hovered=true]:bg-white group-data-[hovered=true]:shadow-sm">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-muted transition-colors group-data-[active=true]:bg-surface group-data-[active=true]:shadow-sm group-data-[hovered=true]:bg-surface group-data-[hovered=true]:shadow-sm">
                 <Icon
                     name={item.icon}
                     size={16}
-                    className="text-navy-500 transition-colors group-data-[active=true]:text-teal-700 group-data-[hovered=true]:text-teal-700"
+                    className="text-ink-muted transition-colors group-data-[active=true]:text-brand-ink group-data-[hovered=true]:text-brand-ink"
                 />
             </div>
 
             {/* Labels */}
             <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-navy-700 transition-colors group-data-[active=true]:text-navy-900 group-data-[hovered=true]:text-navy-900">
+                <p className="truncate text-sm font-semibold text-ink-secondary transition-colors group-data-[active=true]:text-ink group-data-[hovered=true]:text-ink">
                     {item.label}
                 </p>
-                <p className="truncate text-xs text-navy-400">{item.description}</p>
+                <p className="truncate text-xs text-ink-faint">{item.description}</p>
             </div>
 
             {/* Enter hint — slides in when active */}
-            <kbd className="shrink-0 rounded-md border border-navy-200 bg-white px-1.5 py-0.5 font-display text-[10px] font-bold text-navy-400 shadow-sm opacity-0 transition-opacity group-data-[active=true]:opacity-100">
+            <kbd className="shrink-0 rounded-md border border-line bg-surface px-1.5 py-0.5 font-display text-[10px] font-bold text-ink-faint shadow-sm opacity-0 transition-opacity group-data-[active=true]:opacity-100">
                 ↵
             </kbd>
         </div>
@@ -179,8 +175,8 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
             <div ref={liveRef} role="status" aria-live="polite" aria-atomic="true" className="sr-only" />
 
             {/* ── Search input ─────────────────────────────────────────── */}
-            <div className="flex items-center gap-3 border-b border-navy-100 px-4 py-3.5">
-                <Icon name="search" size={20} className="shrink-0 text-navy-400" />
+            <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
+                <Icon name="search" size={20} className="shrink-0 text-ink-faint" />
                 <input
                     ref={inputRef}
                     type="text"
@@ -198,9 +194,9 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
                         setActiveIndex(0)
                     }}
                     onKeyDown={handleKeyDown}
-                    className="flex-1 bg-transparent text-sm font-medium text-navy-900 outline-none placeholder:text-navy-300"
+                    className="flex-1 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-ink-faint"
                 />
-                <kbd className="shrink-0 rounded-md border border-navy-200 bg-navy-50 px-1.5 py-0.5 font-display text-[10px] font-bold text-navy-400">
+                <kbd className="shrink-0 rounded-md border border-line-strong bg-surface-muted px-1.5 py-0.5 font-display text-[10px] font-bold text-ink-faint">
                     ESC
                 </kbd>
             </div>
@@ -214,13 +210,13 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
             >
                 {flatItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-50">
-                            <Icon name="search_off" size={24} className="text-navy-300" />
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-muted">
+                            <Icon name="search_off" size={24} className="text-ink-faint" />
                         </div>
-                        <p className="text-sm font-semibold text-navy-700">
+                        <p className="text-sm font-semibold text-ink-secondary">
                             No results for &ldquo;{query}&rdquo;
                         </p>
-                        <p className="mt-1 text-xs text-navy-400">
+                        <p className="mt-1 text-xs text-ink-faint">
                             Try a different keyword or browse the sidebar.
                         </p>
                     </div>
@@ -232,7 +228,7 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
                      */
                     <Highlight
                         value={activeItemId}
-                        className="rounded-xl bg-teal-50"
+                        className="rounded-md bg-brand-soft/40"
                         containerClassName="p-2"
                         hover={true}
                     >
@@ -242,7 +238,7 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
                                 <div className="px-3 pb-1 pt-2">
                                     <p className={cn(
                                         "text-[10px] font-bold uppercase tracking-widest font-display",
-                                        GROUP_ACCENT[group] ?? "text-navy-400"
+                                        GROUP_ACCENT[group] ?? "text-ink-faint"
                                     )}>
                                         {group}
                                     </p>
@@ -272,22 +268,22 @@ function CommandPalettePanel({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* ── Footer ───────────────────────────────────────────────── */}
-            <div className="flex items-center gap-4 border-t border-navy-100 bg-navy-50/50 px-4 py-2.5">
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-navy-400">
-                    <kbd className="rounded border border-navy-200 bg-white px-1 py-0.5 font-display text-[10px] text-navy-500 shadow-sm">↑</kbd>
-                    <kbd className="rounded border border-navy-200 bg-white px-1 py-0.5 font-display text-[10px] text-navy-500 shadow-sm">↓</kbd>
+            <div className="flex items-center gap-4 border-t border-line bg-surface-muted/50 px-4 py-2.5">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-faint">
+                    <kbd className="rounded border border-line-strong bg-surface px-1 py-0.5 font-display text-[10px] text-ink-muted shadow-sm">↑</kbd>
+                    <kbd className="rounded border border-line-strong bg-surface px-1 py-0.5 font-display text-[10px] text-ink-muted shadow-sm">↓</kbd>
                     Navigate
                 </span>
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-navy-400">
-                    <kbd className="rounded border border-navy-200 bg-white px-1 py-0.5 font-display text-[10px] text-navy-500 shadow-sm">↵</kbd>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-faint">
+                    <kbd className="rounded border border-line-strong bg-surface px-1 py-0.5 font-display text-[10px] text-ink-muted shadow-sm">↵</kbd>
                     Open
                 </span>
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-navy-400">
-                    <kbd className="rounded border border-navy-200 bg-white px-1 py-0.5 font-display text-[10px] text-navy-500 shadow-sm">ESC</kbd>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-faint">
+                    <kbd className="rounded border border-line-strong bg-surface px-1 py-0.5 font-display text-[10px] text-ink-muted shadow-sm">ESC</kbd>
                     Close
                 </span>
                 {flatItems.length > 0 && (
-                    <span className="ml-auto text-[11px] font-semibold text-navy-300">
+                    <span className="ml-auto text-[11px] font-semibold text-ink-faint">
                         {flatItems.length} result{flatItems.length === 1 ? "" : "s"}
                     </span>
                 )}
@@ -306,13 +302,13 @@ export function CommandPalette() {
             {isOpen && (
                 <>
                     {/* Backdrop */}
-                    <motion.div
+                    <m.div
                         key="cmd-backdrop"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={BACKDROP_TRANSITION}
-                        className="fixed inset-0 z-50 bg-navy-900/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 bg-overlay backdrop-blur-sm"
                         aria-hidden="true"
                         onClick={close}
                     />
@@ -325,16 +321,16 @@ export function CommandPalette() {
                         className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh] pointer-events-none"
                     >
                         {/* Animated panel */}
-                        <motion.div
+                        <m.div
                             key="cmd-panel"
                             initial={{ opacity: 0, scale: 0.97, y: -12 }}
                             animate={{ opacity: 1, scale: 1,    y: 0 }}
                             exit={{    opacity: 0, scale: 0.97, y: -12 }}
                             transition={PANEL_TRANSITION}
-                            className="w-full max-w-[640px] pointer-events-auto origin-top overflow-hidden rounded-2xl border border-navy-100 bg-white shadow-2xl"
+                            className="w-full max-w-[640px] pointer-events-auto origin-top overflow-hidden rounded-lg bg-surface-raised shadow-card-hover"
                         >
                             <CommandPalettePanel onClose={close} />
-                        </motion.div>
+                        </m.div>
                     </div>
                 </>
             )}

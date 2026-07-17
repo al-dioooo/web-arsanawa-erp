@@ -11,7 +11,15 @@
         "syncing": "Menyinkronkan",
         "loading": "Memuat",
         "companyScoped": "Dalam lingkup perusahaan",
-        "noCompany": "Belum ada perusahaan"
+        "noCompany": "Belum ada perusahaan",
+        "back": "Kembali",
+        "clear": "Bersihkan",
+        "retry": "Coba lagi",
+        "requestFailed": "Permintaan gagal.",
+        "close": "Tutup",
+        "states": {
+            "loading": "Memuat..."
+        }
     },
     "modules": {
         "inventory": "Inventory",
@@ -43,7 +51,18 @@
         "goToConsole": "Ke Konsol",
         "profileSettings": "Pengaturan Profil",
         "platformSettings": "Pengaturan Platform",
-        "signOut": "Keluar"
+        "signOut": "Keluar",
+        "appearance": "Tampilan",
+        "themeLight": "Terang",
+        "themeSystem": "Sistem",
+        "themeDark": "Gelap",
+        "guard": {
+            "title": "Modul Belum Diaktifkan",
+            "description": "Modul <strong>{module}</strong> belum diaktifkan untuk konteks perusahaan ini.",
+            "goToModuleManager": "Ke Module Manager",
+            "backToApps": "Kembali ke Aplikasi",
+            "backToEnabledApps": "Kembali ke Aplikasi Aktif"
+        }
     },
     "console": {
         "eyebrow": "Konsol",
@@ -68,6 +87,42 @@
         "financeDescription": "Buku besar, AP/AR, pembayaran, dan pajak.",
         "posDescription": "Penjualan kasir, pesanan katering, dan shift.",
         "defaultDescription": "Ruang kerja untuk {module}."
+    },
+    "home": {
+        "greeting": "Hi {name},",
+        "manageModules": "Kelola Modul",
+        "viewAll": "Lihat semua",
+        "widgetError": "Data tidak dapat dimuat",
+        "transactionsCount": "{count} transaksi",
+        "statCards": {
+            "arOutstanding": "Piutang Usaha (AR)",
+            "apOutstanding": "Hutang Usaha (AP)",
+            "todaySales": "Penjualan Hari Ini",
+            "stockValue": "Nilai Stok"
+        },
+        "chart": {
+            "title": "Pemasukan & Pengeluaran",
+            "subtitle": "Bulan ini",
+            "income": "Pemasukan",
+            "expense": "Pengeluaran",
+            "average": "Rata-rata"
+        },
+        "needsAttention": {
+            "title": "Perlu Tindakan",
+            "pendingApprovals": "Persetujuan menunggu",
+            "draftInvoices": "Faktur draf",
+            "draftBills": "Tagihan draf",
+            "unsettledMovements": "Pergerakan stok belum selesai",
+            "expiringLots": "Lot stok segera kedaluwarsa",
+            "openShifts": "Shift masih terbuka",
+            "allClear": "Semua beres",
+            "allClearHint": "Tidak ada yang perlu ditindaklanjuti saat ini."
+        },
+        "recentActivity": {
+            "title": "Aktivitas Terbaru",
+            "empty": "Belum ada aktivitas",
+            "emptyHint": "Faktur dan tagihan terbaru akan muncul di sini."
+        }
     },
     "platform": {
         "eyebrow": "Platform",
@@ -106,6 +161,12 @@
         "cateringImportDefaults": "Default",
         "cateringImportSave": "Simpan pengaturan impor catering",
         "cateringImportSaved": "Pengaturan impor catering tersimpan.",
+        "moduleFinanceDescription": "Default Finance untuk faktur, jurnal, pembayaran, dan alur kerja pajak.",
+        "moduleInventoryDescription": "Default Inventory untuk katalog, stok, harga, dan alur kerja promosi.",
+        "modulePosDescription": "Default Point of Sale untuk register, shift, penjualan, dan struk.",
+        "moduleOrganizationDescription": "Default Organization untuk alur kerja perusahaan, cabang, keanggotaan, dan entitlement.",
+        "cateringImportFieldMap": "Pemetaan kolom",
+        "cateringImportNoPayment": "Tanpa pembayaran",
         "whatsapp": {
             "title": "Struk WhatsApp",
             "description": "Kirim struk WhatsApp otomatis ke setiap pelanggan setelah impor penjualan POS. Didukung oleh Fonnte.",
@@ -134,7 +195,854 @@
             "tokenCleared": "Token dihapus."
         }
     },
+    "organization": {
+        "eyebrow": "Organization",
+        "fallbackTitle": "Perusahaan & Struktur",
+        "subtitle": "Kelola cabang, keanggotaan perusahaan, dan struktur organisasi secara umum.",
+        "developer": "Developer",
+        "createCompany": {
+            "title": "Buat Perusahaan",
+            "name": "Nama perusahaan",
+            "slug": "Slug",
+            "legalName": "Nama legal",
+            "taxIdentifier": "NPWP perusahaan",
+            "primaryBranch": "Cabang utama",
+            "primaryBranchPlaceholder": "Kantor Pusat",
+            "submit": "Buat perusahaan",
+            "creating": "Membuat..."
+        },
+        "branches": {
+            "title": "Cabang",
+            "empty": "Belum ada cabang dibuat",
+            "primary": "Utama",
+            "noCode": "Tanpa kode",
+            "addTitle": "Tambah Cabang Baru",
+            "name": "Nama cabang",
+            "code": "Kode",
+            "submit": "Tambah Cabang"
+        },
+        "members": {
+            "title": "Tambah Anggota",
+            "userId": "ID Pengguna",
+            "userIdHint": "ID akun orang yang akan ditambahkan. Periksa kembali — penugasan berlaku seketika. Anggota yang sudah ada dapat dipilih berdasarkan nama di Peran Cabang.",
+            "branch": "Penugasan Cabang",
+            "branchPlaceholder": "Tanpa penugasan cabang (seluruh perusahaan)",
+            "role": "Peran Sistem",
+            "roleMember": "Member",
+            "roleAdmin": "Admin",
+            "submit": "Tambah Anggota"
+        },
+        "admin": {
+            "membersTitle": "Anggota",
+            "membersDescription": "Keanggotaan perusahaan yang aktif beserta peran organisasi bawaannya.",
+            "membersEmpty": "Belum ada anggota untuk perusahaan ini.",
+            "noEmail": "Email belum dimuat",
+            "userFallback": "Pengguna #{id}",
+            "roleFallback": "Peran #{id}",
+            "rolesTitle": "Peran",
+            "rolesDescription": "Susun peran khusus dari katalog izin API.",
+            "permissionsCount": "{count} izin",
+            "builtIn": "Bawaan",
+            "roleName": "Nama peran",
+            "permissionsLoading": "Memuat katalog izin...",
+            "saveChanges": "Simpan perubahan",
+            "createRole": "Buat peran",
+            "deleteRoleConfirmTitle": "Hapus peran “{name}”?",
+            "deleteRoleConfirmMessage": "Penugasan cabang yang memakai peran ini akan kehilangan peran tersebut. Tindakan ini tidak dapat dibatalkan.",
+            "branchRolesTitle": "Penugasan Peran Cabang",
+            "branchRolesDescription": "Tetapkan peran khusus kepada pengguna untuk cabang terpilih.",
+            "branch": "Cabang",
+            "noBranches": "Belum ada cabang",
+            "assignmentsEmpty": "Belum ada penugasan untuk cabang ini.",
+            "assignMember": "Pilih anggota",
+            "assignMemberPlaceholder": "Cari anggota perusahaan",
+            "assignRole": "Tetapkan peran",
+            "selectRole": "Pilih peran",
+            "assignSubmit": "Tetapkan peran cabang",
+            "revoke": "Cabut",
+            "revokeAria": "Cabut {name}"
+        },
+        "modules": {
+            "eyebrow": "Module Manager",
+            "title": "Modul {company}",
+            "fallbackTitle": "Pilih konteks perusahaan",
+            "subtitle": "Aktifkan atau nonaktifkan modul bisnis inti untuk perusahaan ini. Mengaktifkan modul memberi akses kepada keanggotaan yang berwenang.",
+            "availableTitle": "Modul Tersedia",
+            "active": "Aktif",
+            "disabled": "Nonaktif",
+            "description": "Kelola operasional, analitik, dan pemetaan basis data tenant untuk {module}.",
+            "enable": "Aktifkan Modul",
+            "disable": "Nonaktifkan Modul",
+            "enableAria": "Aktifkan modul {module}",
+            "disableAria": "Nonaktifkan modul {module}"
+        },
+        "apiKeys": {
+            "title": "API Keys",
+            "subtitle": "Buat dan rotasi kunci berlingkup perusahaan untuk landing page dan integrasi eksternal.",
+            "selectOrganization": "Pilih organisasi sebelum mengelola kunci akses eksternal.",
+            "cannotManage": "Akun Anda tidak dapat mengelola API key eksternal untuk organisasi ini.",
+            "secretTitle": "Secret baru untuk {name}",
+            "secretHint": "Nilai ini hanya ditampilkan sekali. Rotasi kunci jika hilang.",
+            "activeKeys": "Kunci Aktif",
+            "empty": "Belum ada API key dibuat.",
+            "createTitle": "Buat Kunci",
+            "name": "Nama kunci",
+            "sourceChannel": "Kanal sumber",
+            "expiresAt": "Kedaluwarsa pada",
+            "submit": "Buat API Key",
+            "created": "API key dibuat.",
+            "createError": "Tidak dapat membuat API key.",
+            "rotated": "API key dirotasi.",
+            "rotateError": "Tidak dapat merotasi API key.",
+            "revoked": "API key dicabut.",
+            "revokeError": "Tidak dapat mencabut API key.",
+            "statusActive": "Aktif",
+            "statusRevoked": "Dicabut",
+            "prefix": "Prefiks",
+            "source": "Sumber",
+            "expires": "Kedaluwarsa",
+            "lastUsed": "Terakhir dipakai",
+            "rotate": "Rotasi",
+            "revoke": "Cabut",
+            "rotateAria": "Rotasi {name}",
+            "revokeAria": "Cabut {name}"
+        }
+    },
+    "identity": {
+        "eyebrow": "Identity",
+        "title": "Pengaturan Profil",
+        "subtitle": "Jaga identitas ruang kerja, lokal, dan zona waktu tetap selaras dengan catatan profil API.",
+        "profileTitle": "Profil",
+        "displayName": "Nama tampilan",
+        "avatarUrl": "URL avatar",
+        "locale": "Lokal",
+        "timezone": "Zona waktu",
+        "localeEnglish": "English",
+        "localeIndonesian": "Indonesia",
+        "localeEnglishDescription": "Gunakan label dan format bahasa Inggris di konsol web.",
+        "localeIndonesianDescription": "Gunakan label bahasa Indonesia dan format lokal di konsol web.",
+        "timezoneUtcDescription": "Waktu universal untuk audit lintas wilayah dan pekerjaan integrasi.",
+        "timezoneDescription": "Gunakan {timezone} sebagai zona waktu kerja pengguna.",
+        "save": "Simpan profil",
+        "saved": "Profil tersimpan.",
+        "lookupTitle": "Pencarian Pengguna",
+        "lookupDescription": "Cari ID pengguna sebelum menambah anggota atau menetapkan peran cabang.",
+        "userId": "ID Pengguna",
+        "lookupSubmit": "Cari pengguna"
+    },
+    "partners": {
+        "eyebrow": "Data master bersama",
+        "title": "Partners",
+        "subtitle": "Kelola pelanggan, pemasok, dan kontak bersama yang digunakan Finance dan POS.",
+        "directory": {
+            "title": "Direktori",
+            "emptyTitle": "Belum ada partner",
+            "emptyDescription": "Tambahkan pelanggan atau pemasok untuk membuka alur kerja Finance dan POS.",
+            "noCode": "Tanpa kode",
+            "noEmail": "Tanpa email"
+        },
+        "types": {
+            "customer": "Pelanggan",
+            "supplier": "Pemasok",
+            "both": "Keduanya"
+        },
+        "statuses": {
+            "active": "Aktif",
+            "inactive": "Nonaktif"
+        },
+        "create": {
+            "title": "Buat Partner",
+            "description": "Mulai dari identitas utama. Kontak dan alamat dapat dikembangkan dari catatan bersama ini.",
+            "submit": "Buat partner"
+        },
+        "fields": {
+            "name": "Nama partner",
+            "type": "Tipe",
+            "code": "Kode",
+            "email": "Email",
+            "phone": "Telepon",
+            "notes": "Catatan",
+            "notesPlaceholder": "Konteks internal",
+            "status": "Status",
+            "taxId": "NPWP",
+            "nationalId": "NIK",
+            "creditLimit": "Batas kredit",
+            "transactionLimit": "Batas transaksi"
+        },
+        "detail": {
+            "title": "Detail Partner",
+            "description": "Ubah catatan partner bersama serta kelola kontak dan alamat dari API.",
+            "empty": "Pilih partner untuk melihat detail.",
+            "editName": "Ubah nama partner",
+            "editType": "Ubah tipe",
+            "editCode": "Ubah kode",
+            "editEmail": "Ubah email",
+            "editPhone": "Ubah telepon",
+            "editNotes": "Ubah catatan",
+            "save": "Simpan perubahan",
+            "delete": "Hapus partner",
+            "deleteConfirmTitle": "Hapus “{name}”?",
+            "deleteConfirmMessage": "Partner ini digunakan bersama oleh Finance dan POS. Tindakan ini tidak dapat dibatalkan."
+        },
+        "contacts": {
+            "title": "Kontak",
+            "name": "Nama kontak",
+            "role": "Peran kontak",
+            "email": "Email kontak",
+            "phone": "Telepon kontak",
+            "primary": "Kontak utama",
+            "add": "Tambah kontak",
+            "noRole": "Tanpa peran",
+            "noEmail": "Tanpa email",
+            "deleteAria": "Hapus kontak {name}",
+            "deleteConfirmTitle": "Hapus kontak “{name}”?",
+            "deleteConfirmMessage": "Kontak akan dihapus dari catatan partner bersama."
+        },
+        "addresses": {
+            "title": "Alamat",
+            "type": "Tipe alamat",
+            "label": "Label alamat",
+            "line1": "Baris alamat",
+            "line2": "Baris alamat 2",
+            "city": "Kota",
+            "province": "Provinsi",
+            "postalCode": "Kode pos",
+            "country": "Negara",
+            "default": "Alamat utama",
+            "add": "Tambah alamat",
+            "deleteAria": "Hapus alamat {label}",
+            "deleteConfirmTitle": "Hapus alamat “{label}”?",
+            "deleteConfirmMessage": "Alamat akan dihapus dari catatan partner bersama.",
+            "types": {
+                "billing": "Penagihan",
+                "shipping": "Pengiriman",
+                "other": "Lainnya"
+            }
+        }
+    },
+    "inventory": {
+        "dashboard": {
+            "eyebrow": "Inventory",
+            "title": "Dashboard Inventory",
+            "subtitle": "Pantau kesiapan katalog, SKU siap jual, nilai stok, dan pergerakan stok yang masih perlu ditindaklanjuti.",
+            "status": {
+                "scoped": "Terhubung ke perusahaan",
+                "noCompany": "Belum ada perusahaan"
+            },
+            "newProduct": "Produk Baru",
+            "widgetError": "Data tidak dapat dimuat",
+            "statCards": {
+                "products": "Produk",
+                "sellableSkus": "SKU Siap Jual",
+                "stockValue": "Nilai Stok",
+                "unsettledMovements": "Pergerakan Belum Selesai",
+                "activeCount": "{count} aktif",
+                "activeLots": "{count} lot aktif",
+                "ledgerRows": "{count} baris buku pergerakan"
+            },
+            "needsAttention": {
+                "title": "Perlu Tindakan",
+                "unsettledMovements": "Pergerakan stok belum selesai",
+                "expiringLots": "Lot stok segera kedaluwarsa",
+                "allClear": "Semua beres",
+                "allClearHint": "Tidak ada yang perlu ditindaklanjuti saat ini."
+            },
+            "quickActions": {
+                "title": "Aksi Cepat",
+                "openCatalogue": "Buka katalog"
+            }
+        },
+        "master": {
+            "eyebrow": "Master Inventory",
+            "backToList": "Kembali ke Daftar",
+            "rootCategory": "Kategori akar",
+            "kinds": {
+                "categories": {
+                    "title": "Kategori Produk",
+                    "singular": "Kategori Produk",
+                    "description": "Susun tipe produk, seri, model, dan tingkat hierarki produk lainnya dengan kategori bersarang."
+                },
+                "brands": {
+                    "title": "Merek Produk",
+                    "singular": "Merek Produk",
+                    "description": "Kelola data master inventory dengan alur daftar, detail, buat, dan ubah yang terpisah."
+                },
+                "units": {
+                    "title": "Satuan Ukur",
+                    "singular": "Satuan Ukur",
+                    "description": "Kelola satuan hitung seperti pax, box, tray, pieces, kilogram, atau liter."
+                },
+                "products": {
+                    "title": "Produk",
+                    "singular": "Produk",
+                    "description": "Kelola data master inventory dengan alur daftar, detail, buat, dan ubah yang terpisah."
+                },
+                "productUnits": {
+                    "title": "Satuan Produk",
+                    "singular": "Satuan Produk",
+                    "description": "Kelola catatan SKU final siap jual dengan memilih produk beserta nilai variannya."
+                },
+                "variantGroups": {
+                    "title": "Grup Varian",
+                    "singular": "Grup Varian",
+                    "description": "Definisikan dimensi varian yang dapat dipakai ulang dan tautkan setiap grup ke konteks satuan ukurnya."
+                },
+                "variants": {
+                    "title": "Varian",
+                    "singular": "Varian",
+                    "description": "Kelola nilai varian lintas perusahaan yang dipakai oleh Satuan Produk."
+                }
+            },
+            "heading": {
+                "create": "{name} Baru",
+                "edit": "Ubah {name}",
+                "detail": "Detail {name}"
+            },
+            "actions": {
+                "import": "Impor Produk"
+            },
+            "import": {
+                "title": "Impor Produk",
+                "description": "Unggah atau periksa template produk Google Sheets publik, tinjau validasi baris, lalu antrekan impor."
+            },
+            "list": {
+                "searchLabel": "Cari {name}",
+                "recordCount": "{count} data"
+            },
+            "table": {
+                "name": "Nama",
+                "context": "Konteks",
+                "status": "Status",
+                "actions": "Aksi",
+                "empty": "Belum ada data.",
+                "view": "Lihat {name}",
+                "edit": "Ubah {name}",
+                "collapse": "Tutup {name}",
+                "expand": "Buka {name}"
+            },
+            "status": {
+                "active": "Aktif",
+                "inactive": "Nonaktif"
+            },
+            "meta": {
+                "brand": "Merek",
+                "sellableSku": "SKU Siap Jual"
+            },
+            "detail": {
+                "notFound": "Data tidak ditemukan.",
+                "imageAlt": "Gambar produk",
+                "deleteTitle": "Hapus {name} ini?",
+                "deleteMessage": "Tindakan ini tidak dapat dibatalkan.",
+                "name": "Nama",
+                "path": "Path",
+                "code": "Kode",
+                "status": "Status",
+                "unit": "Satuan",
+                "group": "Grup",
+                "product": "Produk",
+                "variants": "Varian",
+                "sku": "SKU",
+                "baseUnitId": "ID Satuan Dasar"
+            },
+            "form": {
+                "name": "Nama",
+                "unitName": "Nama Satuan",
+                "code": "Kode",
+                "parentCategory": "Kategori Induk",
+                "baseUnit": "Satuan Dasar",
+                "category": "Kategori",
+                "brand": "Merek",
+                "initialSku": "SKU varian awal",
+                "initialVariantName": "Nama varian awal",
+                "linkedUnit": "Satuan Ukur Tertaut",
+                "description": "Deskripsi",
+                "variantGroup": "Grup Varian",
+                "position": "Posisi",
+                "product": "Produk",
+                "sku": "SKU",
+                "barcode": "Barcode",
+                "selectedVariants": "Varian Terpilih",
+                "noCategory": "Tanpa kategori",
+                "active": "Aktif",
+                "saving": "Menyimpan...",
+                "image": {
+                    "remoteUrl": "URL gambar eksternal",
+                    "altText": "Teks alternatif gambar",
+                    "altPlaceholder": "Deskripsi gambar produk",
+                    "file": "Berkas gambar",
+                    "preview": "Pratinjau",
+                    "previewAlt": "Pratinjau gambar produk"
+                }
+            },
+            "toast": {
+                "saved": "{name} disimpan.",
+                "deleted": "{name} dihapus.",
+                "loadError": "Tidak dapat memuat data master inventory.",
+                "saveError": "Tidak dapat menyimpan data master.",
+                "deleteError": "Tidak dapat menghapus data master."
+            },
+            "variantManager": {
+                "title": "Varian",
+                "subtitle": "SKU siap jual untuk produk ini. Harga dan penjualan POS mengacu pada varian.",
+                "columns": {
+                    "sku": "SKU",
+                    "name": "Nama",
+                    "barcode": "Barcode",
+                    "status": "Status",
+                    "actions": "Aksi"
+                },
+                "empty": "Belum ada varian. Tambahkan satu di bawah agar produk ini bisa dijual.",
+                "editSku": "Ubah SKU",
+                "editName": "Ubah nama varian",
+                "editBarcode": "Ubah barcode",
+                "editAria": "Ubah varian {sku}",
+                "deleteAria": "Hapus varian {sku}",
+                "activate": "Aktifkan",
+                "deactivate": "Nonaktifkan",
+                "newSku": "SKU varian baru",
+                "newName": "Nama varian",
+                "newBarcode": "Barcode",
+                "add": "Tambah varian",
+                "deleteTitle": "Hapus varian “{sku}”?",
+                "deleteMessage": "Tindakan ini menghapus permanen varian beserta harga, lot stok, dan pergerakannya.",
+                "tags": {
+                    "title": "Tag",
+                    "subtitle": "Label untuk mengelompokkan dan memfilter produk.",
+                    "empty": "Belum ada tag.",
+                    "removeAria": "Hapus tag {tag}",
+                    "addLabel": "Tambah tag",
+                    "addButton": "Tambah",
+                    "save": "Simpan tag"
+                },
+                "availability": {
+                    "title": "Ketersediaan Cabang",
+                    "subtitle": "Varian tersedia di semua cabang kecuali dimatikan untuk cabang tertentu.",
+                    "variantColumn": "Varian",
+                    "available": "Tersedia",
+                    "availableAria": "{sku} tersedia di {branch}",
+                    "empty": "Tambahkan varian untuk mengatur ketersediaan."
+                },
+                "toast": {
+                    "added": "Varian ditambahkan.",
+                    "updated": "Varian diperbarui.",
+                    "activated": "Varian diaktifkan.",
+                    "deactivated": "Varian dinonaktifkan.",
+                    "deleted": "Varian dihapus.",
+                    "available": "Varian tersedia.",
+                    "hidden": "Varian disembunyikan untuk cabang ini.",
+                    "tagsSaved": "Tag disimpan.",
+                    "loadError": "Tidak dapat memuat varian produk.",
+                    "error": "Terjadi kesalahan."
+                }
+            }
+        },
+        "nav": {
+            "product": "PRODUK",
+            "variants": "VARIAN",
+            "stockMovement": "PERGERAKAN STOK",
+            "operations": "OPERASIONAL",
+            "products": "Produk",
+            "categories": "Kategori Produk",
+            "brands": "Merek Produk",
+            "unitsOfMeasure": "Satuan Ukur",
+            "productUnits": "Satuan Produk",
+            "variantGroups": "Daftar Grup Varian",
+            "variantList": "Daftar Varian",
+            "stockOverview": "Ringkasan Stok",
+            "stockLots": "Lot Stok",
+            "movements": "Buku Pergerakan",
+            "newReceipt": "Penerimaan Baru",
+            "newIssue": "Pengeluaran Baru",
+            "newAdjustment": "Penyesuaian Baru",
+            "newTransfer": "Transfer Baru",
+            "pricing": "Harga",
+            "promotions": "Promosi"
+        },
+        "stock": {
+            "eyebrow": "Inventory · Pergerakan Stok",
+            "optionsError": "Satuan produk tidak dapat dimuat.",
+            "missingContext": "Pilih perusahaan aktif, cabang, dan Satuan Produk sebelum mencatat stok.",
+            "selectors": {
+                "branch": "Cabang",
+                "productUnit": "Satuan Produk",
+                "productUnitPlaceholder": "Pilih satuan produk"
+            },
+            "overview": {
+                "title": "Ringkasan Stok",
+                "subtitle": "Tinjau valuasi, stok tersedia, lot aktif, dan pergerakan stok terbaru yang bersifat permanen.",
+                "error": "Ringkasan stok tidak dapat dimuat.",
+                "contextValue": "Nilai Konteks Aktif",
+                "selectedOnHand": "Stok Tersedia Terpilih",
+                "activeLots": "Lot Aktif",
+                "links": {
+                    "lots": "Periksa saldo batch, tanggal kedaluwarsa, dan biaya.",
+                    "movements": "Audit catatan pergerakan stok yang bersifat permanen.",
+                    "receipt": "Terima stok ke cabang berdasarkan Satuan Produk.",
+                    "issue": "Keluarkan stok dari cabang berdasarkan Satuan Produk.",
+                    "adjustment": "Koreksi jumlah stok dengan penyesuaian bertanda.",
+                    "transfer": "Pindahkan stok Satuan Produk antar cabang."
+                }
+            },
+            "lots": {
+                "title": "Lot Stok",
+                "subtitle": "Pantau batch terbuka, sisa jumlah, dan konteks biaya Satuan Produk.",
+                "error": "Lot stok tidak dapat dimuat.",
+                "empty": "Belum ada lot untuk konteks ini.",
+                "lotNumber": "Lot #{id}",
+                "pageInfo": "{from}–{to} dari {total}",
+                "columns": {
+                    "lot": "Lot",
+                    "productUnit": "Satuan Produk",
+                    "remaining": "Sisa",
+                    "unitCost": "Biaya Satuan"
+                }
+            },
+            "movements": {
+                "title": "Buku Pergerakan",
+                "subtitle": "Jejak audit pergerakan stok (hanya baca) untuk penerimaan, pengeluaran, penyesuaian, dan transfer.",
+                "count": "{count} dari {total}",
+                "error": "Pergerakan stok tidak dapat dimuat.",
+                "empty": "Belum ada pergerakan untuk konteks ini.",
+                "movementNumber": "Pergerakan #{id}",
+                "columns": {
+                    "movement": "Pergerakan",
+                    "productUnit": "Satuan Produk",
+                    "type": "Tipe",
+                    "qty": "Jml",
+                    "occurredAt": "Waktu Kejadian"
+                }
+            },
+            "detail": {
+                "subtitle": "Detail audit pergerakan yang bersifat permanen. Pergerakan stok tidak dapat diubah atau dihapus dari UI.",
+                "error": "Pergerakan stok tidak dapat dimuat.",
+                "productUnit": "Satuan Produk",
+                "type": "Tipe",
+                "quantity": "Jumlah",
+                "unitCost": "Biaya Satuan",
+                "occurredAt": "Waktu Kejadian",
+                "notes": "Catatan",
+                "noNotes": "Tanpa catatan"
+            },
+            "receipt": {
+                "title": "Penerimaan Baru",
+                "subtitle": "Terima stok ke cabang menggunakan SKU siap jual Satuan Produk.",
+                "quantity": "Jumlah",
+                "unitCost": "Biaya Satuan (IDR)",
+                "lotNumber": "Nomor Lot",
+                "receivedAt": "Tanggal Diterima",
+                "submit": "Catat Penerimaan",
+                "success": "Penerimaan stok berhasil dicatat.",
+                "failure": "Penerimaan stok gagal dicatat."
+            },
+            "issue": {
+                "title": "Pengeluaran Baru",
+                "subtitle": "Keluarkan stok Satuan Produk dari cabang.",
+                "quantity": "Jumlah pengeluaran",
+                "notes": "Catatan pengeluaran",
+                "submit": "Catat Pengeluaran",
+                "success": "Pengeluaran stok berhasil dicatat.",
+                "failure": "Pengeluaran stok gagal dicatat."
+            },
+            "adjustment": {
+                "title": "Penyesuaian Baru",
+                "subtitle": "Koreksi stok Satuan Produk dengan jumlah bertanda.",
+                "quantity": "Jumlah penyesuaian",
+                "cost": "Biaya penyesuaian",
+                "notes": "Catatan penyesuaian",
+                "submit": "Catat Penyesuaian",
+                "success": "Penyesuaian stok berhasil dicatat.",
+                "failure": "Penyesuaian stok gagal dicatat."
+            },
+            "transfer": {
+                "title": "Transfer Baru",
+                "subtitle": "Pindahkan stok Satuan Produk antar cabang.",
+                "destination": "Cabang tujuan",
+                "quantity": "Jumlah transfer",
+                "notes": "Catatan transfer",
+                "missingDestination": "Pilih cabang tujuan sebelum mencatat stok.",
+                "submit": "Catat Transfer",
+                "success": "Transfer stok berhasil dicatat.",
+                "failure": "Transfer stok gagal dicatat."
+            }
+        },
+        "catalogue": {
+            "title": "Katalog Produk",
+            "subtitle": "Kelola produk lingkup perusahaan, varian kustom, kategori, merek, dan satuan ukur.",
+            "loadError": "Katalog tidak dapat dimuat.",
+            "mutationError": "Permintaan gagal diproses.",
+            "products": {
+                "heading": "Produk ({count} dari {total})"
+            },
+            "filters": {
+                "search": "Cari produk",
+                "searchPlaceholder": "Cari SKU atau nama...",
+                "category": "Kategori",
+                "allCategories": "Semua Kategori",
+                "brand": "Merek",
+                "allBrands": "Semua Merek",
+                "status": "Status",
+                "allStatuses": "Semua Status",
+                "allStatusesDescription": "Tampilkan produk aktif dan nonaktif.",
+                "active": "Aktif",
+                "activeDescription": "Hanya produk yang tersedia untuk alur kerja normal.",
+                "inactive": "Nonaktif",
+                "inactiveDescription": "Hanya produk yang ditahan dari alur kerja normal."
+            },
+            "table": {
+                "product": "Produk",
+                "variants": "Varian (SKU · Nama)",
+                "tags": "Tag",
+                "status": "Status",
+                "empty": "Produk tidak ditemukan.",
+                "idLabel": "ID {id}"
+            },
+            "statuses": {
+                "active": "Aktif",
+                "inactive": "Nonaktif"
+            },
+            "createProduct": {
+                "heading": "Buat Produk",
+                "name": "Nama Produk",
+                "namePlaceholder": "cth. Rice Crackers",
+                "sku": "SKU",
+                "variantName": "Nama Varian",
+                "variantNamePlaceholder": "cth. Original",
+                "baseUnit": "Satuan Dasar",
+                "selectUnit": "Pilih satuan",
+                "category": "Kategori",
+                "noCategory": "Tanpa kategori",
+                "nonePlaceholder": "Tidak ada",
+                "brand": "Merek",
+                "submit": "Buat Produk",
+                "success": "Produk berhasil dibuat."
+            },
+            "quickCategory": {
+                "heading": "Kategori Cepat",
+                "name": "Nama Kategori",
+                "placeholder": "cth. Snacks",
+                "submit": "Tambah Kategori",
+                "success": "Kategori berhasil dibuat."
+            },
+            "quickBrand": {
+                "heading": "Merek Cepat",
+                "name": "Nama Merek",
+                "placeholder": "cth. Arsanawa Foods",
+                "submit": "Tambah Merek",
+                "success": "Merek berhasil dibuat."
+            },
+            "quickUnit": {
+                "heading": "Satuan Cepat",
+                "name": "Nama Satuan",
+                "placeholder": "cth. Pieces",
+                "code": "Kode",
+                "submit": "Tambah Satuan",
+                "success": "Satuan ukur berhasil dibuat."
+            }
+        },
+        "pricing": {
+            "title": "Manajemen Harga",
+            "subtitle": "Atur daftar harga lingkup perusahaan atau cabang, dan tetapkan harga berlaku bertanggal untuk varian produk.",
+            "loadError": "Data harga tidak dapat dimuat.",
+            "pricesError": "Harga tidak dapat dimuat.",
+            "statuses": {
+                "active": "Aktif",
+                "inactive": "Nonaktif",
+                "default": "Utama"
+            },
+            "lists": {
+                "heading": "Daftar Harga Tersedia ({count})",
+                "empty": "Belum ada daftar harga",
+                "emptyHint": "Buat lewat formulir di samping daftar ini.",
+                "companyWide": "Seluruh perusahaan",
+                "branchScope": "ID Cabang: {id}",
+                "default": "Daftar Utama"
+            },
+            "manage": {
+                "heading": "Kelola Harga untuk: {name}",
+                "hint": "Pilih varian pada daftar di bawah untuk memperbarui harganya pada daftar harga ini."
+            },
+            "table": {
+                "productSku": "Produk & SKU",
+                "variantSku": "SKU Varian",
+                "currentPrice": "Harga Saat Ini",
+                "effectiveFrom": "Berlaku Sejak",
+                "actions": "Aksi",
+                "empty": "Tidak ada varian produk di katalog.",
+                "notPriced": "Belum ada harga",
+                "setPrice": "Atur Harga"
+            },
+            "createList": {
+                "heading": "Buat Daftar Harga",
+                "name": "Nama Daftar Harga",
+                "namePlaceholder": "cth. Retail Indonesia",
+                "branch": "Konteks cabang (opsional)",
+                "branchPlaceholder": "Seluruh perusahaan (semua cabang)",
+                "isDefault": "Jadikan daftar utama",
+                "submit": "Buat Daftar",
+                "success": "Daftar harga berhasil dibuat.",
+                "failure": "Daftar harga gagal dibuat."
+            },
+            "setPriceForm": {
+                "heading": "Atur Harga",
+                "close": "Tutup formulir atur harga",
+                "variant": "Varian Terpilih",
+                "variantPlaceholder": "Pilih Varian",
+                "price": "Harga (IDR)",
+                "pricePlaceholder": "cth. 50000",
+                "effectiveFrom": "Berlaku Sejak",
+                "note": "Harga akan ditetapkan pada daftar harga: {name}.",
+                "submit": "Atur Harga",
+                "success": "Harga varian berhasil ditetapkan.",
+                "failure": "Harga gagal ditetapkan."
+            }
+        },
+        "promotions": {
+            "title": "Promosi & Reward",
+            "subtitle": "Kelola kampanye diskon, promosi paket produk, dan reward loyalitas pelanggan.",
+            "loadError": "Promosi tidak dapat dimuat.",
+            "discounts": {
+                "heading": "Kampanye Diskon ({count})",
+                "empty": "Belum ada diskon aktif."
+            },
+            "rewards": {
+                "heading": "Reward Loyalitas ({count})",
+                "empty": "Belum ada reward aktif."
+            },
+            "card": {
+                "active": "Aktif",
+                "inactive": "Nonaktif",
+                "value": "Nilai:",
+                "benefit": "Manfaat:",
+                "branchScope": "Cakupan: ID Cabang {id}",
+                "companyWide": "Cakupan: Seluruh perusahaan",
+                "minQty": "Jml Min: {value}",
+                "minPurchaseQty": "Jml Beli Min: {value}",
+                "validity": "Berlaku: {from} sampai {to}",
+                "immediate": "Langsung",
+                "open": "Terbuka"
+            },
+            "summary": {
+                "target": "{count} target",
+                "targets": "{count} target",
+                "dependency": "{count} dependensi",
+                "dependencies": "{count} dependensi",
+                "giveaway": "{count} giveaway",
+                "giveaways": "{count} giveaway"
+            },
+            "deleteDiscountAria": "Hapus diskon {name}",
+            "deleteRewardAria": "Hapus reward {name}",
+            "deleteConfirm": {
+                "title": "Hapus “{name}”?",
+                "discountMessage": "Tindakan ini menghapus kampanye beserta target produknya secara permanen dan tidak dapat dibatalkan.",
+                "rewardMessage": "Tindakan ini menghapus reward loyalitas secara permanen dan tidak dapat dibatalkan."
+            },
+            "toasts": {
+                "incompleteRows": "Lengkapi atau hapus baris target, dependensi, dan giveaway yang masih kosong terlebih dahulu.",
+                "discountCreated": "Kampanye diskon berhasil dibuat.",
+                "discountCreateFailed": "Diskon gagal dibuat.",
+                "discountDeleted": "Diskon dihapus.",
+                "discountDeleteFailed": "Diskon gagal dihapus.",
+                "rewardCreated": "Reward loyalitas berhasil dibuat.",
+                "rewardCreateFailed": "Reward gagal dibuat.",
+                "rewardDeleted": "Reward dihapus.",
+                "rewardDeleteFailed": "Reward gagal dihapus."
+            },
+            "tabs": {
+                "addDiscount": "Tambah Diskon",
+                "addReward": "Tambah Reward"
+            },
+            "form": {
+                "campaignName": "Nama Kampanye",
+                "campaignNamePlaceholder": "cth. End Year Mega Sale",
+                "rewardName": "Nama Reward",
+                "rewardNamePlaceholder": "cth. Premium Member Reward",
+                "calcType": "Tipe Perhitungan",
+                "percentage": "Persentase (%)",
+                "amount": "Nominal Tetap (IDR)",
+                "value": "Nilai",
+                "branchScope": "Cakupan cabang",
+                "companyWidePlaceholder": "Seluruh perusahaan",
+                "minQty": "Syarat Jml Minimum",
+                "minQtyPlaceholderDiscount": "cth. 5 (Opsional)",
+                "minQtyPlaceholderReward": "cth. 2 (Opsional)",
+                "appliesTo": "Berlaku untuk",
+                "add": "Tambah",
+                "addTarget": "Tambah target",
+                "targetType": "Tipe target {index}",
+                "target": "Target {index}",
+                "removeTarget": "Hapus target {index}",
+                "targetTypes": {
+                    "variant": "Varian",
+                    "product": "Produk",
+                    "category": "Kategori"
+                },
+                "selectVariant": "Pilih varian",
+                "selectProduct": "Pilih produk",
+                "selectCategory": "Pilih kategori",
+                "requires": "Syarat (beli-X)",
+                "addDependency": "Tambah dependensi",
+                "dependencyVariant": "Varian dependensi {index}",
+                "removeDependency": "Hapus dependensi {index}",
+                "requiredQuantity": "Jumlah wajib",
+                "qtyPlaceholder": "Jml",
+                "giveaways": "Giveaway (dapat-Y)",
+                "addGiveaway": "Tambah giveaway",
+                "giveawayVariant": "Varian giveaway {index}",
+                "removeGiveaway": "Hapus giveaway {index}",
+                "giveawayQuantity": "Jumlah giveaway",
+                "effectiveFrom": "Berlaku Sejak",
+                "effectiveTo": "Berlaku Sampai",
+                "optional": "Opsional",
+                "submitDiscount": "Buat Diskon",
+                "submitReward": "Buat Reward"
+            }
+        }
+    },
     "finance": {
+        "dashboard": {
+            "eyebrow": "Finance",
+            "title": "Dashboard",
+            "subtitle": "Ringkasan posisi keuangan perusahaan — kas, piutang, hutang, dan persetujuan yang menunggu.",
+            "newInvoice": "Faktur Baru",
+            "widgetError": "Data tidak dapat dimuat",
+            "kpis": {
+                "cashPosition": "Posisi Kas",
+                "arOutstanding": "Piutang Usaha (AR)",
+                "apOutstanding": "Hutang Usaha (AP)",
+                "pendingApprovals": "Persetujuan Menunggu"
+            },
+            "chart": {
+                "title": "Pemasukan vs Pengeluaran",
+                "income": "Pemasukan",
+                "expense": "Pengeluaran",
+                "net": "Neto",
+                "average": "Rata-rata",
+                "from": "Dari",
+                "to": "Sampai",
+                "empty": "Tidak ada data pada rentang ini",
+                "emptyHint": "Tidak ada total faktur atau tagihan pada rentang tanggal ini."
+            },
+            "recentActivity": {
+                "title": "Aktivitas Terbaru",
+                "empty": "Belum ada aktivitas",
+                "emptyHint": "Faktur dan tagihan terbaru akan muncul di sini.",
+                "viewAll": "Lihat semua"
+            },
+            "quickActions": {
+                "title": "Aksi Cepat",
+                "newInvoice": "Faktur Baru",
+                "newBill": "Tagihan Baru",
+                "recordPayment": "Catat Pembayaran",
+                "recordReceipt": "Catat Penerimaan",
+                "journalEntry": "Entri Jurnal"
+            },
+            "reports": {
+                "title": "Laporan",
+                "trialBalance": "Neraca Saldo",
+                "incomeStatement": "Laporan Laba Rugi",
+                "taxReturns": "SPT Pajak"
+            }
+        },
         "nav": {
             "transactions": "TRANSAKSI",
             "payablesAndReceivables": "HUTANG & PIUTANG",
@@ -177,6 +1085,1071 @@
             "download": "Ekspor {kind}",
             "success": "Ekspor {kind} sedang diunduh.",
             "error": "Ekspor gagal dibuat. Silakan coba lagi."
+        },
+        "detail": {
+            "subtotal": "Subtotal",
+            "taxTotal": "Total Pajak",
+            "total": "Total",
+            "amountPaid": "Terbayar",
+            "balanceDue": "Sisa Tagihan",
+            "notes": "Catatan",
+            "noNotes": "Tidak ada catatan.",
+            "ppn": "PPN (Pajak Pertambahan Nilai)",
+            "pph": "PPh (Pajak Penghasilan)"
+        },
+        "approvals": {
+            "title": "Persetujuan Dokumen",
+            "statusLabel": "Status",
+            "requiredBadge": "Persetujuan Diperlukan",
+            "requiredHint": "Dokumen ini memerlukan persetujuan sebelum dapat diposting ke jurnal.",
+            "submit": "Ajukan Persetujuan",
+            "submitting": "Mengajukan...",
+            "trail": "Riwayat Persetujuan",
+            "trailEmpty": "Belum ada tindakan tercatat.",
+            "approvedAtLevel": "Disetujui (Level {level})",
+            "rejectedAtLevel": "Ditolak (Level {level})",
+            "yourDecision": "Keputusan Anda (Level {level})",
+            "remarks": "Catatan Keputusan",
+            "remarksPlaceholder": "cth. Anggaran disetujui",
+            "approve": "Setujui",
+            "reject": "Tolak",
+            "acting": "Memproses...",
+            "waitingTitle": "Menunggu Approver",
+            "waitingHint": "Menunggu persetujuan dari {name} di level {level}.",
+            "approvedTitle": "Disetujui Penuh",
+            "approvedHint": "Dokumen ini telah melewati semua level persetujuan dan siap diposting.",
+            "rejectedTitle": "Ditolak",
+            "rejectedHint": "Dokumen ini ditolak. Ubah detail dokumen untuk mengembalikannya ke draf dan ajukan ulang.",
+            "userFallback": "User #{id}",
+            "unknownApprover": "Approver tidak diketahui",
+            "submitSuccess": "{doc} berhasil diajukan untuk persetujuan",
+            "submitError": "Gagal mengajukan persetujuan",
+            "approveSuccess": "Permintaan persetujuan disetujui",
+            "rejectSuccess": "Permintaan persetujuan ditolak",
+            "actError": "Gagal memproses persetujuan",
+            "matrices": {
+                "eyebrow": "Finance",
+                "title": "Matriks Persetujuan (Approval Matrix)",
+                "subtitle": "Atur aturan persetujuan bertingkat berdasarkan rentang nilai untuk faktur/tagihan dan pembayaran.",
+                "addRule": "Tambah Aturan Persetujuan",
+                "tabs": {
+                    "bill": "Tagihan & Faktur Masuk",
+                    "payment": "Pembayaran & Penerimaan Keluar"
+                },
+                "table": {
+                    "level": "Level",
+                    "minAmount": "Nilai Minimum",
+                    "maxAmount": "Nilai Maksimum",
+                    "approver": "Nama Approver",
+                    "actions": "Aksi"
+                },
+                "empty": "Belum ada aturan persetujuan untuk {type}.",
+                "docTypeBill": "Tagihan",
+                "docTypePayment": "Pembayaran",
+                "level": "Level {level}",
+                "userFallback": "User ID #{id}",
+                "actions": {
+                    "edit": "Ubah Aturan",
+                    "delete": "Hapus Aturan"
+                },
+                "deleteConfirm": {
+                    "title": "Hapus aturan persetujuan ini?",
+                    "message": "Dokumen pada rentang nilai ini tidak lagi memerlukan level persetujuan tersebut. Tindakan ini tidak dapat dibatalkan."
+                },
+                "toast": {
+                    "deleted": "Aturan persetujuan berhasil dihapus",
+                    "deleteFailed": "Gagal menghapus aturan",
+                    "created": "Aturan persetujuan berhasil dibuat",
+                    "updated": "Aturan persetujuan berhasil diperbarui",
+                    "saveFailed": "Gagal menyimpan aturan persetujuan"
+                },
+                "drawer": {
+                    "editTitle": "Ubah Aturan Persetujuan",
+                    "newTitle": "Aturan Persetujuan Baru",
+                    "documentType": "Tipe Dokumen",
+                    "documentTypes": {
+                        "bill": "Tagihan / Faktur Masuk",
+                        "payment": "Pembayaran / Penerimaan Keluar"
+                    },
+                    "minAmount": "Nilai Minimum",
+                    "minRequired": "Nilai minimum wajib diisi",
+                    "minNegative": "Nilai minimum tidak boleh negatif",
+                    "maxAmount": "Nilai Maksimum",
+                    "maxRequired": "Nilai maksimum wajib diisi",
+                    "maxGteMin": "Nilai maksimum harus >= nilai minimum",
+                    "levelLabel": "Level Persetujuan (Urutan Tingkat)",
+                    "levelRequired": "Level wajib diisi",
+                    "levelMin": "Level harus >= 1",
+                    "approver": "Approver yang Ditunjuk",
+                    "approverRequired": "Approver wajib dipilih",
+                    "approverPlaceholder": "Pilih anggota perusahaan...",
+                    "saving": "Menyimpan...",
+                    "saveChanges": "Simpan Perubahan",
+                    "createRule": "Buat Aturan"
+                }
+            },
+            "requests": {
+                "eyebrow": "Finance",
+                "title": "Permintaan Persetujuan (Approval Requests)",
+                "filter": {
+                    "status": "Status",
+                    "all": "Semua Status",
+                    "allDesc": "Tampilkan semua status permintaan persetujuan.",
+                    "pending": "Menunggu",
+                    "pendingDesc": "Permintaan yang menunggu approver berikutnya.",
+                    "approved": "Disetujui",
+                    "approvedDesc": "Permintaan yang lolos semua persetujuan.",
+                    "rejected": "Ditolak",
+                    "rejectedDesc": "Permintaan yang ditolak oleh approver."
+                },
+                "tabs": {
+                    "pending": "Antrean Menunggu",
+                    "approved": "Permintaan Disetujui",
+                    "rejected": "Permintaan Ditolak"
+                },
+                "table": {
+                    "documentType": "Tipe Dokumen",
+                    "refNumber": "No. Referensi",
+                    "amount": "Nilai",
+                    "currentLevel": "Level Saat Ini",
+                    "submittedDate": "Tanggal Diajukan",
+                    "status": "Status",
+                    "actions": "Aksi"
+                },
+                "empty": "Tidak ada permintaan persetujuan.",
+                "docTypes": {
+                    "bill": "Tagihan",
+                    "payment": "Pembayaran"
+                },
+                "fallbackBillRef": "Bill #{id}",
+                "fallbackPaymentRef": "Payment #{id}",
+                "level": "Level {level}",
+                "review": "Tinjau",
+                "drawer": {
+                    "title": "Tinjau Permintaan Persetujuan",
+                    "documentType": "Tipe Dokumen",
+                    "reference": "No. Referensi",
+                    "amount": "Nilai",
+                    "currentLevel": "Level Saat Ini",
+                    "trail": "Riwayat Persetujuan",
+                    "userFallback": "User #{id}",
+                    "approvedBadge": "Disetujui (Lvl {level})",
+                    "rejectedBadge": "Ditolak (Lvl {level})",
+                    "noActions": "Belum ada aksi tercatat.",
+                    "remarks": "Catatan Tinjauan",
+                    "remarksPlaceholder": "Tambahkan komentar/alasan keputusan...",
+                    "reject": "Tolak",
+                    "approve": "Setujui",
+                    "approving": "Menyetujui...",
+                    "locked": "Tinjauan Terkunci",
+                    "lockedHint": "Hanya approver yang ditunjuk ({name}) yang dapat memproses Level {level} permintaan ini.",
+                    "unknownApprover": "Approver Tidak Dikenal"
+                },
+                "toast": {
+                    "approved": "Permintaan berhasil disetujui",
+                    "rejected": "Permintaan berhasil ditolak",
+                    "actionFailed": "Gagal memproses permintaan"
+                }
+            }
+        },
+        "invoices": {
+            "detail": {
+                "eyebrow": "Finance",
+                "title": "Faktur {number}",
+                "notFound": "Faktur tidak ditemukan",
+                "notFoundHint": "Faktur mungkin telah dihapus atau tautan tidak valid.",
+                "backToList": "Kembali ke Faktur",
+                "billedTo": "Ditagihkan kepada",
+                "customerFallback": "Pelanggan #{id}",
+                "invoiceDate": "Tanggal Faktur",
+                "dueDate": "Jatuh Tempo",
+                "post": "Posting Faktur",
+                "posting": "Memposting...",
+                "void": "Void Faktur",
+                "voiding": "Membatalkan...",
+                "postConfirmTitle": "Posting faktur ini?",
+                "postConfirmMessage": "Tindakan ini akan membuat entri jurnal dan tidak mudah dibatalkan.",
+                "voidConfirmTitle": "Void faktur ini?",
+                "voidConfirmMessage": "Ini akan membatalkan piutang yang masih terbuka.",
+                "postSuccess": "Faktur berhasil diposting",
+                "postError": "Gagal memposting faktur",
+                "voidSuccess": "Faktur berhasil di-void",
+                "voidError": "Gagal melakukan void faktur",
+                "lines": {
+                    "description": "Deskripsi",
+                    "qty": "Qty",
+                    "unitPrice": "Harga Satuan",
+                    "tax": "Pajak",
+                    "amount": "Jumlah",
+                    "empty": "Tidak ada baris item."
+                }
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "Buat Faktur Baru",
+                "saveDraft": "Simpan Draf",
+                "saving": "Menyimpan...",
+                "detailsTitle": "Detail Faktur",
+                "customer": "Pelanggan (Partner)",
+                "customerPlaceholder": "Pilih pelanggan...",
+                "customerRequired": "Pelanggan wajib dipilih",
+                "invoiceDate": "Tanggal Faktur",
+                "invoiceDateRequired": "Tanggal faktur wajib diisi",
+                "dueDate": "Jatuh Tempo",
+                "dueDateRequired": "Tanggal jatuh tempo wajib diisi",
+                "linesTitle": "Baris Item",
+                "lineDescription": "Deskripsi",
+                "lineDescriptionPlaceholder": "Deskripsi item...",
+                "revenueAccount": "Akun Pendapatan",
+                "qty": "Qty",
+                "unitPrice": "Harga Satuan",
+                "tax": "Pajak",
+                "noTax": "Tanpa Pajak",
+                "required": "Wajib diisi",
+                "addLine": "Tambah Baris Item",
+                "removeLine": "Hapus baris {number}",
+                "notes": "Catatan",
+                "notesPlaceholder": "Catatan tambahan untuk pelanggan...",
+                "success": "Faktur berhasil dibuat sebagai Draf",
+                "error": "Gagal membuat faktur"
+            },
+            "title": "Faktur Penjualan (Invoice)",
+            "new": "Faktur Baru",
+            "filters": {
+                "from": "Tanggal Faktur Dari",
+                "to": "Tanggal Faktur Sampai"
+            },
+            "columns": {
+                "number": "No. Faktur",
+                "customer": "Pelanggan",
+                "date": "Tanggal",
+                "dueDate": "Jatuh Tempo",
+                "total": "Total",
+                "status": "Status"
+            },
+            "empty": "Belum ada faktur. Buat satu untuk memulai.",
+            "customerFallback": "Pelanggan #{id}"
+        },
+        "bills": {
+            "detail": {
+                "eyebrow": "Finance",
+                "doc": "Tagihan",
+                "title": "Tagihan {number}",
+                "notFound": "Tagihan tidak ditemukan",
+                "notFoundHint": "Tagihan mungkin telah dihapus atau tautan tidak valid.",
+                "backToList": "Kembali ke Tagihan",
+                "billedFrom": "Ditagihkan dari",
+                "vendorFallback": "Vendor #{id}",
+                "billDate": "Tanggal Tagihan",
+                "dueDate": "Jatuh Tempo",
+                "post": "Posting Tagihan",
+                "posting": "Memposting...",
+                "void": "Void Tagihan",
+                "voiding": "Membatalkan...",
+                "postConfirmTitle": "Posting tagihan ini?",
+                "postConfirmMessage": "Tindakan ini akan membuat entri jurnal hutang usaha dan tidak mudah dibatalkan.",
+                "voidConfirmTitle": "Void tagihan ini?",
+                "voidConfirmMessage": "Ini akan membatalkan hutang yang masih terbuka.",
+                "postSuccess": "Tagihan berhasil diposting",
+                "postError": "Gagal memposting tagihan",
+                "voidSuccess": "Tagihan berhasil di-void",
+                "voidError": "Gagal melakukan void tagihan",
+                "lines": {
+                    "description": "Deskripsi",
+                    "qty": "Qty",
+                    "unitPrice": "Harga Satuan",
+                    "ppn": "Pajak (PPN)",
+                    "pph": "PPh (WHT)",
+                    "amount": "Jumlah",
+                    "empty": "Tidak ada baris item."
+                }
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "Tagihan Baru",
+                "create": "Buat Tagihan",
+                "creating": "Membuat...",
+                "vendorTitle": "Informasi Vendor",
+                "vendor": "Vendor",
+                "vendorPlaceholder": "Pilih vendor...",
+                "vendorRequired": "Vendor wajib dipilih",
+                "vendorMissing": "Silakan pilih vendor",
+                "accountsMissing": "Semua baris harus memiliki akun beban",
+                "datesTitle": "Tanggal",
+                "billDate": "Tanggal Tagihan",
+                "billDateRequired": "Tanggal tagihan wajib diisi",
+                "dueDate": "Jatuh Tempo",
+                "dueDateRequired": "Tanggal jatuh tempo wajib diisi",
+                "linesTitle": "Baris Item",
+                "lineDescription": "Deskripsi",
+                "lineDescriptionLabel": "Deskripsi baris {number}",
+                "lineDescriptionPlaceholder": "Deskripsi item...",
+                "expenseAccount": "Akun Beban",
+                "accountPlaceholder": "Akun...",
+                "qty": "Qty",
+                "lineQtyLabel": "Qty baris {number}",
+                "unitPrice": "Harga Satuan",
+                "lineUnitPriceLabel": "Harga satuan baris {number}",
+                "taxRate": "Tarif Pajak",
+                "lineTaxLabel": "Tarif pajak baris {number}",
+                "noTax": "Tanpa Pajak",
+                "noTaxDescription": "Jangan terapkan pajak pada baris ini.",
+                "taxRateDescription": "Tarif pajak {type}",
+                "amount": "Jumlah",
+                "addLine": "Tambah Baris",
+                "removeLine": "Hapus baris {number}",
+                "notes": "Catatan / Memo",
+                "notesPlaceholder": "Tambahkan detail untuk keperluan internal...",
+                "required": "Wajib diisi",
+                "success": "Tagihan berhasil dibuat",
+                "error": "Gagal membuat tagihan"
+            },
+            "title": "Tagihan Vendor (Bills)",
+            "new": "Tagihan Baru",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "Semua Status",
+                    "allDesc": "Tampilkan tagihan di semua status posting.",
+                    "draft": "Draft",
+                    "draftDesc": "Tagihan yang masih disiapkan.",
+                    "posted": "Posted",
+                    "postedDesc": "Tagihan yang sudah diposting dan menunggu pelunasan.",
+                    "partiallyPaid": "Dibayar Sebagian",
+                    "partiallyPaidDesc": "Tagihan dengan sisa saldo terhutang.",
+                    "paid": "Lunas",
+                    "paidDesc": "Tagihan yang sudah dilunasi oleh pembayaran keluar.",
+                    "void": "Void",
+                    "voidDesc": "Tagihan yang dibatalkan setelah dibuat."
+                },
+                "from": "Tanggal Tagihan Dari",
+                "to": "Tanggal Tagihan Sampai"
+            },
+            "columns": {
+                "number": "No. Tagihan",
+                "vendor": "Vendor",
+                "date": "Tanggal",
+                "dueDate": "Jatuh Tempo",
+                "total": "Total",
+                "status": "Status"
+            },
+            "empty": "Belum ada tagihan. Buat satu untuk memulai.",
+            "vendorFallback": "Vendor #{id}"
+        },
+        "payments": {
+            "detail": {
+                "eyebrow": "Finance",
+                "docPayment": "Pembayaran",
+                "docReceipt": "Penerimaan",
+                "title": "{doc} {number}",
+                "notFound": "Pembayaran tidak ditemukan",
+                "notFoundHint": "Pembayaran mungkin telah dihapus atau tautan tidak valid.",
+                "backToList": "Kembali ke Pembayaran",
+                "paidTo": "Dibayarkan kepada",
+                "receivedFrom": "Diterima dari",
+                "partnerFallback": "Partner #{id}",
+                "date": "Tanggal",
+                "method": "Metode",
+                "bankCash": "Bank / Kas",
+                "accountFallback": "Akun #{id}",
+                "post": "Posting {doc}",
+                "posting": "Memposting...",
+                "void": "Void {doc}",
+                "voiding": "Membatalkan...",
+                "postConfirmTitle": "Posting {doc} ini?",
+                "postConfirmMessage": "Ini akan membuat entri jurnal dan mengurangi hutang/piutang terbuka.",
+                "voidConfirmTitle": "Void {doc} ini?",
+                "voidConfirmMessage": "Ini akan membalik entri jurnal dan membuka kembali tagihan/faktur yang dialokasikan.",
+                "postSuccess": "{doc} berhasil diposting",
+                "postError": "Gagal memposting {doc}",
+                "voidSuccess": "{doc} berhasil di-void",
+                "voidError": "Gagal melakukan void {doc}",
+                "allocations": {
+                    "title": "Alokasi",
+                    "document": "Dokumen",
+                    "documentTotal": "Total Dokumen",
+                    "amount": "Jumlah Dialokasikan",
+                    "bill": "Tagihan #{id}",
+                    "invoice": "Faktur #{id}",
+                    "empty": "Belum ada alokasi tercatat.",
+                    "unallocated": "Tidak Teralokasi (Uang Muka)"
+                },
+                "notesTitle": "Catatan & Referensi",
+                "referenceNumber": "Nomor Referensi",
+                "notes": "Catatan"
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "Pembayaran Keluar Baru",
+                "draft": "Draf Pembayaran",
+                "drafting": "Menyusun draf...",
+                "detailsTitle": "Detail Pembayaran",
+                "vendor": "Vendor (Supplier)",
+                "vendorPlaceholder": "Pilih vendor...",
+                "vendorRequired": "Vendor wajib dipilih",
+                "paidFrom": "Dibayar Dari (Kas & Bank)",
+                "accountPlaceholder": "Pilih rekening bank...",
+                "accountRequired": "Rekening bank wajib dipilih",
+                "paymentDate": "Tanggal Pembayaran",
+                "dateRequired": "Tanggal wajib diisi",
+                "method": "Metode Pembayaran",
+                "methodBankTransfer": "Transfer Bank",
+                "methodBankTransferDescription": "Selesaikan melalui rekening transfer bank.",
+                "methodCash": "Tunai",
+                "methodCashDescription": "Selesaikan langsung melalui akun kas.",
+                "methodCheck": "Cek / Giro",
+                "methodCheckDescription": "Selesaikan menggunakan referensi cek atau giro.",
+                "amount": "Jumlah Dibayar",
+                "amountRequired": "Jumlah wajib diisi",
+                "amountInvalid": "Jumlah harus lebih dari nol",
+                "reference": "No. Referensi (Opsional)",
+                "referencePlaceholder": "cth. TRF-12345",
+                "totalPayment": "Total Pembayaran",
+                "amountAllocated": "Jumlah Dialokasikan",
+                "unallocated": "Tidak Teralokasi (Uang Muka)",
+                "overAllocated": "Alokasi melebihi jumlah pembayaran!",
+                "overAllocatedToast": "Alokasi tidak boleh melebihi jumlah pembayaran",
+                "prepaymentHint": "Sisa {amount} akan dicatat sebagai Uang Muka Vendor.",
+                "allocationsTitle": "Tagihan Terbuka untuk Alokasi",
+                "allocationsEmpty": "Tidak ada tagihan terbuka untuk vendor ini. Seluruh pembayaran akan dicatat sebagai uang muka.",
+                "billNo": "No. Tagihan",
+                "date": "Tanggal",
+                "billTotal": "Total Tagihan",
+                "balanceDue": "Sisa Tagihan",
+                "allocationAmount": "Jumlah Alokasi",
+                "allocationFor": "Alokasi untuk {number}",
+                "success": "Draf pembayaran berhasil dibuat",
+                "error": "Gagal membuat draf pembayaran"
+            },
+            "title": "Pembayaran Vendor (Payments)",
+            "new": "Pembayaran Baru",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "Semua Status",
+                    "allDesc": "Tampilkan pembayaran di semua status posting.",
+                    "draft": "Draft",
+                    "draftDesc": "Pembayaran yang masih disiapkan.",
+                    "posted": "Posted",
+                    "postedDesc": "Pembayaran yang sudah diposting ke buku besar.",
+                    "void": "Void",
+                    "voidDesc": "Pembayaran yang dibatalkan setelah dibuat."
+                },
+                "from": "Tanggal Pembayaran Dari",
+                "to": "Tanggal Pembayaran Sampai"
+            },
+            "columns": {
+                "number": "No. Pembayaran",
+                "vendor": "Vendor",
+                "date": "Tanggal",
+                "account": "Bank/Kas",
+                "amount": "Jumlah",
+                "status": "Status"
+            },
+            "empty": "Belum ada pembayaran keluar. Buat satu untuk memulai.",
+            "vendorFallback": "Vendor #{id}",
+            "accountFallback": "Akun #{id}"
+        },
+        "receipts": {
+            "form": {
+                "eyebrow": "Finance",
+                "title": "Penerimaan Baru",
+                "draft": "Draf Penerimaan",
+                "drafting": "Menyusun draf...",
+                "detailsTitle": "Detail Penerimaan",
+                "customer": "Pelanggan",
+                "customerPlaceholder": "Pilih pelanggan...",
+                "customerRequired": "Pelanggan wajib dipilih",
+                "depositedTo": "Disetor Ke (Kas & Bank)",
+                "accountPlaceholder": "Pilih rekening bank...",
+                "accountRequired": "Rekening bank wajib dipilih",
+                "receiptDate": "Tanggal Penerimaan",
+                "dateRequired": "Tanggal wajib diisi",
+                "method": "Metode Pembayaran",
+                "methodBankTransfer": "Transfer Bank",
+                "methodBankTransferDescription": "Catat penyelesaian melalui rekening bank.",
+                "methodCash": "Tunai",
+                "methodCashDescription": "Catat penyelesaian tunai langsung.",
+                "methodCheck": "Cek / Giro",
+                "methodCheckDescription": "Catat penyelesaian cek atau giro.",
+                "amount": "Jumlah Diterima",
+                "amountRequired": "Jumlah wajib diisi",
+                "amountInvalid": "Jumlah harus lebih dari nol",
+                "reference": "No. Referensi (Opsional)",
+                "referencePlaceholder": "cth. TRF-12345",
+                "totalReceipt": "Total Penerimaan",
+                "amountAllocated": "Jumlah Dialokasikan",
+                "unallocated": "Tidak Teralokasi (Uang Muka)",
+                "overAllocated": "Alokasi melebihi jumlah penerimaan!",
+                "overAllocatedToast": "Alokasi tidak boleh melebihi jumlah penerimaan",
+                "prepaymentHint": "Sisa {amount} akan dicatat sebagai Uang Muka Pelanggan.",
+                "allocationsTitle": "Faktur Terbuka untuk Alokasi",
+                "allocationsEmpty": "Tidak ada faktur terbuka untuk pelanggan ini. Seluruh penerimaan akan dicatat sebagai uang muka.",
+                "invoiceNo": "No. Faktur",
+                "date": "Tanggal",
+                "invoiceTotal": "Total Faktur",
+                "balanceDue": "Sisa Tagihan",
+                "allocationAmount": "Jumlah Alokasi",
+                "allocationFor": "Alokasi untuk {number}",
+                "success": "Draf penerimaan berhasil dibuat",
+                "error": "Gagal membuat draf penerimaan"
+            },
+            "title": "Penerimaan (Receipts)",
+            "new": "Penerimaan Baru",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "Semua Status",
+                    "allDesc": "Tampilkan penerimaan di semua status posting.",
+                    "draft": "Draft",
+                    "draftDesc": "Penerimaan yang masih disiapkan.",
+                    "posted": "Posted",
+                    "postedDesc": "Penerimaan yang sudah diposting ke buku besar.",
+                    "void": "Void",
+                    "voidDesc": "Penerimaan yang dibatalkan setelah dibuat."
+                },
+                "from": "Tanggal Penerimaan Dari",
+                "to": "Tanggal Penerimaan Sampai"
+            },
+            "columns": {
+                "number": "No. Penerimaan",
+                "customer": "Pelanggan",
+                "date": "Tanggal",
+                "account": "Bank/Kas",
+                "amount": "Jumlah",
+                "status": "Status"
+            },
+            "empty": "Belum ada penerimaan masuk. Buat satu untuk memulai.",
+            "customerFallback": "Pelanggan #{id}",
+            "accountFallback": "Akun #{id}"
+        },
+        "journals": {
+            "detail": {
+                "eyebrow": "Finance",
+                "title": "Entri Jurnal {number}",
+                "notFound": "Entri jurnal tidak ditemukan",
+                "notFoundHint": "Entri jurnal mungkin telah dihapus atau tautan tidak valid.",
+                "backToList": "Kembali ke Jurnal",
+                "draftHeading": "Draf JE #{id}",
+                "period": "Periode Akuntansi",
+                "periodFallback": "Periode #{id}",
+                "entryDate": "Tanggal Entri",
+                "post": "Posting Entri",
+                "posting": "Memposting...",
+                "void": "Void Entri",
+                "voiding": "Membatalkan...",
+                "postConfirmTitle": "Posting entri jurnal ini?",
+                "postConfirmMessage": "Setelah diposting, entri ini akan memengaruhi laporan seperti Neraca Saldo dan Buku Besar.",
+                "voidConfirmTitle": "Void entri jurnal ini?",
+                "voidConfirmMessage": "Void akan membuat entri pembalik di buku besar dan membatalkan saldonya.",
+                "postSuccess": "Entri jurnal berhasil diposting",
+                "postError": "Gagal memposting entri jurnal",
+                "voidSuccess": "Entri jurnal berhasil di-void",
+                "voidError": "Gagal melakukan void entri jurnal",
+                "lines": {
+                    "account": "Akun",
+                    "accountFallback": "Akun #{id}",
+                    "description": "Deskripsi",
+                    "debit": "Debit",
+                    "credit": "Kredit",
+                    "empty": "Tidak ada baris pada entri jurnal ini.",
+                    "total": "Total"
+                },
+                "descriptionTitle": "Deskripsi / Catatan",
+                "noDescription": "Tidak ada deskripsi."
+            },
+            "ledger": {
+                "eyebrow": "Finance",
+                "title": "Buku Besar: {account}",
+                "accountFallback": "Akun #{id}",
+                "subtitle": "Saldo Normal: {balance} · Tipe: {type}",
+                "periodLabel": "Periode Akuntansi",
+                "periodPlaceholder": "Pilih periode",
+                "periodPlaceholderDescription": "Pilih periode yang digunakan untuk buku besar ini.",
+                "normalBalance": "Saldo Normal",
+                "totalDebit": "Total Debit",
+                "totalCredit": "Total Kredit",
+                "endingBalance": "Saldo Akhir",
+                "columns": {
+                    "date": "Tanggal",
+                    "reference": "Referensi Jurnal",
+                    "description": "Deskripsi",
+                    "debit": "Debit",
+                    "credit": "Kredit",
+                    "balance": "Saldo Berjalan"
+                },
+                "empty": "Tidak ada baris buku besar untuk periode ini."
+            },
+            "form": {
+                "eyebrow": "Finance",
+                "title": "Entri Jurnal Baru",
+                "saveDraft": "Simpan Draf",
+                "creating": "Membuat...",
+                "detailsTitle": "Detail Entri",
+                "description": "Deskripsi / Catatan",
+                "descriptionPlaceholder": "Tulis tujuan atau penjelasan jurnal...",
+                "descriptionRequired": "Deskripsi wajib diisi",
+                "dateTitle": "Tanggal & Periode",
+                "entryDate": "Tanggal Entri",
+                "dateRequired": "Tanggal wajib diisi",
+                "periodLabel": "Periode",
+                "noPeriod": "Tidak ada periode yang cocok",
+                "noPeriodToast": "Tidak ada periode akuntansi untuk tanggal yang dipilih",
+                "linesTitle": "Baris Jurnal",
+                "account": "Akun",
+                "accountPlaceholder": "Pilih Akun...",
+                "minLines": "Entri jurnal minimal memiliki 2 baris",
+                "accountsMissing": "Silakan pilih akun untuk semua baris",
+                "unbalancedToast": "Entri jurnal tidak seimbang. Debit dan Kredit harus sama (Selisih: {diff})",
+                "zeroToast": "Total Debit/Kredit harus lebih dari 0",
+                "lineDescription": "Deskripsi",
+                "lineDescriptionLabel": "Deskripsi baris {number}",
+                "lineDescriptionPlaceholder": "Deskripsi baris (opsional)...",
+                "debit": "Debit",
+                "lineDebitLabel": "Debit baris {number}",
+                "credit": "Kredit",
+                "lineCreditLabel": "Kredit baris {number}",
+                "addLine": "Tambah Baris",
+                "removeLine": "Hapus baris {number}",
+                "totalDebit": "Total Debit",
+                "totalCredit": "Total Kredit",
+                "balanced": "Entri Jurnal Seimbang",
+                "unbalanced": "Entri Jurnal Tidak Seimbang",
+                "balancedHint": "Semua siap! Anda dapat menyimpan entri jurnal ini sebagai draf.",
+                "zeroHint": "Tambahkan nilai debit dan kredit lebih dari 0.",
+                "differenceHint": "Total Debit harus sama dengan Total Kredit. Selisih saat ini {diff}.",
+                "success": "Entri jurnal berhasil dibuat sebagai Draf",
+                "error": "Gagal membuat entri jurnal"
+            },
+            "title": "Buku Jurnal (Journal Entries)",
+            "new": "Entri Jurnal Baru",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "Semua Status",
+                    "allDesc": "Tampilkan jurnal di semua status posting.",
+                    "draft": "Draft",
+                    "draftDesc": "Entri yang masih bisa diedit.",
+                    "posted": "Posted",
+                    "postedDesc": "Entri yang sudah terkunci di buku besar.",
+                    "void": "Void",
+                    "voidDesc": "Entri yang dibatalkan setelah dibuat."
+                }
+            },
+            "columns": {
+                "number": "No. Jurnal",
+                "date": "Tanggal",
+                "period": "Periode",
+                "description": "Deskripsi",
+                "totalDebit": "Total Debit",
+                "status": "Status"
+            },
+            "empty": "Belum ada entri jurnal.",
+            "periodFallback": "Periode #{id}"
+        },
+        "taxRates": {
+            "eyebrow": "Finance",
+            "title": "Tarif Pajak",
+            "subtitle": "Kelola tarif pajak yang dipakai saat membuat faktur dan tagihan.",
+            "new": "Tarif Pajak Baru",
+            "tabs": {
+                "ppn": "PPN (Pajak Pertambahan Nilai)",
+                "pph": "PPh (Pajak Penghasilan)"
+            },
+            "table": {
+                "name": "Nama Pajak",
+                "type": "Tipe",
+                "rate": "Tarif (%)",
+                "status": "Status",
+                "actions": "Aksi"
+            },
+            "empty": "Belum ada tarif pajak {type}.",
+            "activate": "Aktifkan",
+            "deactivate": "Nonaktifkan",
+            "deleteConfirm": {
+                "title": "Hapus tarif pajak “{name}”?",
+                "message": "Tarif ini tidak lagi tersedia saat membuat faktur atau tagihan. Tindakan ini tidak dapat dibatalkan."
+            },
+            "drawer": {
+                "title": "Tarif Pajak Baru",
+                "name": "Nama Pajak",
+                "namePlaceholder": "cth. PPN 11%, PPh 23",
+                "nameRequired": "Nama wajib diisi",
+                "type": "Tipe Pajak",
+                "rate": "Tarif (%)",
+                "rateRequired": "Tarif wajib diisi",
+                "rateMin": "Tarif tidak boleh negatif",
+                "save": "Simpan Tarif Pajak",
+                "saving": "Menyimpan..."
+            },
+            "toast": {
+                "created": "Tarif pajak berhasil dibuat",
+                "createFailed": "Gagal membuat tarif pajak"
+            }
+        },
+        "coa": {
+            "eyebrow": "Finance",
+            "title": "Chart of Accounts",
+            "subtitle": "Kelola bagan akun (chart of accounts) perusahaan Anda.",
+            "new": "Akun Baru",
+            "table": {
+                "code": "Kode",
+                "name": "Nama",
+                "type": "Tipe",
+                "balance": "Saldo Normal",
+                "postable": "Postable",
+                "status": "Status",
+                "actions": "Aksi"
+            },
+            "empty": "Belum ada akun. Buat akun untuk memulai.",
+            "activate": "Aktifkan",
+            "deactivate": "Nonaktifkan",
+            "deleteConfirm": {
+                "title": "Hapus akun “{name}”?",
+                "message": "Akun akan dihapus dari chart of accounts. Tindakan ini tidak dapat dibatalkan."
+            },
+            "drawer": {
+                "title": "Akun Baru",
+                "parent": "Akun Induk",
+                "parentPlaceholder": "Pilih akun induk...",
+                "noParent": "-- Tanpa Induk (Root) --",
+                "code": "Kode Akun",
+                "codeRequired": "Kode wajib diisi",
+                "name": "Nama Akun",
+                "nameRequired": "Nama wajib diisi",
+                "type": "Tipe Akun",
+                "types": {
+                    "asset": "Aset",
+                    "liability": "Liabilitas",
+                    "equity": "Ekuitas",
+                    "revenue": "Pendapatan",
+                    "expense": "Beban"
+                },
+                "normalBalance": "Saldo Normal",
+                "balances": {
+                    "debit": "Debit",
+                    "credit": "Kredit"
+                },
+                "postable": "Akun Postable",
+                "postableHint": "Transaksi dapat diposting langsung ke akun ini.",
+                "save": "Simpan Akun",
+                "saving": "Menyimpan..."
+            },
+            "toast": {
+                "created": "Akun berhasil dibuat",
+                "createFailed": "Gagal membuat akun"
+            }
+        },
+        "periods": {
+            "eyebrow": "Finance",
+            "title": "Periode Akuntansi",
+            "subtitle": "Kelola periode akuntansi keuangan. Tutup periode untuk mencegah posting lebih lanjut.",
+            "new": "Periode Baru",
+            "table": {
+                "name": "Nama Periode",
+                "startDate": "Tanggal Mulai",
+                "endDate": "Tanggal Selesai",
+                "closedAt": "Ditutup Pada",
+                "status": "Status",
+                "actions": "Aksi"
+            },
+            "empty": "Belum ada periode akuntansi.",
+            "close": "Tutup Periode",
+            "reopen": "Buka Kembali",
+            "closeConfirm": {
+                "title": "Tutup periode akuntansi ini?",
+                "message": "Setelah ditutup, jurnal tidak dapat lagi diposting ke periode ini."
+            },
+            "reopenConfirm": {
+                "title": "Buka kembali periode akuntansi ini?",
+                "message": "Posting jurnal ke periode ini akan diizinkan kembali."
+            },
+            "toast": {
+                "closed": "Periode berhasil ditutup",
+                "closeFailed": "Gagal menutup periode",
+                "reopened": "Periode berhasil dibuka kembali",
+                "reopenFailed": "Gagal membuka kembali periode",
+                "created": "Periode berhasil dibuat",
+                "createFailed": "Gagal membuat periode. Pastikan tanggal tidak tumpang tindih dengan periode lain."
+            },
+            "drawer": {
+                "title": "Periode Akuntansi Baru",
+                "name": "Nama Periode",
+                "namePlaceholder": "cth. FY2026-Q1, Mei 2026",
+                "nameRequired": "Nama wajib diisi",
+                "startDate": "Tanggal Mulai",
+                "startRequired": "Tanggal mulai wajib diisi",
+                "endDate": "Tanggal Selesai",
+                "endRequired": "Tanggal selesai wajib diisi",
+                "save": "Simpan Periode",
+                "saving": "Menyimpan..."
+            }
+        },
+        "taxReturns": {
+            "eyebrow": "Finance",
+            "title": "SPT Pajak (Tax Returns)",
+            "subtitle": "Buat dan laporkan SPT untuk PPN dan PPh 23. SPT dihitung dari transaksi yang sudah diposting.",
+            "generate": "Generate SPT",
+            "allReturns": "Semua SPT",
+            "types": {
+                "ppn": "PPN (Pajak Pertambahan Nilai)",
+                "pph23": "PPh 23 (Pajak Penghasilan 23)"
+            },
+            "typeShort": {
+                "ppn": "PPN",
+                "pph23": "PPh 23"
+            },
+            "summary": "{total} total · {draft} draf",
+            "tabs": {
+                "all": "Semua"
+            },
+            "table": {
+                "period": "Periode",
+                "taxType": "Tipe Pajak",
+                "outputTax": "Pajak Keluaran",
+                "inputTax": "Pajak Masukan",
+                "netPayable": "Terutang Neto",
+                "status": "Status"
+            },
+            "empty": "Belum ada SPT. Klik “Generate SPT” untuk membuat SPT baru.",
+            "periodTo": "s.d. {date}",
+            "drawer": {
+                "title": "Generate SPT",
+                "description": "Hitung SPT dari transaksi yang sudah diposting",
+                "taxType": "Tipe Pajak",
+                "taxTypeRequired": "Tipe pajak wajib dipilih",
+                "typeDescPpn": "SPT PPN untuk penjualan dan pembelian kena pajak.",
+                "typeDescPph23": "SPT PPh 23 untuk pembayaran vendor yang dikenai pemotongan.",
+                "reportingPeriod": "Periode Pelaporan",
+                "periodStart": "Awal Periode",
+                "startRequired": "Tanggal mulai wajib diisi",
+                "periodEnd": "Akhir Periode",
+                "endRequired": "Tanggal selesai wajib diisi",
+                "info": "Sistem akan memindai semua faktur dan tagihan yang diposting dalam rentang tanggal terpilih dan menghitung total pajak secara otomatis.",
+                "generate": "Generate SPT",
+                "generating": "Memproses..."
+            },
+            "toast": {
+                "generated": "SPT berhasil dibuat",
+                "generateFailed": "Gagal membuat SPT"
+            },
+            "detail": {
+                "back": "Kembali ke SPT Pajak",
+                "title": "SPT — {type}",
+                "notFound": "SPT tidak ditemukan",
+                "backToList": "Kembali ke Daftar SPT",
+                "finalize": "Finalisasi & Posting",
+                "finalizing": "Memfinalisasi...",
+                "reportingPeriod": "Periode Pelaporan",
+                "finalizedIn": "Difinalisasi pada entri jurnal",
+                "draftNotice": "SPT ini masih draf. Tinjau baris di bawah, lalu klik Finalisasi & Posting untuk membuat jurnal penyelesaian dan mengunci SPT.",
+                "totalOutput": "Total Pajak Keluaran",
+                "outputHint": "Pajak yang dipungut dari pelanggan",
+                "totalInput": "Total Pajak Masukan",
+                "inputHint": "Pajak yang dibayar ke vendor (dapat dikreditkan)",
+                "netPayable": "Pajak Terutang Neto",
+                "payableHint": "Jumlah yang disetor ke otoritas pajak",
+                "creditHint": "Posisi kredit neto",
+                "lines": "Baris Transaksi",
+                "lineCount": "{count} transaksi",
+                "linesEmpty": "Tidak ada transaksi pada periode ini.",
+                "linesEmptyHint": "Pastikan ada faktur atau tagihan yang diposting dalam periode pelaporan.",
+                "sourceType": "Tipe Sumber",
+                "documentId": "ID Dokumen",
+                "taxAmount": "Nilai Pajak",
+                "sources": {
+                    "invoice": "Faktur",
+                    "bill": "Tagihan"
+                },
+                "total": "Total",
+                "deleteConfirm": {
+                    "title": "Hapus SPT ini?",
+                    "message": "SPT draf ini beserta semua baris yang dihasilkan akan dihapus. Tindakan ini tidak dapat dibatalkan."
+                },
+                "toast": {
+                    "finalized": "SPT difinalisasi dan jurnal diposting",
+                    "finalizeFailed": "Gagal memfinalisasi SPT",
+                    "deleted": "SPT dihapus",
+                    "deleteFailed": "Gagal menghapus SPT"
+                }
+            }
+        },
+        "goodsReceipts": {
+            "title": "Penerimaan Bahan Baku (STB)",
+            "new": "STB Baru",
+            "filters": {
+                "status": {
+                    "label": "Status",
+                    "all": "Semua Status",
+                    "allDesc": "Tampilkan penerimaan pada semua status pemrosesan.",
+                    "received": "Diterima",
+                    "receivedDesc": "Barang sudah diterima ke stok.",
+                    "completed": "Selesai",
+                    "completedDesc": "Penerimaan sudah diproses sepenuhnya.",
+                    "void": "Void",
+                    "voidDesc": "Penerimaan dibatalkan setelah dibuat."
+                }
+            },
+            "columns": {
+                "number": "No. STB",
+                "date": "Tanggal",
+                "supplier": "Supplier",
+                "deliveryNote": "No. SJ",
+                "itemCount": "Jumlah Item",
+                "total": "Total",
+                "status": "Status",
+                "bill": "No. Tagihan"
+            },
+            "empty": "Belum ada penerimaan bahan baku. Buat satu untuk memulai.",
+            "supplierFallback": "Supplier #{id}",
+            "billRef": "Tagihan #{id}",
+            "pendingApLink": "Menunggu Tautan AP"
+        },
+        "activity": {
+            "title": "Riwayat Aktivitas Keuangan",
+            "subtitle": "Aliran kronologis transaksi, faktur, tagihan, dan jurnal umum.",
+            "emptyTitle": "Belum Ada Riwayat",
+            "emptyDescription": "Semua transaksi keuangan, pembayaran, faktur, dan jurnal umum yang dicatat akan muncul di sini secara kronologis.",
+            "types": {
+                "invoice": "Faktur Penjualan (Invoice)",
+                "bill": "Tagihan Pembelian (Vendor Bill)",
+                "paymentOut": "Pembayaran Keluar (Payment)",
+                "paymentIn": "Penerimaan Masuk (Receipt)",
+                "journal": "Jurnal Umum (Journal Entry)"
+            },
+            "customerPrefix": "Pelanggan: {name}",
+            "supplierPrefix": "Pemasok: {name}",
+            "toPrefix": "Kepada: {name}",
+            "fromPrefix": "Dari: {name}",
+            "partnerFallback": "Partner #{id}",
+            "manualAdjustment": "Penyesuaian manual"
+        },
+        "ap": {
+            "title": "Umur Hutang Usaha (AP Aging)",
+            "subtitle": "Pantau saldo hutang vendor (Hutang Usaha) berdasarkan lama lewat jatuh tempo.",
+            "totalOutstanding": "Total Hutang Berjalan",
+            "overdueSuffix": "sedang lewat jatuh tempo.",
+            "columns": {
+                "vendor": "Vendor",
+                "current": "Belum Jatuh Tempo",
+                "d1_30": "1-30 Hari",
+                "d31_60": "31-60 Hari",
+                "d61_90": "61-90 Hari",
+                "over90": "> 90 Hari",
+                "total": "Total Saldo"
+            },
+            "grandTotal": "Jumlah Keseluruhan",
+            "empty": "Tidak ada hutang usaha berjalan."
+        },
+        "ar": {
+            "title": "Umur Piutang Usaha (AR Aging)",
+            "subtitle": "Pantau saldo piutang pelanggan (Piutang Usaha) berdasarkan lama lewat jatuh tempo.",
+            "totalOutstanding": "Total Piutang Berjalan",
+            "overdueSuffix": "sedang lewat jatuh tempo.",
+            "columns": {
+                "customer": "Pelanggan",
+                "current": "Belum Jatuh Tempo",
+                "d1_30": "1-30 Hari",
+                "d31_60": "31-60 Hari",
+                "d61_90": "61-90 Hari",
+                "over90": "> 90 Hari",
+                "total": "Total Saldo"
+            },
+            "grandTotal": "Jumlah Keseluruhan",
+            "empty": "Tidak ada piutang usaha berjalan."
+        },
+        "cashBank": {
+            "title": "Kas & Bank",
+            "subtitle": "Saldo per periode {period}",
+            "error": "Saldo tidak dapat dimuat. Silakan coba lagi.",
+            "noPeriod": "Belum ada periode akuntansi. Buat periode untuk melihat saldo.",
+            "noAccounts": "Belum ada akun Kas & Bank pada Chart of Accounts.",
+            "categoryLabel": "Kas & Bank",
+            "currentBalance": "Saldo Saat Ini"
+        },
+        "accountMappings": {
+            "title": "Pemetaan Akun",
+            "subtitle": "Petakan transaksi standar sistem ke chart of accounts perusahaan Anda.",
+            "save": "Simpan Pemetaan",
+            "saving": "Menyimpan...",
+            "saveSuccess": "Pemetaan akun berhasil disimpan",
+            "saveError": "Pemetaan akun gagal disimpan",
+            "selectAccount": "-- Pilih Akun --",
+            "selectPlaceholder": "Pilih akun yang bisa diposting...",
+            "fields": {
+                "ar_account": {
+                    "label": "Piutang Usaha (Accounts Receivable)",
+                    "description": "Akun default untuk faktur pelanggan"
+                },
+                "ap_account": {
+                    "label": "Hutang Usaha (Accounts Payable)",
+                    "description": "Akun default untuk tagihan vendor"
+                },
+                "ppn_in_account": {
+                    "label": "Pajak Masukan (PPN In)",
+                    "description": "Akun untuk PPN masukan atas pembelian"
+                },
+                "ppn_out_account": {
+                    "label": "Pajak Keluaran (PPN Out)",
+                    "description": "Akun untuk PPN keluaran atas penjualan"
+                },
+                "retained_earnings": {
+                    "label": "Laba Ditahan (Retained Earnings)",
+                    "description": "Akun untuk menutup laba/rugi akhir tahun"
+                },
+                "cash_discount": {
+                    "label": "Diskon Tunai (Cash Discount)",
+                    "description": "Akun untuk diskon pembayaran lebih awal"
+                }
+            }
+        },
+        "trialBalance": {
+            "title": "Neraca Saldo (Trial Balance)",
+            "subtitle": "Daftar saldo akhir untuk seluruh akun buku besar pada periode akuntansi tertentu.",
+            "period": {
+                "label": "Periode Akuntansi",
+                "placeholder": "Pilih periode",
+                "placeholderDesc": "Pilih periode yang digunakan untuk neraca saldo ini."
+            },
+            "balanced": "Neraca Saldo Seimbang",
+            "unbalanced": "Neraca Saldo Tidak Seimbang",
+            "balancedHint": "Bagus! Total debit sama dengan total kredit.",
+            "unbalancedHint": "Perhatian: Total debit tidak sama dengan total kredit. Selisihnya {difference}.",
+            "columns": {
+                "code": "Kode Akun",
+                "name": "Nama Akun",
+                "type": "Tipe",
+                "normal": "Saldo Normal",
+                "debit": "Debit",
+                "credit": "Kredit"
+            },
+            "empty": "Tidak ada akun atau saldo tercatat pada periode terpilih.",
+            "grandTotal": "Jumlah Keseluruhan"
+        },
+        "profitLoss": {
+            "title": "Laporan Laba Rugi",
+            "subtitle": "Income Statement",
+            "period": {
+                "label": "Periode Akuntansi",
+                "placeholder": "Pilih periode",
+                "placeholderDesc": "Pilih periode akuntansi untuk laporan ini.",
+                "statusDesc": "Status: {status}"
+            },
+            "sections": {
+                "revenue": "Pendapatan",
+                "cogs": "Beban Pokok Penjualan",
+                "opex": "Beban Operasional"
+            },
+            "grossProfit": "Laba Kotor",
+            "grossProfitAlt": "Gross Profit",
+            "netOperatingProfit": "Laba Usaha",
+            "netOperatingProfitAlt": "Net Operating Profit",
+            "selectPeriodTitle": "Pilih periode akuntansi",
+            "selectPeriodHint": "Laporan Laba Rugi dihitung dari seluruh entri jurnal yang diposting pada periode terpilih.",
+            "sectionEmpty": "Tidak ada akun pada kategori ini untuk periode terpilih.",
+            "noData": "Belum ada data terposting untuk periode ini.",
+            "noDataHint": "Posting entri jurnal atau faktur/tagihan untuk melihat Laporan Laba Rugi.",
+            "footnote": "Angka dihitung dari Neraca Saldo untuk periode: {period}"
         }
     },
     "pos": {
@@ -186,6 +2159,413 @@
             "sales": "Penjualan",
             "registers": "Register",
             "reports": "Laporan"
+        },
+        "reports": {
+            "title": "Laporan",
+            "subtitle": "Tinjau penjualan dalam rentang tanggal dan periksa penyelesaian kas shift kasir.",
+            "sales": {
+                "title": "Laporan Penjualan",
+                "from": "Dari",
+                "to": "Sampai",
+                "branch": "Cabang",
+                "allBranches": "Semua cabang",
+                "run": "Jalankan laporan",
+                "error": "Laporan penjualan tidak dapat dimuat.",
+                "empty": "Belum ada laporan",
+                "emptyHint": "Pilih rentang tanggal lalu jalankan laporan.",
+                "totalSales": "Total Penjualan",
+                "saleCount": "Jumlah Transaksi",
+                "byType": "Berdasarkan Tipe",
+                "byPaymentMethod": "Berdasarkan Metode Pembayaran",
+                "breakdownEmpty": "Belum ada data",
+                "amount": "Penjualan"
+            },
+            "saleTypes": {
+                "counter": "Counter",
+                "catering": "Catering"
+            },
+            "paymentMethods": {
+                "cash": "Tunai",
+                "card": "Kartu",
+                "qris": "QRIS",
+                "transfer": "Transfer"
+            },
+            "shift": {
+                "title": "Penyelesaian Shift",
+                "subtitle": "Periksa perhitungan kas untuk setiap shift kasir.",
+                "select": "Shift",
+                "selectPlaceholder": "Pilih shift",
+                "optionLabel": "Shift #{id}",
+                "status": {
+                    "open": "Terbuka",
+                    "closed": "Ditutup"
+                },
+                "empty": "Belum ada shift",
+                "emptyHint": "Shift kasir akan muncul di sini untuk laporan penyelesaian kas.",
+                "error": "Laporan shift tidak dapat dimuat.",
+                "openingFloat": "Modal awal",
+                "cashSales": "Penjualan tunai",
+                "nonCashSales": "Penjualan non-tunai",
+                "expectedCash": "Kas seharusnya",
+                "countedCash": "Kas terhitung",
+                "variance": "Selisih"
+            }
+        },
+        "sales": {
+            "title": "Penjualan",
+            "subtitle": "Telusuri penjualan counter dan pesanan katering. Buka penjualan untuk melihat item, pembayaran, dan promosinya.",
+            "import": "Impor Pesanan",
+            "importTitle": "Impor Pesanan Katering",
+            "importDescription": "Pratinjau sumber Google Form yang dikonfigurasi atau unggah template pesanan katering, lalu antrekan pesanan yang terkonfirmasi.",
+            "loadError": "Penjualan tidak dapat dimuat.",
+            "updateError": "Penjualan tidak dapat diperbarui.",
+            "empty": "Belum ada penjualan.",
+            "walkIn": "Walk-in",
+            "partnerRef": "Partner #{id}",
+            "pageInfo": "{from}–{to} dari {total} penjualan",
+            "columns": {
+                "sale": "Penjualan",
+                "type": "Tipe",
+                "customer": "Pelanggan",
+                "date": "Tanggal",
+                "total": "Total",
+                "status": "Status",
+                "actions": "Aksi"
+            },
+            "filters": {
+                "status": "Status",
+                "allStatuses": "Semua status",
+                "draft": "Draft",
+                "confirmed": "Terkonfirmasi",
+                "completed": "Selesai",
+                "void": "Void",
+                "type": "Tipe",
+                "allTypes": "Semua tipe",
+                "counter": "Counter",
+                "catering": "Catering",
+                "branch": "Cabang",
+                "allBranches": "Semua cabang",
+                "fulfilmentFrom": "Pemenuhan dari",
+                "fulfilmentTo": "Pemenuhan sampai"
+            },
+            "lifecycle": {
+                "resume": "Lanjutkan checkout",
+                "receipt": "Struk",
+                "cancelSale": "Batalkan penjualan",
+                "voidSale": "Void penjualan selesai",
+                "cancelTitle": "Batalkan penjualan ini?",
+                "cancelMessage": "Penjualan akan dibatalkan dan dihapus dari antrean aktif.",
+                "cancelConfirm": "Batalkan penjualan",
+                "keepSale": "Pertahankan penjualan",
+                "voidTitle": "Void penjualan yang sudah selesai?",
+                "voidMessage": "Void membalikkan jurnal pendapatan, COGS, dan persediaan penjualan ini. Tindakan ini tidak dapat dibatalkan.",
+                "voidConfirm": "Void penjualan"
+            },
+            "detail": {
+                "title": "Penjualan",
+                "fallbackTitle": "Penjualan #{id}",
+                "typeSale": "Penjualan {type}",
+                "loadError": "Penjualan tidak dapat dimuat.",
+                "voided": "Penjualan di-void.",
+                "canceled": "Penjualan dibatalkan.",
+                "voidError": "Penjualan tidak dapat di-void.",
+                "cancelError": "Penjualan tidak dapat dibatalkan.",
+                "lineItems": "Item Penjualan",
+                "columns": {
+                    "description": "Deskripsi",
+                    "qty": "Qty",
+                    "unit": "Harga Satuan",
+                    "total": "Total"
+                },
+                "variantRef": "Variant #{id}",
+                "giveaway": "Bonus",
+                "noLines": "Belum ada item.",
+                "payments": "Pembayaran",
+                "promotions": "Promosi",
+                "summary": "Ringkasan",
+                "info": "Detail",
+                "customer": "Pelanggan",
+                "orderDate": "Tanggal pesanan",
+                "branch": "Cabang",
+                "register": "Register",
+                "revenueJournal": "Jurnal pendapatan",
+                "cogsJournal": "Jurnal COGS",
+                "completed": "Selesai",
+                "fulfilment": "Pemenuhan",
+                "batch": "Batch",
+                "delivery": "Pengiriman"
+            }
+        },
+        "shifts": {
+            "title": "Shift Kasir",
+            "subtitle": "Buka dan tutup shift kasir. Shift harus dibuka sebelum penjualan dapat dicatat di register.",
+            "openShift": "Buka shift",
+            "listTitle": "Shift ({count})",
+            "columns": {
+                "register": "Register",
+                "status": "Status",
+                "opened": "Dibuka",
+                "openingFloat": "Modal awal",
+                "countedVariance": "Terhitung / Selisih",
+                "actions": "Aksi"
+            },
+            "status": {
+                "open": "Terbuka",
+                "closed": "Ditutup"
+            },
+            "close": "Tutup",
+            "empty": "Belum ada shift.",
+            "loadError": "Shift tidak dapat dimuat.",
+            "openSuccess": "Shift dibuka.",
+            "closeSuccess": "Shift ditutup.",
+            "registerRef": "Register #{id}",
+            "openDialog": {
+                "title": "Buka shift",
+                "description": "Pilih register dan catat modal awal kas.",
+                "register": "Register",
+                "selectRegister": "Pilih register",
+                "openingFloat": "Modal awal",
+                "notes": "Catatan",
+                "optional": "Opsional",
+                "submit": "Buka shift"
+            },
+            "closeDialog": {
+                "title": "Tutup shift",
+                "description": "Hitung laci kas. Selisih terhadap kas seharusnya ditampilkan di bawah.",
+                "register": "Register",
+                "expectedCash": "Kas seharusnya",
+                "variance": "Selisih",
+                "countedCash": "Kas terhitung",
+                "notes": "Catatan",
+                "submit": "Tutup shift"
+            }
+        },
+        "registers": {
+            "title": "Register",
+            "subtitle": "Kelola register POS per cabang. Setiap register dapat ditautkan ke akun kas untuk penyelesaian.",
+            "listTitle": "Register ({count})",
+            "columns": {
+                "name": "Nama",
+                "code": "Kode",
+                "branch": "Cabang",
+                "status": "Status",
+                "actions": "Aksi"
+            },
+            "active": "Aktif",
+            "inactive": "Nonaktif",
+            "branchRef": "Cabang #{id}",
+            "empty": "Belum ada register.",
+            "loadError": "Register tidak dapat dimuat.",
+            "created": "Register dibuat.",
+            "updated": "Register diperbarui.",
+            "deleted": "Register dihapus.",
+            "deleteTitle": "Hapus register “{name}”?",
+            "deleteMessage": "Register ini akan dihapus secara permanen.",
+            "deleteConfirm": "Hapus register",
+            "form": {
+                "editTitle": "Ubah register",
+                "newTitle": "Register baru",
+                "name": "Nama",
+                "namePlaceholder": "cth. Kasir Depan",
+                "code": "Kode",
+                "codePlaceholder": "cth. REG-01",
+                "branch": "Cabang",
+                "selectBranch": "Pilih cabang",
+                "cashAccount": "Akun kas (opsional)",
+                "none": "Tidak ada",
+                "active": "Aktif",
+                "save": "Simpan perubahan",
+                "create": "Buat register"
+            }
+        },
+        "register": {
+            "title": "Dashboard POS",
+            "cateringTitle": "Pesanan Katering",
+            "subtitle": "Catat penjualan counter dan katering. Ketuk produk untuk menambahkannya ke keranjang, lalu terima pembayaran.",
+            "cateringSubtitle": "Buat dan konfirmasi pesanan katering tanpa register, shift, atau pembayaran counter.",
+            "loadError": "Register tidak dapat dimuat.",
+            "resumeError": "Penjualan tidak dapat dilanjutkan.",
+            "shiftNeeded": "Buka shift untuk register terpilih sebelum menjual.",
+            "cateringRequired": "Pesanan katering memerlukan pelanggan dan tanggal pemenuhan.",
+            "cateringConfirmed": "Pesanan katering terkonfirmasi.",
+            "saleCompleted": "Penjualan selesai.",
+            "shiftOpened": "Shift dibuka.",
+            "variantRef": "Variant #{id}",
+            "kpis": {
+                "activeRegisters": "Register Aktif",
+                "totalCount": "{count} total",
+                "openShifts": "Shift Terbuka",
+                "readyDrawers": "Laci kas siap",
+                "openSales": "Penjualan Terbuka",
+                "openSalesDetail": "Draft atau terkonfirmasi",
+                "todaySales": "Penjualan Hari Ini",
+                "transactions": "{count} transaksi"
+            },
+            "openShiftDialog": {
+                "title": "Buka shift",
+                "description": "Pilih register dan catat modal awal kas.",
+                "register": "Register",
+                "selectRegister": "Pilih register",
+                "openingFloat": "Modal awal",
+                "submit": "Buka shift"
+            },
+            "saleTypes": {
+                "counter": "Counter",
+                "catering": "Catering"
+            },
+            "cart": {
+                "customer": "Pelanggan",
+                "selectCustomer": "Pilih pelanggan",
+                "fulfilmentDate": "Tanggal pemenuhan",
+                "deliveryAddress": "Alamat pengiriman",
+                "customerName": "Nama pelanggan (opsional)",
+                "walkIn": "Walk-in",
+                "empty": "Ketuk produk untuk menambahkannya ke penjualan.",
+                "subtotal": "Subtotal",
+                "discount": "Diskon",
+                "tax": "Pajak",
+                "total": "Total",
+                "paid": "Dibayar",
+                "balanceDue": "Sisa tagihan",
+                "confirmOrder": "Konfirmasi pesanan",
+                "charge": "Bayar",
+                "managePayments": "Kelola pembayaran / selesaikan",
+                "takePayment": "Terima pembayaran",
+                "cancelSale": "Batalkan penjualan"
+            },
+            "products": {
+                "search": "Cari produk",
+                "searchPlaceholder": "Cari produk atau SKU...",
+                "category": "Kategori",
+                "allCategories": "Semua kategori",
+                "noPrice": "Tanpa harga",
+                "empty": "Produk tidak ditemukan."
+            },
+            "payment": {
+                "title": "Pembayaran",
+                "forSale": "Penjualan {number}",
+                "description": "Terima pembayaran untuk penjualan ini",
+                "completeSale": "Selesaikan penjualan",
+                "method": "Metode",
+                "amount": "Jumlah",
+                "reference": "Referensi (opsional)",
+                "referencePlaceholder": "Referensi kartu / transfer",
+                "changeDue": "Kembalian: {amount}",
+                "nonCashError": "Pembayaran non-tunai tidak boleh melebihi sisa tagihan.",
+                "addPayment": "Tambah pembayaran",
+                "methods": {
+                    "cash": "Tunai",
+                    "card": "Kartu",
+                    "qris": "QRIS",
+                    "transfer": "Transfer"
+                }
+            },
+            "shiftBar": {
+                "noOpenShift": "Belum ada shift terbuka",
+                "openPrompt": "Buka shift kasir sebelum mencatat penjualan.",
+                "openShift": "Buka shift",
+                "open": "Terbuka",
+                "openingFloat": "Modal awal",
+                "expectedCash": "Kas seharusnya",
+                "closeShift": "Tutup shift",
+                "registerRef": "Register #{id}"
+            },
+            "summary": {
+                "subtotal": "Subtotal",
+                "discount": "Diskon",
+                "tax": "Pajak",
+                "total": "Total",
+                "paid": "Dibayar",
+                "balanceDue": "Sisa tagihan",
+                "paidInFull": "Lunas",
+                "change": "Kembalian"
+            },
+            "selector": {
+                "register": "Register",
+                "selectActive": "Pilih register aktif",
+                "noActive": "Tidak ada register aktif",
+                "createPrompt": "Buat atau aktifkan register di cabang ini sebelum menjual."
+            },
+            "checklist": {
+                "title": "Penyiapan register diperlukan",
+                "branch": "Cabang dipilih",
+                "register": "Register aktif dipilih",
+                "shift": "Shift terbuka untuk register terpilih"
+            }
+        },
+        "receipt": {
+            "title": "Struk",
+            "loadError": "Struk tidak dapat dimuat.",
+            "brand": "Arsanawa POS",
+            "saleFallback": "Penjualan #{id}",
+            "variantRef": "Variant #{id}",
+            "status": "Status",
+            "type": "Tipe",
+            "customer": "Pelanggan",
+            "register": "Register",
+            "completed": "Selesai",
+            "walkIn": "Walk-in",
+            "noLines": "Belum ada item.",
+            "subtotal": "Subtotal",
+            "discount": "Diskon",
+            "tax": "Pajak",
+            "total": "Total",
+            "paid": "Dibayar",
+            "balance": "Sisa",
+            "change": "Kembalian",
+            "payments": "Pembayaran",
+            "saleDetail": "Detail penjualan",
+            "print": "Cetak"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "Masuk",
+            "subtitle": "Selamat datang kembali. Masukkan kredensial Anda untuk mengakses konsol.",
+            "loginField": "Email atau username",
+            "password": "Kata sandi",
+            "forgotPassword": "Lupa kata sandi?",
+            "submit": "Masuk",
+            "submitting": "Sedang masuk...",
+            "panel": {
+                "badge": "Arsanawa ERP Console",
+                "headline": "Backend operasional terpadu untuk perusahaan modular.",
+                "description": "Lingkup perusahaan multi-tenant, izin granular, entitlement modul dinamis, dan pengelolaan siklus inventaris yang menyeluruh.",
+                "featureModularTitle": "Modular",
+                "featureModularDescription": "Aktifkan POS, Accounting, Inventory sesuai kebutuhan",
+                "featureScopedTitle": "Terlingkup",
+                "featureScopedDescription": "Batas data perusahaan dan cabang yang ketat",
+                "featureDurableTitle": "Andal",
+                "featureDurableDescription": "Status tetap konsisten di seluruh sesi perangkat"
+            }
+        },
+        "forgot": {
+            "title": "Lupa kata sandi",
+            "subtitle": "Masukkan email Anda untuk menerima tautan reset kata sandi.",
+            "email": "Alamat email",
+            "submit": "Kirim tautan reset",
+            "submitting": "Mengirim tautan...",
+            "failed": "Reset kata sandi gagal.",
+            "backToLogin": "Kembali ke halaman masuk"
+        },
+        "reset": {
+            "title": "Reset kata sandi",
+            "subtitle": "Masukkan email, token reset, dan kata sandi baru Anda.",
+            "email": "Alamat email",
+            "token": "Token reset",
+            "newPassword": "Kata sandi baru",
+            "confirmPassword": "Konfirmasi kata sandi",
+            "submit": "Reset kata sandi",
+            "submitting": "Mereset kata sandi...",
+            "passwordMismatch": "Kata sandi tidak cocok.",
+            "failed": "Reset kata sandi gagal.",
+            "backToLogin": "Kembali ke halaman masuk"
+        },
+        "requireSession": {
+            "eyebrow": "Arsanawa ERP",
+            "title": "Masuk untuk melanjutkan",
+            "description": "Konsol web menyimpan token akses di memori, sehingga menyegarkan halaman akan memulai sesi baru.",
+            "goToLogin": "Ke halaman masuk"
         }
     }
 }

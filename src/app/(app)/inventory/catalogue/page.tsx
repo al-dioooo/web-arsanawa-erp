@@ -25,7 +25,7 @@ export default function CataloguePage() {
             />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {links.map(([label, href, icon]) => (
-                    <MotionLinkItem key={href} href={href} icon={icon} label={label} className="min-h-20 rounded-2xl">
+                    <MotionLinkItem key={href} href={href} icon={icon} label={label} className="min-h-20 rounded-lg">
                         Open {label}
                     </MotionLinkItem>
                 ))}

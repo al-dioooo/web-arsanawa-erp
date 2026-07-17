@@ -1,14 +1,18 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useSession } from "@/features/auth/session-provider"
 import { useInvoices } from "@/features/finance/api-invoices"
 import { useBills } from "@/features/finance/api-bills"
 import { usePayments } from "@/features/finance/api-payments"
 import { useJournalEntries } from "@/features/finance/api-journals"
 import { PageHeader } from "@/features/finance/components/page-header"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { formatIDR, formatDateID } from "@/lib/format"
+import { Card } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Icon } from "@/components/ui/icon"
+import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 
 type ActivityItem = {
@@ -27,6 +31,7 @@ type ActivityItem = {
 }
 
 export default function ActivityFeedPage() {
+    const t = useTranslations("finance.activity")
     const { activeCompanyId } = useSession()
 
     // Fetch all transaction streams
@@ -44,16 +49,16 @@ export default function ActivityFeedPage() {
         activities.push({
             id: inv.id,
             type: "invoice",
-            title: "Faktur Penjualan (Invoice)",
+            title: t("types.invoice"),
             reference: inv.invoice_number,
             date: inv.invoice_date,
-            description: `Pelanggan: ${inv.partner?.name || `Partner #${inv.partner_id}`}`,
+            description: t("customerPrefix", { name: inv.partner?.name || t("partnerFallback", { id: inv.partner_id }) }),
             amount: parseFloat(inv.total),
             status: inv.status,
             link: `/finance/invoices/${inv.id}`,
             icon: "request_quote",
-            color: "text-teal-600",
-            bgColor: "bg-teal-50"
+            color: "text-brand-ink",
+            bgColor: "bg-brand-soft"
         })
     })
 
@@ -61,34 +66,36 @@ export default function ActivityFeedPage() {
         activities.push({
             id: bill.id,
             type: "bill",
-            title: "Tagihan Pembelian (Vendor Bill)",
+            title: t("types.bill"),
             reference: bill.bill_number,
             date: bill.bill_date,
-            description: `Pemasok: ${bill.partner?.name || `Partner #${bill.partner_id}`}`,
+            description: t("supplierPrefix", { name: bill.partner?.name || t("partnerFallback", { id: bill.partner_id }) }),
             amount: parseFloat(bill.total),
             status: bill.status,
             link: `/finance/bills/${bill.id}`,
             icon: "receipt",
-            color: "text-orange-600",
-            bgColor: "bg-orange-50"
+            // Raw orange is the sanctioned brand accent shade.
+            color: "text-orange-700",
+            bgColor: "bg-orange-100"
         })
     })
 
     payments.forEach(pay => {
         const isDisbursement = pay.payment_type === "outbound"
+        const partnerName = pay.partner?.name || t("partnerFallback", { id: pay.partner_id })
         activities.push({
             id: pay.id,
             type: "payment",
-            title: isDisbursement ? "Pembayaran Keluar (Payment)" : "Penerimaan Masuk (Receipt)",
+            title: isDisbursement ? t("types.paymentOut") : t("types.paymentIn"),
             reference: pay.payment_number,
             date: pay.payment_date,
-            description: `${isDisbursement ? "Kepada: " : "Dari: "} ${pay.partner?.name || `Partner #${pay.partner_id}`}`,
+            description: isDisbursement ? t("toPrefix", { name: partnerName }) : t("fromPrefix", { name: partnerName }),
             amount: parseFloat(pay.amount),
             status: pay.status,
             link: `/finance/payments/${pay.id}`,
             icon: isDisbursement ? "account_balance_wallet" : "savings",
-            color: isDisbursement ? "text-indigo-600" : "text-emerald-600",
-            bgColor: isDisbursement ? "bg-indigo-50" : "bg-emerald-50"
+            color: isDisbursement ? "text-error-strong" : "text-success-strong",
+            bgColor: isDisbursement ? "bg-error-soft" : "bg-success-soft"
         })
     })
 
@@ -97,16 +104,16 @@ export default function ActivityFeedPage() {
         activities.push({
             id: entry.id,
             type: "journal",
-            title: "Jurnal Umum (Journal Entry)",
+            title: t("types.journal"),
             reference: entry.entry_number || `JE-${entry.id}`,
             date: entry.entry_date,
-            description: entry.description || "Manual adjustment",
+            description: entry.description || t("manualAdjustment"),
             amount: debitSum,
             status: entry.status,
             link: `/finance/journals/${entry.id}`,
             icon: "menu_book",
-            color: "text-amber-600",
-            bgColor: "bg-amber-50"
+            color: "text-warning-strong",
+            bgColor: "bg-warning-soft"
         })
     })
 
@@ -114,65 +121,66 @@ export default function ActivityFeedPage() {
     activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
     return (
-        <div className="w-full max-w-4xl mx-auto">
+        <div className="mx-auto w-full max-w-4xl">
             <PageHeader
-                title="Riwayat Aktivitas Keuangan"
-                subtitle="Aliran kronologis transaksi, faktur, tagihan, dan jurnal umum."
+                title={t("title")}
+                subtitle={t("subtitle")}
             />
 
             {isLoading && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-100 border-t-teal-600 mb-4" />
-                    <p className="text-navy-500 font-medium">Aggregating transactions log...</p>
+                <div className="flex flex-col gap-4" aria-hidden="true">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <Skeleton key={index} className="h-28 w-full rounded-lg" />
+                    ))}
                 </div>
             )}
 
             {!isLoading && activities.length === 0 && (
-                <div className="bg-white rounded-2xl shadow-sm border border-navy-100 p-12 text-center flex flex-col items-center justify-center">
-                    <div className="p-4 rounded-full bg-navy-50 text-navy-400 mb-4">
-                        <Icon name="history" className="text-4xl" />
-                    </div>
-                    <h3 className="text-lg font-bold text-navy-900 mb-1">Belum Ada Riwayat</h3>
-                    <p className="text-navy-500 text-sm max-w-md">
-                        Semua transaksi keuangan, pembayaran, faktur, dan jurnal umum yang dicatat akan muncul di sini secara kronologis.
-                    </p>
-                </div>
+                <Card padding="lg">
+                    <EmptyState
+                        icon="history"
+                        title={t("emptyTitle")}
+                        description={t("emptyDescription")}
+                    />
+                </Card>
             )}
 
             {!isLoading && activities.length > 0 && (
                 <div className="flex flex-col gap-4">
                     {activities.map((item, index) => (
-                        <div 
-                            key={`${item.type}-${item.id}-${index}`} 
-                            className="bg-white rounded-2xl p-5 shadow-sm border border-navy-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-teal-200 hover:shadow transition-all group"
+                        <Card
+                            key={`${item.type}-${item.id}-${index}`}
+                            padding="md"
+                            hover
+                            className="group flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
                         >
                             <div className="flex items-start gap-4">
-                                <div className={`p-3 rounded-xl shrink-0 ${item.bgColor}`}>
-                                    <Icon name={item.icon} className={`text-xl ${item.color}`} />
+                                <div className={`shrink-0 rounded-md p-3 ${item.bgColor}`}>
+                                    <Icon name={item.icon} size={20} className={item.color} />
                                 </div>
                                 <div>
-                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <span className="font-semibold text-xs text-navy-450 uppercase tracking-wider">{item.title}</span>
-                                        <span className="text-navy-300">•</span>
-                                        <span className="text-xs font-semibold text-navy-500">{formatDateID(item.date)}</span>
+                                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                                        <span className="type-card-label uppercase tracking-wider">{item.title}</span>
+                                        <span className="text-ink-faint">&bull;</span>
+                                        <span className="text-xs font-semibold text-ink-muted">{formatDateID(item.date)}</span>
                                     </div>
-                                    <Link 
-                                        href={item.link} 
-                                        className="font-bold text-navy-900 group-hover:text-teal-600 transition-colors text-base hover:underline block"
+                                    <Link
+                                        href={item.link}
+                                        className="block text-base font-bold text-ink transition-colors hover:underline group-hover:text-brand-ink"
                                     >
                                         {item.reference}
                                     </Link>
-                                    <p className="text-sm text-navy-500 mt-0.5">{item.description}</p>
+                                    <p className="mt-0.5 text-sm text-ink-muted">{item.description}</p>
                                 </div>
                             </div>
-                            
-                            <div className="flex sm:flex-col items-end justify-between sm:justify-center w-full sm:w-auto border-t sm:border-t-0 border-navy-50 pt-3 sm:pt-0 gap-2 shrink-0">
-                                <span className="font-bold text-navy-900 text-lg">
+
+                            <div className="flex w-full shrink-0 items-end justify-between gap-2 border-t border-line pt-3 sm:w-auto sm:flex-col sm:justify-center sm:border-t-0 sm:pt-0">
+                                <span className="text-lg font-bold text-ink tabular-nums">
                                     {formatIDR(item.amount)}
                                 </span>
                                 <StatusBadge status={item.status} />
                             </div>
-                        </div>
+                        </Card>
                     ))}
                 </div>
             )}

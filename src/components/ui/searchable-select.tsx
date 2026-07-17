@@ -141,7 +141,7 @@ export function SearchableSelect({
     const activeOptionId = isOpen && activeIndex >= 0 ? `${baseId}-option-${activeIndex}` : undefined
 
     return (
-        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-navy-700", className)}>
+        <div ref={containerRef} className={cn("relative grid gap-1.5 text-sm font-medium text-ink-secondary", className)}>
             {label && <span className={fieldLabelClassName}>{label}</span>}
             <div className="relative">
                 <input
@@ -163,7 +163,7 @@ export function SearchableSelect({
                     onKeyDown={handleKeyDown}
                     className={cn(fieldControlClassName, "w-full pr-10 cursor-pointer")}
                 />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-navy-500">
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-ink-muted">
                     <Icon name="arrow_drop_down" size={20} />
                 </span>
 
@@ -172,13 +172,13 @@ export function SearchableSelect({
                         id={listboxId}
                         role="listbox"
                         aria-label={label}
-                        className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-navy-100 bg-white py-1 text-sm text-navy-900 outline-none select-none"
+                        className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface-raised py-1 text-sm text-ink shadow-card-hover outline-none select-none"
                     >
                         {filteredOptions.length > 0 ? (
                             <Highlight
                                 value={value ? String(value) : null}
                                 containerClassName="flex flex-col gap-0.5 px-1"
-                                className="bg-teal-50/50 rounded-md"
+                                className="bg-surface-muted rounded-md"
                                 hover={true}
                             >
                                 {filteredOptions.map((opt, index) => (
@@ -191,15 +191,15 @@ export function SearchableSelect({
                                             onMouseEnter={() => setActiveIndex(index)}
                                             className={cn(
                                                 "relative cursor-pointer py-2 pl-3 pr-9 select-none transition-colors rounded-md",
-                                                index === activeIndex && "bg-teal-50",
+                                                index === activeIndex && "bg-surface-muted",
                                                 String(opt.value) === String(value)
-                                                    ? "text-teal-700 font-semibold"
-                                                    : "text-navy-900",
+                                                    ? "text-brand-ink font-semibold"
+                                                    : "text-ink",
                                             )}
                                         >
                                             {opt.label}
                                             {String(opt.value) === String(value) && (
-                                                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-teal-700">
+                                                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-brand-ink">
                                                     <Icon name="check" size={16} />
                                                 </span>
                                             )}
@@ -208,7 +208,7 @@ export function SearchableSelect({
                                 ))}
                             </Highlight>
                         ) : (
-                            <li className="relative py-2 pl-3 pr-9 text-navy-400 italic">
+                            <li className="relative py-2 pl-3 pr-9 text-ink-muted italic">
                                 No options found
                             </li>
                         )}

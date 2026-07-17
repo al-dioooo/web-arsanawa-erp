@@ -1,19 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
+import { useTranslations } from "next-intl"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { useConfirm } from "@/components/ui/confirm-dialog"
+import { DataTable } from "@/components/ui/data-table"
+import { Field } from "@/components/ui/field"
+import { Icon } from "@/components/ui/icon"
+import { Modal } from "@/components/ui/modal"
+import { PageHeader } from "@/components/ui/page-header"
+import { SearchableSelect } from "@/components/ui/searchable-select"
+import { TableStateRow } from "@/components/ui/table-state-row"
+import { Tooltip } from "@/components/ui/tooltip"
 import { useSession } from "@/features/auth/session-provider"
 import { useApprovalMatrices, useCreateApprovalMatrix, useUpdateApprovalMatrix, useDeleteApprovalMatrix, useCompanyMembers, type ApprovalMatrix } from "@/features/finance/api-approvals"
-import { EnterTransition } from "@/components/ui/enter"
-import { Icon } from "@/components/ui/icon"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { SearchableSelect } from "@/components/ui/searchable-select"
-import { Tooltip } from "@/components/ui/tooltip"
-import { useForm, Controller } from "react-hook-form"
-import { toast } from "sonner"
 import { formatIDR } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -25,11 +28,16 @@ type ApprovalMatrixFormData = {
     approver_user_id: number
 }
 
+const TABS = ["bill", "payment"] as const
+
 export default function ApprovalMatricesPage() {
+    const t = useTranslations("finance.approvals.matrices")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const { data: matrices = [], isLoading } = useApprovalMatrices(activeCompanyId)
     const deleteMatrix = useDeleteMatrixRule()
-    
+    const [confirm, confirmDialog] = useConfirm()
+
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
     const [editingRule, setEditingRule] = useState<ApprovalMatrix | null>(null)
     const [activeTab, setActiveTab] = useState<"bill" | "payment">("bill")
@@ -48,11 +56,18 @@ export default function ApprovalMatricesPage() {
         setIsDrawerOpen(true)
     }
 
-    const handleDelete = (id: number) => {
-        if (confirm("Are you sure you want to delete this approval rule?")) {
+    const handleDelete = async (id: number) => {
+        const ok = await confirm({
+            title: t("deleteConfirm.title"),
+            message: t("deleteConfirm.message"),
+            confirmLabel: tCommon("delete"),
+            cancelLabel: tCommon("cancel"),
+            danger: true,
+        })
+        if (ok) {
             deleteMatrix.mutate(id, {
-                onSuccess: () => toast.success("Approval rule deleted successfully"),
-                onError: (err: Error) => toast.error(err?.message || "Failed to delete rule")
+                onSuccess: () => toast.success(t("toast.deleted")),
+                onError: (err: Error) => toast.error(err?.message || t("toast.deleteFailed"))
             })
         }
     }
@@ -60,93 +75,94 @@ export default function ApprovalMatricesPage() {
     return (
         <div className="w-full">
             <PageHeader
-                title="Matriks Persetujuan (Approval Matrix)"
-                primaryAction={{
-                    label: "+ Add Approval Rule",
-                    onClick: () => {
-                        setEditingRule(null)
-                        setIsDrawerOpen(true)
-                    }
-                }}
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                actions={
+                    <Button
+                        size="lg"
+                        onClick={() => {
+                            setEditingRule(null)
+                            setIsDrawerOpen(true)
+                        }}
+                    >
+                        {t("addRule")}
+                    </Button>
+                }
             />
 
-            <FilterBar>
-                <div className="flex-1 text-sm text-navy-500 font-body">
-                    Configure multi-level, value-banded approval rules for invoices/bills and payments.
-                </div>
-            </FilterBar>
-
-            <div className="mb-4 border-b border-navy-100 flex gap-4">
-                <button
-                    onClick={() => setActiveTab("bill")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        activeTab === "bill" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    Bills & Inbound Invoices
-                </button>
-                <button
-                    onClick={() => setActiveTab("payment")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        activeTab === "payment" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    Payments & Outbound Receipts
-                </button>
+            <div className="mb-4 flex gap-4 border-b border-line">
+                {TABS.map(tab => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        className={cn(
+                            "cursor-pointer border-b-2 px-1 py-2 text-sm font-semibold transition-colors",
+                            activeTab === tab
+                                ? "border-brand text-brand-ink"
+                                : "border-transparent text-ink-muted hover:text-ink"
+                        )}
+                    >
+                        {t(`tabs.${tab}`)}
+                    </button>
+                ))}
             </div>
 
-            <DataTable columns={["Level", "Min Amount", "Max Amount", "Approver Name", "Actions"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-navy-500">
-                            Loading approval rules...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && filteredRules.length === 0 && (
-                    <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-navy-500">
-                            No approval rules configured for {activeTab === "bill" ? "Bills" : "Payments"}.
-                        </td>
-                    </tr>
-                )}
+            <DataTable
+                columns={[
+                    t("table.level"),
+                    t("table.minAmount"),
+                    t("table.maxAmount"),
+                    t("table.approver"),
+                    t("table.actions"),
+                ]}
+            >
+                <TableStateRow
+                    isLoading={isLoading}
+                    count={filteredRules.length}
+                    columns={5}
+                    emptyMessage={t("empty", {
+                        type: t(activeTab === "bill" ? "docTypeBill" : "docTypePayment"),
+                    })}
+                />
                 {filteredRules.map((rule) => (
-                    <tr key={rule.id} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-navy-900">
-                            Level {rule.level}
+                    <tr key={rule.id}>
+                        <td className="font-mono font-bold text-ink">
+                            {t("level", { level: rule.level })}
                         </td>
-                        <td className="px-6 py-4 text-navy-700 font-semibold">
+                        <td className="font-semibold text-ink-secondary">
                             {formatIDR(parseFloat(rule.min_amount))}
                         </td>
-                        <td className="px-6 py-4 text-navy-700 font-semibold">
+                        <td className="font-semibold text-ink-secondary">
                             {formatIDR(parseFloat(rule.max_amount))}
                         </td>
-                        <td className="px-6 py-4 text-navy-900 font-medium">
+                        <td className="font-medium text-ink">
                             <ApproverName userId={rule.approver_user_id} />
                         </td>
-                        <td className="px-6 py-4">
+                        <td>
                             <div className="flex gap-2">
-                                <Tooltip label="Edit Rule">
-                                    <button
+                                <Tooltip label={t("actions.edit")}>
+                                    <Button
                                         type="button"
-                                        aria-label="Edit Rule"
+                                        size="icon-sm"
+                                        variant="ghost"
+                                        aria-label={t("actions.edit")}
                                         onClick={() => handleEdit(rule)}
-                                        className="p-1.5 text-navy-500 hover:text-teal-600 hover:bg-navy-50 rounded-lg transition-colors cursor-pointer"
                                     >
-                                        <Icon name="edit" className="w-4 h-4" />
-                                    </button>
+                                        <Icon name="edit" className="h-4 w-4" />
+                                    </Button>
                                 </Tooltip>
-                                <Tooltip label="Delete Rule">
-                                    <button
+                                <Tooltip label={t("actions.delete")}>
+                                    <Button
                                         type="button"
-                                        aria-label="Delete Rule"
-                                        onClick={() => handleDelete(rule.id)}
-                                        className="p-1.5 text-navy-500 hover:text-rose-600 hover:bg-navy-50 rounded-lg transition-colors cursor-pointer"
+                                        size="icon-sm"
+                                        variant="ghost"
+                                        aria-label={t("actions.delete")}
+                                        onClick={() => void handleDelete(rule.id)}
                                     >
-                                        <Icon name="delete" className="w-4 h-4" />
-                                    </button>
+                                        <Icon name="delete" className="h-4 w-4" />
+                                    </Button>
                                 </Tooltip>
                             </div>
                         </td>
@@ -155,15 +171,16 @@ export default function ApprovalMatricesPage() {
             </DataTable>
 
             {isDrawerOpen && (
-                <ApprovalRuleDrawer 
+                <ApprovalRuleDrawer
                     rule={editingRule}
                     defaultDocType={activeTab}
                     onClose={() => {
                         setIsDrawerOpen(false)
                         setEditingRule(null)
-                    }} 
+                    }}
                 />
             )}
+            {confirmDialog}
         </div>
     )
 }
@@ -173,16 +190,20 @@ function useDeleteMatrixRule() {
 }
 
 function ApproverName({ userId }: { userId: number }) {
+    const t = useTranslations("finance.approvals.matrices")
     const { activeCompanyId } = useSession()
     const { data: memberships = [] } = useCompanyMembers(activeCompanyId)
     const membership = memberships.find(m => m.user_id === userId)
     if (!membership?.user) {
-        return <span className="text-navy-400">User ID #{userId}</span>
+        return <span className="text-ink-faint">{t("userFallback", { id: userId })}</span>
     }
-    return <span>{membership.user.name} <span className="text-xs text-navy-400">({membership.role})</span></span>
+    return <span>{membership.user.name} <span className="text-xs text-ink-faint">({membership.role})</span></span>
 }
 
 function ApprovalRuleDrawer({ rule, defaultDocType, onClose }: { rule: ApprovalMatrix | null, defaultDocType: "bill" | "payment", onClose: () => void }) {
+    const t = useTranslations("finance.approvals.matrices.drawer")
+    const tToast = useTranslations("finance.approvals.matrices.toast")
+    const tCommon = useTranslations("common")
     const { activeCompanyId } = useSession()
     const createRule = useCreateApprovalMatrix()
     const updateRule = useUpdateApprovalMatrix()
@@ -194,7 +215,7 @@ function ApprovalRuleDrawer({ rule, defaultDocType, onClose }: { rule: ApprovalM
             value: m.user_id,
             label: `${m.user?.name || `User #${m.user_id}`} (${m.role})`
         }))
-    
+
     const { register, handleSubmit, control, formState: { errors } } = useForm<ApprovalMatrixFormData>({
         defaultValues: rule ? {
             document_type: rule.document_type,
@@ -225,11 +246,11 @@ function ApprovalRuleDrawer({ rule, defaultDocType, onClose }: { rule: ApprovalM
 
         const mutateOptions = {
             onSuccess: () => {
-                toast.success(rule ? "Approval rule updated successfully" : "Approval rule created successfully")
+                toast.success(rule ? tToast("updated") : tToast("created"))
                 onClose()
             },
             onError: (err: Error) => {
-                toast.error(err?.message || "Failed to save approval rule")
+                toast.error(err?.message || tToast("saveFailed"))
             }
         }
 
@@ -243,94 +264,90 @@ function ApprovalRuleDrawer({ rule, defaultDocType, onClose }: { rule: ApprovalM
     const isPending = createRule.isPending || updateRule.isPending
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
-                    <h2 className="text-lg font-bold text-navy-900">
-                        {rule ? "Edit Approval Rule" : "New Approval Rule"}
-                    </h2>
-                    <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
-                        <Icon name="close" />
-                    </button>
-                </div>
-                
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-                    <Controller
-                        name="document_type"
-                        control={control}
-                        render={({ field }) => (
-                            <SearchableSelect
-                                label="Document Type"
-                                options={[
-                                    { value: "bill", label: "Bill / Inbound Invoice" },
-                                    { value: "payment", label: "Payment / Outbound Receipt" },
-                                ]}
-                                value={field.value}
-                                onChange={field.onChange}
-                            />
-                        )}
-                    />
+        <Modal
+            open
+            onClose={onClose}
+            variant="drawer"
+            size="md"
+            title={rule ? t("editTitle") : t("newTitle")}
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>{tCommon("cancel")}</Button>
+                    <Button onClick={handleSubmit(onSubmit)} disabled={isPending}>
+                        {isPending ? t("saving") : rule ? t("saveChanges") : t("createRule")}
+                    </Button>
+                </>
+            }
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                <Controller
+                    name="document_type"
+                    control={control}
+                    render={({ field }) => (
+                        <SearchableSelect
+                            label={t("documentType")}
+                            options={[
+                                { value: "bill", label: t("documentTypes.bill") },
+                                { value: "payment", label: t("documentTypes.payment") },
+                            ]}
+                            value={field.value}
+                            onChange={field.onChange}
+                        />
+                    )}
+                />
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field
-                            label="Min Amount"
-                            type="number"
-                            step="0.01"
-                            {...register("min_amount", { 
-                                required: "Min Amount is required",
-                                min: { value: 0, message: "Min amount cannot be negative" }
-                            })}
-                            error={errors.min_amount?.message}
-                        />
-                        
-                        <Field
-                            label="Max Amount"
-                            type="number"
-                            step="0.01"
-                            {...register("max_amount", { 
-                                required: "Max Amount is required",
-                                validate: (val, formVals) => 
-                                    parseFloat(val) >= parseFloat(formVals.min_amount) || "Max Amount must be >= Min Amount"
-                            })}
-                            error={errors.max_amount?.message}
-                        />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label={t("minAmount")}
+                        type="number"
+                        step="0.01"
+                        {...register("min_amount", {
+                            required: t("minRequired"),
+                            min: { value: 0, message: t("minNegative") }
+                        })}
+                        error={errors.min_amount?.message}
+                    />
 
                     <Field
-                        label="Approval Level (Seq. Tier)"
+                        label={t("maxAmount")}
                         type="number"
-                        min="1"
-                        step="1"
-                        {...register("level", { 
-                            required: "Level is required",
-                            min: { value: 1, message: "Level must be >= 1" }
+                        step="0.01"
+                        {...register("max_amount", {
+                            required: t("maxRequired"),
+                            validate: (val, formVals) =>
+                                parseFloat(val) >= parseFloat(formVals.min_amount) || t("maxGteMin")
                         })}
-                        error={errors.level?.message}
+                        error={errors.max_amount?.message}
                     />
-
-                    <Controller
-                        name="approver_user_id"
-                        control={control}
-                        rules={{ required: "Approver is required" }}
-                        render={({ field }) => (
-                            <SearchableSelect
-                                label="Designated Approver"
-                                options={memberOptions}
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder="Select a company member..."
-                            />
-                        )}
-                    />
-                </form>
-
-                <div className="p-6 border-t border-navy-100 bg-navy-50/50 flex gap-3 justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSubmit(onSubmit)} disabled={isPending} className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                        {isPending ? "Saving..." : rule ? "Save Changes" : "Create Rule"}
-                    </Button>
                 </div>
-            </EnterTransition>
-        </div>
+
+                <Field
+                    label={t("levelLabel")}
+                    type="number"
+                    min="1"
+                    step="1"
+                    {...register("level", {
+                        required: t("levelRequired"),
+                        min: { value: 1, message: t("levelMin") }
+                    })}
+                    error={errors.level?.message}
+                />
+
+                <Controller
+                    name="approver_user_id"
+                    control={control}
+                    rules={{ required: t("approverRequired") }}
+                    render={({ field }) => (
+                        <SearchableSelect
+                            label={t("approver")}
+                            options={memberOptions}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={t("approverPlaceholder")}
+                        />
+                    )}
+                />
+            </form>
+        </Modal>
     )
 }

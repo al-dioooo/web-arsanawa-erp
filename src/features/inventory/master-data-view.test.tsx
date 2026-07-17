@@ -25,6 +25,47 @@ vi.mock("sonner", () => ({
     toast: { success: vi.fn(), error: vi.fn() },
 }))
 
+// Echo the en.json copy for the keys the assertions rely on; unknown keys
+// fall back to the full key so missing copy is visible in failures.
+vi.mock("next-intl", () => ({
+    useTranslations: (namespace?: string) => (key: string, values?: Record<string, string | number>) => {
+        const fullKey = namespace ? `${namespace}.${key}` : key
+        const labels: Record<string, string> = {
+            "common.save": "Save",
+            "common.cancel": "Cancel",
+            "common.delete": "Delete",
+            "common.edit": "Edit",
+            "common.companyScoped": "Company scoped",
+            "common.noCompany": "No company",
+            "inventory.master.kinds.products.title": "Products",
+            "inventory.master.kinds.products.singular": "Product",
+            "inventory.master.heading.create": "New {name}",
+            "inventory.master.heading.detail": "{name} Detail",
+            "inventory.master.form.name": "Name",
+            "inventory.master.form.baseUnit": "Base Unit",
+            "inventory.master.form.category": "Category",
+            "inventory.master.form.brand": "Brand",
+            "inventory.master.form.initialSku": "Initial variant SKU",
+            "inventory.master.form.initialVariantName": "Initial variant name",
+            "inventory.master.form.saving": "Saving...",
+            "inventory.master.variantManager.newSku": "New variant SKU",
+            "inventory.master.variantManager.newName": "Variant name",
+            "inventory.master.variantManager.newBarcode": "Barcode",
+            "inventory.master.variantManager.add": "Add variant",
+            "inventory.master.variantManager.editAria": "Edit variant {sku}",
+            "inventory.master.variantManager.deleteAria": "Delete variant {sku}",
+            "inventory.master.variantManager.deleteTitle": "Delete variant “{sku}”?",
+            "inventory.master.variantManager.availability.availableAria": "{sku} available at {branch}",
+            "inventory.master.variantManager.tags.addLabel": "Add tag",
+            "inventory.master.variantManager.tags.addButton": "Add",
+            "inventory.master.variantManager.tags.save": "Save tags",
+        }
+
+        const template = labels[fullKey] ?? fullKey
+        return template.replace(/\{(\w+)\}/g, (_, token: string) => String(values?.[token] ?? ""))
+    },
+}))
+
 vi.mock("@/features/auth/session-provider", () => ({
     useSession: vi.fn(),
 }))

@@ -19,7 +19,7 @@ export default async function RootLayout({
     const messages = await getMessages()
 
     return (
-        <html lang="en" className="h-full antialiased">
+        <html lang="en" className="h-full antialiased" suppressHydrationWarning>
             <body className="flex min-h-full flex-col">
                 <NextIntlClientProvider messages={messages}>
                     <Providers>

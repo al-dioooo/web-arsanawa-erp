@@ -1,134 +1,130 @@
 "use client"
 
 import { useState } from "react"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { StatusBadge } from "@/features/finance/components/status-badge"
+import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
+import { Field } from "@/components/ui/field"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { Icon } from "@/components/ui/icon"
+import { Modal } from "@/components/ui/modal"
+import { PageHeader } from "@/components/ui/page-header"
+import { SelectDescription } from "@/components/ui/select-description"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { useApprovalRequests, useActOnApproval, useApprovalMatrices, useCompanyMembers, type ApprovalRequest } from "@/features/finance/api-approvals"
-import { EnterTransition } from "@/components/ui/enter"
-import { Icon } from "@/components/ui/icon"
-import { Button } from "@/components/ui/button"
-import { Field } from "@/components/ui/field"
-import { SelectDescription } from "@/components/ui/select-description"
-import { toast } from "sonner"
 import { formatIDR, formatDateID } from "@/lib/format"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+
+const TABS = ["pending", "approved", "rejected"] as const
 
 export default function ApprovalRequestsPage() {
+    const t = useTranslations("finance.approvals.requests")
     const { activeCompanyId } = useSession()
     const [statusFilter, setStatusFilter] = useState<string>("pending")
     const { data: response, isLoading } = useApprovalRequests(activeCompanyId, {
         status: statusFilter || undefined
     })
-    
+
     const requests = response?.approval_requests || []
     const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null)
 
     return (
         <div className="w-full">
-            <PageHeader title="Permintaan Persetujuan (Approval Requests)" />
+            <PageHeader eyebrow={t("eyebrow")} title={t("title")} />
 
             <FilterBar>
                 <div className="flex gap-2">
                     <SelectDescription
-                        label="Status"
+                        label={t("filter.status")}
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         options={[
-                            { value: "", label: "All Statuses", description: "Show every approval request state." },
-                            { value: "pending", label: "Pending", description: "Requests waiting for the next approver." },
-                            { value: "approved", label: "Approved", description: "Requests that passed all approvals." },
-                            { value: "rejected", label: "Rejected", description: "Requests declined by an approver." },
+                            { value: "", label: t("filter.all"), description: t("filter.allDesc") },
+                            { value: "pending", label: t("filter.pending"), description: t("filter.pendingDesc") },
+                            { value: "approved", label: t("filter.approved"), description: t("filter.approvedDesc") },
+                            { value: "rejected", label: t("filter.rejected"), description: t("filter.rejectedDesc") },
                         ]}
                     />
                 </div>
             </FilterBar>
 
-            <div className="mb-4 border-b border-navy-100 flex gap-4">
-                <button
-                    onClick={() => setStatusFilter("pending")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        statusFilter === "pending" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    Pending Queue
-                </button>
-                <button
-                    onClick={() => setStatusFilter("approved")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        statusFilter === "approved" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    Approved Requests
-                </button>
-                <button
-                    onClick={() => setStatusFilter("rejected")}
-                    className={cn(
-                        "py-2 px-1 border-b-2 font-semibold text-sm transition-colors cursor-pointer",
-                        statusFilter === "rejected" ? "border-teal-600 text-teal-700" : "border-transparent text-navy-500 hover:text-navy-700"
-                    )}
-                >
-                    Rejected Requests
-                </button>
+            <div className="mb-4 flex gap-4 border-b border-line">
+                {TABS.map(tab => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setStatusFilter(tab)}
+                        className={cn(
+                            "cursor-pointer border-b-2 px-1 py-2 text-sm font-semibold transition-colors",
+                            statusFilter === tab
+                                ? "border-brand text-brand-ink"
+                                : "border-transparent text-ink-muted hover:text-ink"
+                        )}
+                    >
+                        {t(`tabs.${tab}`)}
+                    </button>
+                ))}
             </div>
 
-            <DataTable columns={["Document Type", "Ref Number", "Amount", "Current Level", "Submitted Date", "Status", "Actions"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-navy-500">
-                            Loading approval requests...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && requests.length === 0 && (
-                    <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-navy-500">
-                            No approval requests found.
-                        </td>
-                    </tr>
-                )}
+            <DataTable
+                columns={[
+                    t("table.documentType"),
+                    t("table.refNumber"),
+                    t("table.amount"),
+                    t("table.currentLevel"),
+                    t("table.submittedDate"),
+                    t("table.status"),
+                    t("table.actions"),
+                ]}
+            >
+                <TableStateRow
+                    isLoading={isLoading}
+                    count={requests.length}
+                    columns={7}
+                    emptyMessage={t("empty")}
+                />
                 {requests.map((request) => {
                     const isBill = request.approvable_type.includes("Bill")
-                    const typeLabel = isBill ? "Bill" : "Payment"
-                    const refNumber = isBill 
-                        ? (request.approvable?.bill_number || `Bill #${request.approvable_id}`)
-                        : (request.approvable?.payment_number || `Payment #${request.approvable_id}`)
-                    const amount = isBill 
+                    const typeLabel = isBill ? t("docTypes.bill") : t("docTypes.payment")
+                    const refNumber = isBill
+                        ? (request.approvable?.bill_number || t("fallbackBillRef", { id: request.approvable_id }))
+                        : (request.approvable?.payment_number || t("fallbackPaymentRef", { id: request.approvable_id }))
+                    const amount = isBill
                         ? (request.approvable?.total || "0")
                         : (request.approvable?.amount || "0")
-                    const detailLink = isBill 
+                    const detailLink = isBill
                         ? `/finance/bills/${request.approvable_id}`
                         : `/finance/payments/${request.approvable_id}`
 
                     return (
-                        <tr key={request.id} className="hover:bg-navy-50/50 transition-colors">
-                            <td className="px-6 py-4 font-semibold text-navy-900 capitalize">{typeLabel}</td>
-                            <td className="px-6 py-4">
-                                <Link href={detailLink} className="font-semibold text-teal-600 hover:underline">
+                        <tr key={request.id}>
+                            <td className="font-semibold text-ink">{typeLabel}</td>
+                            <td>
+                                <Link href={detailLink} className="font-semibold text-brand-ink hover:underline">
                                     {refNumber}
                                 </Link>
                             </td>
-                            <td className="px-6 py-4 text-navy-900 font-bold">{formatIDR(parseFloat(amount))}</td>
-                            <td className="px-6 py-4 font-mono font-medium text-navy-700">Level {request.current_level}</td>
-                            <td className="px-6 py-4 text-navy-500 text-sm">
+                            <td className="font-bold text-ink">{formatIDR(parseFloat(amount))}</td>
+                            <td className="font-mono font-medium text-ink-secondary">{t("level", { level: request.current_level })}</td>
+                            <td className="text-sm text-ink-muted">
                                 {request.created_at ? formatDateID(request.created_at) : "-"}
                             </td>
-                            <td className="px-6 py-4">
+                            <td>
                                 <StatusBadge status={request.status} />
                             </td>
-                            <td className="px-6 py-4">
-                                <Button 
-                                    size="sm" 
+                            <td>
+                                <Button
+                                    size="sm"
                                     variant="secondary"
                                     onClick={() => setSelectedRequest(request)}
-                                    className="cursor-pointer"
                                 >
-                                    Review
+                                    {t("review")}
                                 </Button>
                             </td>
                         </tr>
@@ -137,7 +133,7 @@ export default function ApprovalRequestsPage() {
             </DataTable>
 
             {selectedRequest && (
-                <ApprovalActionDrawer 
+                <ApprovalActionDrawer
                     request={selectedRequest}
                     onClose={() => setSelectedRequest(null)}
                 />
@@ -147,6 +143,9 @@ export default function ApprovalRequestsPage() {
 }
 
 function ApprovalActionDrawer({ request, onClose }: { request: ApprovalRequest; onClose: () => void }) {
+    const t = useTranslations("finance.approvals.requests.drawer")
+    const tRequests = useTranslations("finance.approvals.requests")
+    const tToast = useTranslations("finance.approvals.requests.toast")
     const { user: sessionUser, activeCompanyId } = useSession()
     const { data: matrices = [] } = useApprovalMatrices(activeCompanyId)
     const { data: memberships = [] } = useCompanyMembers(activeCompanyId)
@@ -155,7 +154,7 @@ function ApprovalActionDrawer({ request, onClose }: { request: ApprovalRequest; 
 
     const isBill = request.approvable_type.includes("Bill")
     const docType = isBill ? "bill" : "payment"
-    const amount = isBill 
+    const amount = isBill
         ? (request.approvable?.total || "0")
         : (request.approvable?.amount || "0")
 
@@ -167,141 +166,135 @@ function ApprovalActionDrawer({ request, onClose }: { request: ApprovalRequest; 
     )
 
     const isCurrentUserApprover = matchingRule && matchingRule.approver_user_id === sessionUser?.id
-    const activeApproverName = matchingRule 
-        ? (memberships.find(m => m.user_id === matchingRule.approver_user_id)?.user?.name || `User ID #${matchingRule.approver_user_id}`)
-        : "Unknown Approver"
+    const activeApproverName = matchingRule
+        ? (memberships.find(m => m.user_id === matchingRule.approver_user_id)?.user?.name || t("userFallback", { id: matchingRule.approver_user_id }))
+        : t("unknownApprover")
 
     const handleAction = (action: 'approved' | 'rejected') => {
         actMutation.mutate({ id: request.id, action, remark }, {
             onSuccess: () => {
-                toast.success(`Request ${action} successfully`)
+                toast.success(action === 'approved' ? tToast("approved") : tToast("rejected"))
                 onClose()
             },
             onError: (err: Error) => {
-                toast.error(err?.message || `Failed to ${action} request`)
+                toast.error(err?.message || tToast("actionFailed"))
             }
         })
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-navy-900/40 backdrop-blur-sm">
-            <EnterTransition from="right" distance="100%" fade={false} duration={0.2} className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-navy-100">
-                    <h2 className="text-lg font-bold text-navy-900">Review Approval Request</h2>
-                    <button onClick={onClose} className="p-2 text-navy-400 hover:text-navy-700 hover:bg-navy-50 rounded-full transition-colors cursor-pointer">
-                        <Icon name="close" />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-                    {/* Document details box */}
-                    <div className="rounded-xl border border-navy-100 p-4 bg-navy-50/20">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span className="text-navy-400 font-semibold block mb-0.5">Document Type</span>
-                                <span className="font-bold text-navy-900 capitalize">{docType}</span>
-                            </div>
-                            <div>
-                                <span className="text-navy-400 font-semibold block mb-0.5">Reference No</span>
-                                <span className="font-bold text-navy-900">
-                                    {isBill 
-                                        ? (request.approvable?.bill_number || `Bill #${request.approvable_id}`)
-                                        : (request.approvable?.payment_number || `Payment #${request.approvable_id}`)}
-                                </span>
-                            </div>
-                            <div>
-                                <span className="text-navy-400 font-semibold block mb-0.5">Amount</span>
-                                <span className="font-bold text-teal-600">{formatIDR(parseFloat(amount))}</span>
-                            </div>
-                            <div>
-                                <span className="text-navy-400 font-semibold block mb-0.5">Current Level</span>
-                                <span className="font-mono font-bold text-navy-900">Level {request.current_level}</span>
-                            </div>
+        <Modal open onClose={onClose} variant="drawer" size="lg" title={t("title")}>
+            <div className="flex flex-col gap-6">
+                {/* Document details box */}
+                <Card inset padding="sm">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span className="type-card-label mb-0.5 block">{t("documentType")}</span>
+                            <span className="font-bold text-ink">{tRequests(`docTypes.${docType}`)}</span>
+                        </div>
+                        <div>
+                            <span className="type-card-label mb-0.5 block">{t("reference")}</span>
+                            <span className="font-bold text-ink">
+                                {isBill
+                                    ? (request.approvable?.bill_number || tRequests("fallbackBillRef", { id: request.approvable_id }))
+                                    : (request.approvable?.payment_number || tRequests("fallbackPaymentRef", { id: request.approvable_id }))}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="type-card-label mb-0.5 block">{t("amount")}</span>
+                            <span className="font-bold text-brand-ink">{formatIDR(parseFloat(amount))}</span>
+                        </div>
+                        <div>
+                            <span className="type-card-label mb-0.5 block">{t("currentLevel")}</span>
+                            <span className="font-mono font-bold text-ink">{tRequests("level", { level: request.current_level })}</span>
                         </div>
                     </div>
+                </Card>
 
-                    {/* Timeline / Actions Trail */}
-                    <div>
-                        <h3 className="font-bold text-navy-900 text-sm mb-3">Approval Trail</h3>
-                        <div className="flex flex-col gap-4 border-l-2 border-navy-100 pl-4 ml-2">
-                            {request.actions?.map((action, idx) => (
-                                <div key={idx} className="relative">
-                                    <div className={cn(
-                                        "absolute -left-[23px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white ring-4 ring-white",
-                                        action.action === 'approved' ? 'bg-teal-500' : 'bg-rose-500'
-                                    )} />
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-sm text-navy-950">
-                                                {action.user?.name || `User #${action.user_id}`}
-                                            </span>
-                                            <span className={cn(
-                                                "text-xs font-bold px-1.5 py-0.5 rounded",
-                                                action.action === 'approved' ? 'bg-teal-50 text-teal-700' : 'bg-rose-50 text-rose-700'
-                                            )}>
-                                                {action.action === 'approved' ? 'Approved' : 'Rejected'} (Lvl {action.level})
-                                            </span>
-                                        </div>
-                                        {action.remark && (
-                                            <p className="text-sm text-navy-600 italic mt-1 bg-navy-50/50 p-2 rounded">
-                                                &quot;{action.remark}&quot;
-                                            </p>
-                                        )}
-                                        <span className="text-xs text-navy-400 block mt-1">
-                                            {formatDateID(action.acted_at)}
+                {/* Timeline / Actions Trail */}
+                <div>
+                    <h3 className="mb-3 text-sm font-bold text-ink">{t("trail")}</h3>
+                    <div className="ml-2 flex flex-col gap-4 border-l-2 border-line pl-4">
+                        {request.actions?.map((action, idx) => (
+                            <div key={idx} className="relative">
+                                <div className={cn(
+                                    "absolute -left-[23px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-surface ring-4 ring-surface",
+                                    action.action === 'approved' ? 'bg-success' : 'bg-error'
+                                )} />
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-semibold text-ink">
+                                            {action.user?.name || t("userFallback", { id: action.user_id })}
+                                        </span>
+                                        <span className={cn(
+                                            "rounded px-1.5 py-0.5 text-xs font-bold",
+                                            action.action === 'approved'
+                                                ? 'bg-success-soft text-success-strong'
+                                                : 'bg-error-soft text-error-strong'
+                                        )}>
+                                            {action.action === 'approved'
+                                                ? t("approvedBadge", { level: action.level })
+                                                : t("rejectedBadge", { level: action.level })}
                                         </span>
                                     </div>
-                                </div>
-                            ))}
-                            {(!request.actions || request.actions.length === 0) && (
-                                <p className="text-navy-400 text-xs italic">No actions recorded yet.</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Action form */}
-                    {request.status === 'pending' && (
-                        <div className="border-t border-navy-100 pt-6 mt-auto">
-                            {isCurrentUserApprover ? (
-                                <div className="flex flex-col gap-4">
-                                    <Field
-                                        label="Review Remarks"
-                                        placeholder="Add comments/reasons for decision..."
-                                        value={remark}
-                                        onChange={(e) => setRemark(e.target.value)}
-                                    />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Button
-                                            onClick={() => handleAction('rejected')}
-                                            disabled={actMutation.isPending}
-                                            className="bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
-                                        >
-                                            Reject
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleAction('approved')}
-                                            disabled={actMutation.isPending}
-                                            className="bg-teal-600 hover:bg-teal-700 text-white"
-                                        >
-                                            {actMutation.isPending ? "Approving..." : "Approve"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl flex gap-3 text-sm text-amber-800">
-                                    <Icon name="warning" className="text-amber-500 shrink-0" />
-                                    <div>
-                                        <p className="font-semibold">Review Locked</p>
-                                        <p className="text-xs text-amber-700 mt-0.5">
-                                            Only the designated approver (<span className="font-semibold">{activeApproverName}</span>) can act on Level {request.current_level} of this request.
+                                    {action.remark && (
+                                        <p className="mt-1 rounded bg-surface-muted/50 p-2 text-sm italic text-ink-secondary">
+                                            &quot;{action.remark}&quot;
                                         </p>
-                                    </div>
+                                    )}
+                                    <span className="mt-1 block text-xs text-ink-faint">
+                                        {formatDateID(action.acted_at)}
+                                    </span>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        ))}
+                        {(!request.actions || request.actions.length === 0) && (
+                            <p className="text-xs italic text-ink-faint">{t("noActions")}</p>
+                        )}
+                    </div>
                 </div>
-            </EnterTransition>
-        </div>
+
+                {/* Action form */}
+                {request.status === 'pending' && (
+                    <div className="mt-auto border-t border-line pt-6">
+                        {isCurrentUserApprover ? (
+                            <div className="flex flex-col gap-4">
+                                <Field
+                                    label={t("remarks")}
+                                    placeholder={t("remarksPlaceholder")}
+                                    value={remark}
+                                    onChange={(e) => setRemark(e.target.value)}
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => handleAction('rejected')}
+                                        disabled={actMutation.isPending}
+                                    >
+                                        {t("reject")}
+                                    </Button>
+                                    <Button
+                                        onClick={() => handleAction('approved')}
+                                        disabled={actMutation.isPending}
+                                    >
+                                        {actMutation.isPending ? t("approving") : t("approve")}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex gap-3 rounded-lg bg-warning-soft p-4 text-sm text-warning-strong">
+                                <Icon name="warning" className="shrink-0" />
+                                <div>
+                                    <p className="font-semibold">{t("locked")}</p>
+                                    <p className="mt-0.5 text-xs">
+                                        {t("lockedHint", { name: activeApproverName, level: request.current_level })}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </Modal>
     )
 }

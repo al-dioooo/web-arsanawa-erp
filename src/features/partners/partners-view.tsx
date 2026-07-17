@@ -1,11 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { useConfirm } from "@/components/ui/confirm-dialog"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field, SelectField } from "@/components/ui/field"
-import { PageHeaderShell } from "@/components/ui/page-header-shell"
+import { PageHeader } from "@/components/ui/page-header"
+import { Skeleton } from "@/components/ui/skeleton"
 import { StatusPill } from "@/components/ui/status-pill"
+import { cn } from "@/lib/utils"
 import {
     useCreatePartner,
     useCreatePartnerAddress,
@@ -21,6 +26,8 @@ import {
 } from "@/features/partners/partners-api"
 
 export function PartnersView() {
+    const t = useTranslations("partners")
+    const commonT = useTranslations("common")
     const [confirm, confirmDialog] = useConfirm()
     const { data: partners = [], isLoading } = usePartners({ per_page: 100 })
     const createPartner = useCreatePartner()
@@ -212,18 +219,17 @@ export function PartnersView() {
     return (
         <div className="grid gap-6">
             {confirmDialog}
-            <PageHeaderShell
-                eyebrow="Shared master data"
-                title="Partners"
-                subtitle="Maintain customers, suppliers, and shared contacts used by Finance and POS."
+            <PageHeader
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                subtitle={t("subtitle")}
+                className="mb-0"
             />
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px]">
-                <div className="rounded-2xl border border-navy-100 bg-white p-6">
+                <Card as="div" padding="lg">
                     <div className="mb-5 flex items-center justify-between gap-3">
-                        <h2 className="text-lg font-bold text-navy-900 font-display">
-                            Directory
-                        </h2>
+                        <h2 className="type-section">{t("directory.title")}</h2>
                         <StatusPill tone="neutral">{partners.length}</StatusPill>
                     </div>
 
@@ -231,7 +237,7 @@ export function PartnersView() {
                         {isLoading ? (
                             <div className="grid gap-2" aria-hidden="true">
                                 {Array.from({ length: 4 }).map((_, row) => (
-                                    <div key={row} className="h-16 animate-pulse rounded-xl bg-navy-100" />
+                                    <Skeleton key={row} className="h-16 rounded-md" />
                                 ))}
                             </div>
                         ) : partners.length > 0 ? (
@@ -241,54 +247,59 @@ export function PartnersView() {
                                     key={partner.id}
                                     aria-label={partner.name}
                                     onClick={() => setSelectedPartnerId(partner.id)}
-                                    className={`w-full rounded-xl border p-4 text-left transition-colors cursor-pointer ${
+                                    className={cn(
+                                        "w-full cursor-pointer rounded-md p-4 text-left transition-colors",
                                         selectedPartnerId === partner.id
-                                            ? "border-teal-300 bg-teal-50/50"
-                                            : "border-navy-100 bg-navy-50/20 hover:bg-navy-50"
-                                    }`}
+                                            ? "bg-brand-soft"
+                                            : "bg-surface-muted/60 hover:bg-surface-muted",
+                                    )}
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
-                                            <p className="truncate text-sm font-bold text-navy-900">
+                                            <p className="truncate text-sm font-bold text-ink">
                                                 {partner.name}
                                             </p>
-                                            <p className="mt-1 truncate text-xs font-medium text-navy-500">
-                                                {partner.code ?? "No code"} · {partner.email ?? "No email"}
+                                            <p className="mt-1 truncate text-xs font-medium text-ink-muted">
+                                                {partner.code ?? t("directory.noCode")} ·{" "}
+                                                {partner.email ?? t("directory.noEmail")}
                                             </p>
                                         </div>
                                         <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                                            <StatusPill tone="neutral">{partner.type}</StatusPill>
+                                            <StatusPill tone="neutral">
+                                                {t(`types.${partner.type}`)}
+                                            </StatusPill>
                                             <StatusPill tone={partner.status === "active" ? "green" : "neutral"}>
-                                                {partner.status}
+                                                {t(`statuses.${partner.status}`)}
                                             </StatusPill>
                                         </div>
                                     </div>
                                     {partner.phone ? (
-                                        <p className="mt-3 text-xs font-medium text-navy-500">
+                                        <p className="mt-3 text-xs font-medium text-ink-muted">
                                             {partner.phone}
                                         </p>
                                     ) : null}
                                 </button>
                             ))
                         ) : (
-                            <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                                No partners yet. Add a customer or supplier to unblock Finance and POS workflows.
-                            </p>
+                            <EmptyState
+                                compact
+                                icon="groups"
+                                title={t("directory.emptyTitle")}
+                                description={t("directory.emptyDescription")}
+                            />
                         )}
                     </div>
-                </div>
+                </Card>
 
-                <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                    <h2 className="text-lg font-bold text-navy-900 font-display">
-                        Create Partner
-                    </h2>
-                    <p className="mt-1 text-xs leading-relaxed text-navy-500">
-                        Start with the primary identity. Contacts and addresses can be expanded from this shared record.
+                <Card as="div" padding="lg">
+                    <h2 className="type-section">{t("create.title")}</h2>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                        {t("create.description")}
                     </p>
 
                     <form onSubmit={submit} className="mt-5 grid gap-4">
                         <Field
-                            label="Partner name"
+                            label={t("fields.name")}
                             value={form.name}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, name: event.target.value }))
@@ -296,7 +307,7 @@ export function PartnersView() {
                             required
                         />
                         <SelectField
-                            label="Type"
+                            label={t("fields.type")}
                             value={form.type}
                             onChange={(event) =>
                                 setForm((current) => ({
@@ -305,12 +316,12 @@ export function PartnersView() {
                                 }))
                             }
                         >
-                            <option value="customer">Customer</option>
-                            <option value="supplier">Supplier</option>
-                            <option value="both">Both</option>
+                            <option value="customer">{t("types.customer")}</option>
+                            <option value="supplier">{t("types.supplier")}</option>
+                            <option value="both">{t("types.both")}</option>
                         </SelectField>
                         <Field
-                            label="Code"
+                            label={t("fields.code")}
                             value={form.code}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, code: event.target.value }))
@@ -318,7 +329,7 @@ export function PartnersView() {
                             placeholder="CUST-001"
                         />
                         <Field
-                            label="Email"
+                            label={t("fields.email")}
                             type="email"
                             value={form.email}
                             onChange={(event) =>
@@ -327,7 +338,7 @@ export function PartnersView() {
                             placeholder="partner@example.com"
                         />
                         <Field
-                            label="Phone"
+                            label={t("fields.phone")}
                             value={form.phone}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, phone: event.target.value }))
@@ -335,47 +346,47 @@ export function PartnersView() {
                             placeholder="08123456789"
                         />
                         <Field
-                            label="Notes"
+                            label={t("fields.notes")}
                             value={form.notes}
                             onChange={(event) =>
                                 setForm((current) => ({ ...current, notes: event.target.value }))
                             }
-                            placeholder="Internal context"
+                            placeholder={t("fields.notesPlaceholder")}
                         />
                         <Button type="submit" size="xl" disabled={createPartner.isPending}>
-                            Create partner
+                            {t("create.submit")}
                         </Button>
                     </form>
-                </div>
+                </Card>
             </section>
 
-            <section className="rounded-2xl border border-navy-100 bg-white p-6">
+            <Card as="section" padding="lg">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-navy-900 font-display">
-                            Partner Detail
-                        </h2>
-                        <p className="mt-1 text-xs leading-relaxed text-navy-500">
-                            Edit the shared partner record and maintain API-backed contacts and addresses.
+                        <h2 className="type-section">{t("detail.title")}</h2>
+                        <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                            {t("detail.description")}
                         </p>
                     </div>
                     {selectedPartner ? (
                         <StatusPill tone={selectedPartner.status === "active" ? "green" : "neutral"}>
-                            {selectedPartner.status}
+                            {t(`statuses.${selectedPartner.status}`)}
                         </StatusPill>
                     ) : null}
                 </div>
 
                 {selectedLoading ? (
-                    <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                        Loading selected partner...
-                    </p>
+                    <div className="grid gap-2" aria-hidden="true">
+                        <Skeleton className="h-11 rounded-md" />
+                        <Skeleton className="h-11 w-3/4 rounded-md" />
+                        <Skeleton className="h-11 w-1/2 rounded-md" />
+                    </div>
                 ) : selectedPartner ? (
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
                         <form className="grid gap-4" onSubmit={saveSelectedPartner}>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field
-                                    label="Edit partner name"
+                                    label={t("detail.editName")}
                                     value={editForm.name}
                                     onChange={(event) =>
                                         setEditForm((current) => ({ ...current, name: event.target.value }))
@@ -383,7 +394,7 @@ export function PartnersView() {
                                     required
                                 />
                                 <SelectField
-                                    label="Status"
+                                    label={t("fields.status")}
                                     value={editForm.status}
                                     onChange={(event) =>
                                         setEditForm((current) => ({
@@ -392,13 +403,13 @@ export function PartnersView() {
                                         }))
                                     }
                                 >
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
+                                    <option value="active">{t("statuses.active")}</option>
+                                    <option value="inactive">{t("statuses.inactive")}</option>
                                 </SelectField>
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <SelectField
-                                    label="Edit type"
+                                    label={t("detail.editType")}
                                     value={editForm.type}
                                     onChange={(event) =>
                                         setEditForm((current) => ({
@@ -407,12 +418,12 @@ export function PartnersView() {
                                         }))
                                     }
                                 >
-                                    <option value="customer">Customer</option>
-                                    <option value="supplier">Supplier</option>
-                                    <option value="both">Both</option>
+                                    <option value="customer">{t("types.customer")}</option>
+                                    <option value="supplier">{t("types.supplier")}</option>
+                                    <option value="both">{t("types.both")}</option>
                                 </SelectField>
                                 <Field
-                                    label="Edit code"
+                                    label={t("detail.editCode")}
                                     value={editForm.code}
                                     onChange={(event) =>
                                         setEditForm((current) => ({ ...current, code: event.target.value }))
@@ -421,7 +432,7 @@ export function PartnersView() {
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field
-                                    label="Edit email"
+                                    label={t("detail.editEmail")}
                                     type="email"
                                     value={editForm.email}
                                     onChange={(event) =>
@@ -429,7 +440,7 @@ export function PartnersView() {
                                     }
                                 />
                                 <Field
-                                    label="Edit phone"
+                                    label={t("detail.editPhone")}
                                     value={editForm.phone}
                                     onChange={(event) =>
                                         setEditForm((current) => ({ ...current, phone: event.target.value }))
@@ -438,7 +449,7 @@ export function PartnersView() {
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field
-                                    label="Tax ID"
+                                    label={t("fields.taxId")}
                                     value={editForm.tax_identifier}
                                     onChange={(event) =>
                                         setEditForm((current) => ({
@@ -448,7 +459,7 @@ export function PartnersView() {
                                     }
                                 />
                                 <Field
-                                    label="National ID"
+                                    label={t("fields.nationalId")}
                                     value={editForm.national_id}
                                     onChange={(event) =>
                                         setEditForm((current) => ({
@@ -460,7 +471,7 @@ export function PartnersView() {
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field
-                                    label="Credit limit"
+                                    label={t("fields.creditLimit")}
                                     type="number"
                                     min={0}
                                     value={editForm.credit_limit}
@@ -472,7 +483,7 @@ export function PartnersView() {
                                     }
                                 />
                                 <Field
-                                    label="Transaction limit"
+                                    label={t("fields.transactionLimit")}
                                     type="number"
                                     min={0}
                                     value={editForm.transaction_limit}
@@ -485,7 +496,7 @@ export function PartnersView() {
                                 />
                             </div>
                             <Field
-                                label="Edit notes"
+                                label={t("detail.editNotes")}
                                 value={editForm.notes}
                                 onChange={(event) =>
                                     setEditForm((current) => ({ ...current, notes: event.target.value }))
@@ -493,7 +504,7 @@ export function PartnersView() {
                             />
                             <div className="flex flex-wrap gap-2">
                                 <Button type="submit" size="xl" disabled={updatePartner.isPending}>
-                                    Save changes
+                                    {t("detail.save")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -502,58 +513,71 @@ export function PartnersView() {
                                     disabled={deletePartner.isPending}
                                     onClick={async () => {
                                         const ok = await confirm({
-                                            title: `Delete “${selectedPartner.name}”?`,
-                                            message: "This partner is shared by Finance and POS. This can't be undone.",
-                                            confirmLabel: "Delete",
+                                            title: t("detail.deleteConfirmTitle", {
+                                                name: selectedPartner.name,
+                                            }),
+                                            message: t("detail.deleteConfirmMessage"),
+                                            confirmLabel: commonT("delete"),
+                                            cancelLabel: commonT("cancel"),
                                             danger: true,
                                         })
                                         if (ok) void deletePartner.mutateAsync(selectedPartner.id)
                                     }}
                                 >
-                                    Delete partner
+                                    {t("detail.delete")}
                                 </Button>
                             </div>
                         </form>
 
                         <div className="grid gap-6">
-                            <div className="rounded-xl border border-navy-100 bg-navy-50/20 p-4">
-                                <h3 className="text-sm font-bold text-navy-900 font-display">
-                                    Contacts
-                                </h3>
+                            <Card inset padding="sm">
+                                <h3 className="type-section text-sm">{t("contacts.title")}</h3>
                                 <div className="mt-3 grid gap-2">
                                     {selectedContacts.map((contact) => (
                                         <div
                                             key={contact.id}
-                                            className="flex items-center justify-between gap-3 rounded-lg border border-navy-100 bg-white px-3 py-2"
+                                            className="flex items-center justify-between gap-3 rounded-md bg-surface px-3 py-2 shadow-card"
                                         >
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-navy-900">
+                                                <p className="truncate text-sm font-semibold text-ink">
                                                     {contact.name}
                                                 </p>
-                                                <p className="truncate text-xs text-navy-500">
-                                                    {contact.role ?? "No role"} · {contact.email ?? "No email"}
+                                                <p className="truncate text-xs text-ink-muted">
+                                                    {contact.role ?? t("contacts.noRole")} ·{" "}
+                                                    {contact.email ?? t("contacts.noEmail")}
                                                 </p>
                                             </div>
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Delete contact ${contact.name}`}
-                                                onClick={() =>
-                                                    void deleteContact.mutateAsync({
-                                                        partnerId: selectedPartner.id,
-                                                        contactId: contact.id,
+                                                aria-label={t("contacts.deleteAria", { name: contact.name })}
+                                                onClick={async () => {
+                                                    const ok = await confirm({
+                                                        title: t("contacts.deleteConfirmTitle", {
+                                                            name: contact.name,
+                                                        }),
+                                                        message: t("contacts.deleteConfirmMessage"),
+                                                        confirmLabel: commonT("delete"),
+                                                        cancelLabel: commonT("cancel"),
+                                                        danger: true,
                                                     })
-                                                }
+                                                    if (ok) {
+                                                        void deleteContact.mutateAsync({
+                                                            partnerId: selectedPartner.id,
+                                                            contactId: contact.id,
+                                                        })
+                                                    }
+                                                }}
                                             >
-                                                Delete
+                                                {commonT("delete")}
                                             </Button>
                                         </div>
                                     ))}
                                 </div>
                                 <form onSubmit={addContact} className="mt-4 grid gap-3">
                                     <Field
-                                        label="Contact name"
+                                        label={t("contacts.name")}
                                         value={contactForm.name}
                                         onChange={(event) =>
                                             setContactForm((current) => ({
@@ -564,7 +588,7 @@ export function PartnersView() {
                                     />
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <Field
-                                            label="Contact role"
+                                            label={t("contacts.role")}
                                             value={contactForm.role}
                                             onChange={(event) =>
                                                 setContactForm((current) => ({
@@ -574,7 +598,7 @@ export function PartnersView() {
                                             }
                                         />
                                         <Field
-                                            label="Contact email"
+                                            label={t("contacts.email")}
                                             type="email"
                                             value={contactForm.email}
                                             onChange={(event) =>
@@ -586,7 +610,7 @@ export function PartnersView() {
                                         />
                                     </div>
                                     <Field
-                                        label="Contact phone"
+                                        label={t("contacts.phone")}
                                         value={contactForm.phone}
                                         onChange={(event) =>
                                             setContactForm((current) => ({
@@ -595,9 +619,10 @@ export function PartnersView() {
                                             }))
                                         }
                                     />
-                                    <label className="flex items-center gap-2 text-sm font-semibold text-navy-700">
+                                    <label className="flex items-center gap-2 text-sm font-semibold text-ink-secondary">
                                         <input
                                             type="checkbox"
+                                            className="accent-brand"
                                             checked={contactForm.is_primary}
                                             onChange={(event) =>
                                                 setContactForm((current) => ({
@@ -606,29 +631,27 @@ export function PartnersView() {
                                                 }))
                                             }
                                         />
-                                        Primary contact
+                                        {t("contacts.primary")}
                                     </label>
                                     <Button type="submit" variant="secondary" disabled={createContact.isPending}>
-                                        Add contact
+                                        {t("contacts.add")}
                                     </Button>
                                 </form>
-                            </div>
+                            </Card>
 
-                            <div className="rounded-xl border border-navy-100 bg-navy-50/20 p-4">
-                                <h3 className="text-sm font-bold text-navy-900 font-display">
-                                    Addresses
-                                </h3>
+                            <Card inset padding="sm">
+                                <h3 className="type-section text-sm">{t("addresses.title")}</h3>
                                 <div className="mt-3 grid gap-2">
                                     {selectedAddresses.map((address) => (
                                         <div
                                             key={address.id}
-                                            className="flex items-center justify-between gap-3 rounded-lg border border-navy-100 bg-white px-3 py-2"
+                                            className="flex items-center justify-between gap-3 rounded-md bg-surface px-3 py-2 shadow-card"
                                         >
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold text-navy-900">
-                                                    {address.label ?? address.type}
+                                                <p className="truncate text-sm font-semibold text-ink">
+                                                    {address.label ?? t(`addresses.types.${address.type}`)}
                                                 </p>
-                                                <p className="truncate text-xs text-navy-500">
+                                                <p className="truncate text-xs text-ink-muted">
                                                     {address.address_line_1}
                                                 </p>
                                             </div>
@@ -636,15 +659,30 @@ export function PartnersView() {
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
-                                                aria-label={`Delete address ${address.label ?? address.type}`}
-                                                onClick={() =>
-                                                    void deleteAddress.mutateAsync({
-                                                        partnerId: selectedPartner.id,
-                                                        addressId: address.id,
+                                                aria-label={t("addresses.deleteAria", {
+                                                    label: address.label ?? address.type,
+                                                })}
+                                                onClick={async () => {
+                                                    const ok = await confirm({
+                                                        title: t("addresses.deleteConfirmTitle", {
+                                                            label:
+                                                                address.label ??
+                                                                t(`addresses.types.${address.type}`),
+                                                        }),
+                                                        message: t("addresses.deleteConfirmMessage"),
+                                                        confirmLabel: commonT("delete"),
+                                                        cancelLabel: commonT("cancel"),
+                                                        danger: true,
                                                     })
-                                                }
+                                                    if (ok) {
+                                                        void deleteAddress.mutateAsync({
+                                                            partnerId: selectedPartner.id,
+                                                            addressId: address.id,
+                                                        })
+                                                    }
+                                                }}
                                             >
-                                                Delete
+                                                {commonT("delete")}
                                             </Button>
                                         </div>
                                     ))}
@@ -652,7 +690,7 @@ export function PartnersView() {
                                 <form onSubmit={addAddress} className="mt-4 grid gap-3">
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <SelectField
-                                            label="Address type"
+                                            label={t("addresses.type")}
                                             value={addressForm.type}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -661,12 +699,12 @@ export function PartnersView() {
                                                 }))
                                             }
                                         >
-                                            <option value="billing">Billing</option>
-                                            <option value="shipping">Shipping</option>
-                                            <option value="other">Other</option>
+                                            <option value="billing">{t("addresses.types.billing")}</option>
+                                            <option value="shipping">{t("addresses.types.shipping")}</option>
+                                            <option value="other">{t("addresses.types.other")}</option>
                                         </SelectField>
                                         <Field
-                                            label="Address label"
+                                            label={t("addresses.label")}
                                             value={addressForm.label}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -677,7 +715,7 @@ export function PartnersView() {
                                         />
                                     </div>
                                     <Field
-                                        label="Address line"
+                                        label={t("addresses.line1")}
                                         value={addressForm.address_line_1}
                                         onChange={(event) =>
                                             setAddressForm((current) => ({
@@ -687,7 +725,7 @@ export function PartnersView() {
                                         }
                                     />
                                     <Field
-                                        label="Address line 2"
+                                        label={t("addresses.line2")}
                                         value={addressForm.address_line_2}
                                         onChange={(event) =>
                                             setAddressForm((current) => ({
@@ -698,7 +736,7 @@ export function PartnersView() {
                                     />
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <Field
-                                            label="City"
+                                            label={t("addresses.city")}
                                             value={addressForm.city}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -708,7 +746,7 @@ export function PartnersView() {
                                             }
                                         />
                                         <Field
-                                            label="Province"
+                                            label={t("addresses.province")}
                                             value={addressForm.province}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -720,7 +758,7 @@ export function PartnersView() {
                                     </div>
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <Field
-                                            label="Postal code"
+                                            label={t("addresses.postalCode")}
                                             value={addressForm.postal_code}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -730,7 +768,7 @@ export function PartnersView() {
                                             }
                                         />
                                         <Field
-                                            label="Country"
+                                            label={t("addresses.country")}
                                             value={addressForm.country}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -740,9 +778,10 @@ export function PartnersView() {
                                             }
                                         />
                                     </div>
-                                    <label className="flex items-center gap-2 text-sm font-semibold text-navy-700">
+                                    <label className="flex items-center gap-2 text-sm font-semibold text-ink-secondary">
                                         <input
                                             type="checkbox"
+                                            className="accent-brand"
                                             checked={addressForm.is_default}
                                             onChange={(event) =>
                                                 setAddressForm((current) => ({
@@ -751,21 +790,19 @@ export function PartnersView() {
                                                 }))
                                             }
                                         />
-                                        Default address
+                                        {t("addresses.default")}
                                     </label>
                                     <Button type="submit" variant="secondary" disabled={createAddress.isPending}>
-                                        Add address
+                                        {t("addresses.add")}
                                     </Button>
                                 </form>
-                            </div>
+                            </Card>
                         </div>
                     </div>
                 ) : (
-                    <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                        Select a partner to view details.
-                    </p>
+                    <EmptyState compact icon="groups" title={t("detail.empty")} />
                 )}
-            </section>
+            </Card>
         </div>
     )
 }

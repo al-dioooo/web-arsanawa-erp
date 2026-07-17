@@ -1,9 +1,14 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { useConfirm } from "@/components/ui/confirm-dialog"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Field, SelectField } from "@/components/ui/field"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { StatusPill } from "@/components/ui/status-pill"
 import {
     useAssignBranchRole,
@@ -26,6 +31,9 @@ type OrganizationAdminPanelProps = {
 }
 
 export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: OrganizationAdminPanelProps) {
+    const t = useTranslations("organization.admin")
+    const commonT = useTranslations("common")
+    const [confirm, confirmDialog] = useConfirm()
     const { data: memberships = [], isLoading: membershipsLoading } =
         useOrganizationMemberships(companyId)
     const { data: permissionCatalog = {}, isLoading: permissionsLoading } =
@@ -119,17 +127,30 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
         )
     }
 
+    async function removeRole(role: OrganizationRole) {
+        const ok = await confirm({
+            title: t("deleteRoleConfirmTitle", { name: role.name }),
+            message: t("deleteRoleConfirmMessage"),
+            confirmLabel: commonT("delete"),
+            cancelLabel: commonT("cancel"),
+            danger: true,
+        })
+        if (!ok) return
+
+        if (editingRoleId === role.id) cancelEdit()
+        void deleteRole.mutateAsync(role.id)
+    }
+
     return (
         <div className="grid gap-6">
+        {confirmDialog}
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="rounded-2xl border border-navy-100 bg-white p-6">
+            <Card padding="lg">
                 <div className="mb-5 flex items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-lg font-bold text-navy-900 font-display">
-                            Members
-                        </h2>
-                        <p className="mt-1 text-xs leading-relaxed text-navy-500">
-                            Active company memberships and their default organization role.
+                        <h2 className="type-section">{t("membersTitle")}</h2>
+                        <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                            {t("membersDescription")}
                         </p>
                     </div>
                     <StatusPill tone="neutral">{memberships.length}</StatusPill>
@@ -139,21 +160,21 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                     {membershipsLoading ? (
                         <div className="grid gap-2" aria-hidden="true">
                             {Array.from({ length: 3 }).map((_, row) => (
-                                <div key={row} className="h-14 animate-pulse rounded-xl bg-navy-100" />
+                                <Skeleton key={row} className="h-14 rounded-md" />
                             ))}
                         </div>
                     ) : memberships.length > 0 ? (
                         memberships.map((membership) => (
                             <div
                                 key={membership.id}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-navy-100 bg-navy-50/20 px-4 py-3"
+                                className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-4 py-3"
                             >
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm font-bold text-navy-900">
-                                        {membership.user?.name ?? `User #${membership.user_id}`}
+                                    <p className="truncate text-sm font-bold text-ink">
+                                        {membership.user?.name ?? t("userFallback", { id: membership.user_id })}
                                     </p>
-                                    <p className="truncate text-xs font-medium text-navy-500">
-                                        {membership.user?.email ?? "No email loaded"}
+                                    <p className="truncate text-xs font-medium text-ink-muted">
+                                        {membership.user?.email ?? t("noEmail")}
                                     </p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-2">
@@ -165,18 +186,16 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                             </div>
                         ))
                     ) : (
-                        <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                            No members found for this company.
-                        </p>
+                        <EmptyState compact icon="groups" title={t("membersEmpty")} />
                     )}
                 </div>
-            </div>
+            </Card>
 
-            <div className="rounded-2xl border border-navy-100 bg-white p-6">
+            <Card padding="lg">
                 <div className="mb-5">
-                    <h2 className="text-lg font-bold text-navy-900 font-display">Roles</h2>
-                    <p className="mt-1 text-xs leading-relaxed text-navy-500">
-                        Build custom roles from the API permission catalog.
+                    <h2 className="type-section">{t("rolesTitle")}</h2>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                        {t("rolesDescription")}
                     </p>
                 </div>
 
@@ -184,25 +203,25 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                     {rolesLoading ? (
                         <div className="grid gap-2" aria-hidden="true">
                             {Array.from({ length: 3 }).map((_, row) => (
-                                <div key={row} className="h-14 animate-pulse rounded-xl bg-navy-100" />
+                                <Skeleton key={row} className="h-14 rounded-md" />
                             ))}
                         </div>
                     ) : (
                         roles.map((role) => (
                             <div
                                 key={role.id}
-                                className="rounded-xl border border-navy-100 bg-navy-50/20 p-4"
+                                className="rounded-md bg-surface-muted p-4"
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <p className="text-sm font-bold text-navy-900">{role.name}</p>
-                                        <p className="mt-1 text-xs text-navy-500">
-                                            {role.permissions.length} permissions
+                                        <p className="text-sm font-bold text-ink">{role.name}</p>
+                                        <p className="mt-1 text-xs text-ink-muted">
+                                            {t("permissionsCount", { count: role.permissions.length })}
                                         </p>
                                     </div>
                                     {role.is_builtin ? (
                                         <Button type="button" variant="outline" size="sm" disabled>
-                                            Built-in
+                                            {t("builtIn")}
                                         </Button>
                                     ) : (
                                         <div className="flex shrink-0 items-center gap-2">
@@ -213,19 +232,16 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                                 disabled={!canManage}
                                                 onClick={() => startEdit(role)}
                                             >
-                                                Edit
+                                                {commonT("edit")}
                                             </Button>
                                             <Button
                                                 type="button"
                                                 variant="destructive"
                                                 size="sm"
                                                 disabled={!canManage || deleteRole.isPending}
-                                                onClick={() => {
-                                                    if (editingRoleId === role.id) cancelEdit()
-                                                    void deleteRole.mutateAsync(role.id)
-                                                }}
+                                                onClick={() => void removeRole(role)}
                                             >
-                                                Delete
+                                                {commonT("delete")}
                                             </Button>
                                         </div>
                                     )}
@@ -235,7 +251,7 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                         {role.permissions.slice(0, 6).map((permission) => (
                                             <span
                                                 key={permission}
-                                                className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-navy-600"
+                                                className="rounded-pill bg-surface px-2 py-1 text-[10px] font-semibold text-ink-secondary"
                                             >
                                                 {permission}
                                             </span>
@@ -247,9 +263,9 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                     )}
                 </div>
 
-                <form onSubmit={submitRole} className="mt-6 border-t border-navy-100/55 pt-6">
+                <form onSubmit={submitRole} className="mt-6 border-t border-line pt-6">
                     <Field
-                        label="Role name"
+                        label={t("roleName")}
                         value={roleName}
                         onChange={(event) => setRoleName(event.target.value)}
                         placeholder="warehouse-lead"
@@ -258,22 +274,22 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
 
                     <div className="mt-4 grid gap-4">
                         {permissionsLoading ? (
-                            <p className="text-sm text-navy-500">Loading permission catalog...</p>
+                            <p className="text-sm text-ink-muted">{t("permissionsLoading")}</p>
                         ) : (
                             permissionGroups.map((group) => (
-                                <div key={group.key} className="rounded-xl border border-navy-100 p-3">
-                                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-navy-500">
+                                <div key={group.key} className="rounded-md bg-surface-muted p-3">
+                                    <p className="type-card-label mb-2 uppercase tracking-wider">
                                         {group.label}
                                     </p>
                                     <div className="grid gap-2">
                                         {group.permissions.map((permission) => (
                                             <label
                                                 key={permission.key}
-                                                className="flex items-start gap-2 text-xs font-medium text-navy-700"
+                                                className="flex items-start gap-2 text-xs font-medium text-ink-secondary"
                                             >
                                                 <input
                                                     type="checkbox"
-                                                    className="mt-0.5 h-4 w-4 rounded border-navy-200 text-teal-700"
+                                                    className="mt-0.5 h-4 w-4 accent-brand"
                                                     checked={selectedPermissions.includes(permission.key)}
                                                     disabled={!canManage}
                                                     onChange={(event) =>
@@ -282,7 +298,7 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                                 />
                                                 <span>
                                                     {permission.label}
-                                                    <span className="ml-1 text-navy-400">{permission.key}</span>
+                                                    <span className="ml-1 text-ink-faint">{permission.key}</span>
                                                 </span>
                                             </label>
                                         ))}
@@ -300,7 +316,7 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                 size="xl"
                                 disabled={!canManage || updateRole.isPending}
                             >
-                                Save changes
+                                {t("saveChanges")}
                             </Button>
                             <Button
                                 type="button"
@@ -309,7 +325,7 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                 size="xl"
                                 onClick={cancelEdit}
                             >
-                                Cancel
+                                {commonT("cancel")}
                             </Button>
                         </div>
                     ) : (
@@ -319,30 +335,28 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                             size="xl"
                             disabled={!canManage || createRole.isPending}
                         >
-                            Create role
+                            {t("createRole")}
                         </Button>
                     )}
                 </form>
-            </div>
+            </Card>
         </section>
 
-        <section className="rounded-2xl border border-navy-100 bg-white p-6">
+        <Card as="section" padding="lg">
             <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h2 className="text-lg font-bold text-navy-900 font-display">
-                        Branch Role Assignments
-                    </h2>
-                    <p className="mt-1 text-xs leading-relaxed text-navy-500">
-                        Assign custom roles to users for the selected branch.
+                    <h2 className="type-section">{t("branchRolesTitle")}</h2>
+                    <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+                        {t("branchRolesDescription")}
                     </p>
                 </div>
                 <SelectField
-                    label="Branch"
+                    label={t("branch")}
                     value={selectedBranchId ?? ""}
                     onChange={(event) => setSelectedBranchId(event.target.value ? Number(event.target.value) : null)}
                     className="min-w-48"
                 >
-                    {branches.length === 0 ? <option value="">No branches</option> : null}
+                    {branches.length === 0 ? <option value="">{t("noBranches")}</option> : null}
                     {branches.map((branch) => (
                         <option key={branch.id} value={branch.id}>
                             {branch.name}
@@ -354,45 +368,49 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <div className="grid gap-2">
                     {branchAssignmentsLoading ? (
-                        <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                            Loading branch assignments...
-                        </p>
+                        <div className="grid gap-2" aria-hidden="true">
+                            {Array.from({ length: 3 }).map((_, row) => (
+                                <Skeleton key={row} className="h-14 rounded-md" />
+                            ))}
+                        </div>
                     ) : branchAssignments.length > 0 ? (
                         branchAssignments.map((assignment) => (
                             <div
                                 key={assignment.id}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-navy-100 bg-navy-50/20 px-4 py-3"
+                                className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-4 py-3"
                             >
                                 <div className="min-w-0">
-                                    <p className="truncate text-sm font-bold text-navy-900">
-                                        {assignment.user?.name ?? `User #${assignment.user_id}`}
+                                    <p className="truncate text-sm font-bold text-ink">
+                                        {assignment.user?.name ?? t("userFallback", { id: assignment.user_id })}
                                     </p>
-                                    <p className="truncate text-xs font-medium text-navy-500">
-                                        {assignment.role?.name ?? `Role #${assignment.role_id}`}
+                                    <p className="truncate text-xs font-medium text-ink-muted">
+                                        {assignment.role?.name ?? t("roleFallback", { id: assignment.role_id })}
                                     </p>
                                 </div>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    aria-label={`Revoke ${assignment.user?.name ?? `User #${assignment.user_id}`}`}
+                                    aria-label={t("revokeAria", {
+                                        name:
+                                            assignment.user?.name ??
+                                            t("userFallback", { id: assignment.user_id }),
+                                    })}
                                     disabled={!canManage || revokeBranchRole.isPending}
                                     onClick={() => void revokeBranchRole.mutateAsync(assignment.user_id)}
                                 >
-                                    Revoke
+                                    {t("revoke")}
                                 </Button>
                             </div>
                         ))
                     ) : (
-                        <p className="rounded-xl border border-dashed border-navy-100 bg-navy-50/30 p-4 text-sm text-navy-500">
-                            No branch assignments for this branch.
-                        </p>
+                        <EmptyState compact icon="manage_accounts" title={t("assignmentsEmpty")} />
                     )}
                 </div>
 
                 <form className="grid gap-4" onSubmit={submitBranchAssignment}>
                     <SearchableSelect
-                        label="Assign member"
+                        label={t("assignMember")}
                         value={assignmentForm.user_id}
                         onChange={(value) =>
                             setAssignmentForm((current) => ({ ...current, user_id: String(value) }))
@@ -403,20 +421,20 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                                 value: membership.user_id,
                                 label: membership.user
                                     ? `${membership.user.name} (${membership.user.email})`
-                                    : `User #${membership.user_id}`,
+                                    : t("userFallback", { id: membership.user_id }),
                             }))}
-                        placeholder="Search company members"
+                        placeholder={t("assignMemberPlaceholder")}
                         disabled={!canManage}
                     />
                     <SelectField
-                        label="Assign role"
+                        label={t("assignRole")}
                         value={assignmentForm.role_id}
                         onChange={(event) =>
                             setAssignmentForm((current) => ({ ...current, role_id: event.target.value }))
                         }
                         disabled={!canManage}
                     >
-                        <option value="">Select role</option>
+                        <option value="">{t("selectRole")}</option>
                         {roles.map((role) => (
                             <option key={role.id} value={role.id}>
                                 {role.name}
@@ -428,11 +446,11 @@ export function OrganizationAdminPanel({ companyId, canManage, branches = [] }: 
                         size="xl"
                         disabled={!canManage || !selectedBranchId || assignBranchRole.isPending}
                     >
-                        Assign branch role
+                        {t("assignSubmit")}
                     </Button>
                 </form>
             </div>
-        </section>
+        </Card>
         </div>
     )
 }

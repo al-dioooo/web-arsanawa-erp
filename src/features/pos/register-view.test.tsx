@@ -169,7 +169,7 @@ describe("RegisterView catering payments", () => {
 
         render(<RegisterView />)
 
-        const completeButton = await screen.findByRole("button", { name: "Complete sale" })
+        const completeButton = await screen.findByRole("button", { name: "completeSale" })
         fireEvent.click(completeButton)
 
         await waitFor(() => {

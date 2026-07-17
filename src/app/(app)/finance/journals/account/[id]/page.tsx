@@ -1,20 +1,26 @@
 "use client"
 
-import { use, useState } from "react"
-import { PageHeader } from "@/features/finance/components/page-header"
-import { FilterBar } from "@/features/finance/components/filter-bar"
-import { DataTable } from "@/features/finance/components/data-table"
-import { useSession } from "@/features/auth/session-provider"
-import { useAccountLedger } from "@/features/finance/api-journals"
-import { usePeriods } from "@/features/finance/api"
-import { formatIDR, formatDateID } from "@/lib/format"
-import { SelectDescription } from "@/components/ui/select-description"
 import Link from "next/link"
+import { use, useState } from "react"
+import { useTranslations } from "next-intl"
+
+import { Card, CardLabel } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
+import { FilterBar } from "@/components/ui/filter-bar"
+import { PageHeader } from "@/components/ui/page-header"
+import { SelectDescription } from "@/components/ui/select-description"
+import { TableStateRow } from "@/components/ui/table-state-row"
+import { useSession } from "@/features/auth/session-provider"
+import { usePeriods } from "@/features/finance/api"
+import { useAccountLedger } from "@/features/finance/api-journals"
+import { formatIDR, formatDateID } from "@/lib/format"
 
 export default function AccountLedgerPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const { activeCompanyId } = useSession()
-    
+    const t = useTranslations("finance.journals.ledger")
+    const tCommon = useTranslations("common")
+
     const { data: periods = [] } = usePeriods(activeCompanyId)
     const [periodIdState, setPeriodIdState] = useState<number | null>(null)
     const selectedPeriodId = periodIdState ?? periods[0]?.id ?? null
@@ -23,7 +29,7 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
     const { data: report, isLoading } = useAccountLedger(
         activeCompanyId,
         accountId || null,
-        selectedPeriodId
+        selectedPeriodId,
     )
 
     const ledgerLines = report?.ledger || []
@@ -36,17 +42,35 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
     return (
         <div className="w-full">
             <PageHeader
-                title={`Buku Besar: ${account ? `${account.code} - ${account.name}` : `Account #${id}`}`}
-                subtitle={account ? `Normal Balance: ${account.normal_balance.toUpperCase()} · Type: ${account.type.toUpperCase()}` : ""}
+                backHref="/finance/journals"
+                backLabel={tCommon("back")}
+                eyebrow={t("eyebrow")}
+                title={t("title", {
+                    account: account
+                        ? `${account.code} - ${account.name}`
+                        : t("accountFallback", { id }),
+                })}
+                subtitle={
+                    account
+                        ? t("subtitle", {
+                              balance: account.normal_balance.toUpperCase(),
+                              type: account.type.toUpperCase(),
+                          })
+                        : ""
+                }
             />
 
             <FilterBar>
                 <SelectDescription
-                    label="Accounting Period"
+                    label={t("periodLabel")}
                     value={selectedPeriodId || ""}
                     onChange={(e) => setPeriodIdState(Number(e.target.value) || null)}
                     options={[
-                        { value: "", label: "Select a period", description: "Choose the period used for this ledger." },
+                        {
+                            value: "",
+                            label: t("periodPlaceholder"),
+                            description: t("periodPlaceholderDescription"),
+                        },
                         ...periods.map((p) => ({
                             value: p.id,
                             label: p.name,
@@ -57,64 +81,69 @@ export default function AccountLedgerPage({ params }: { params: Promise<{ id: st
             </FilterBar>
 
             {/* Summaries */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-navy-100">
-                    <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider block mb-1">Normal Balance</span>
-                    <span className="text-lg font-bold text-navy-800 capitalize">
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+                <Card padding="sm">
+                    <CardLabel className="mb-1">{t("normalBalance")}</CardLabel>
+                    <div className="text-lg font-bold text-ink capitalize">
                         {account?.normal_balance || "-"}
-                    </span>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-navy-100">
-                    <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider block mb-1">Total Debit</span>
-                    <span className="text-lg font-bold text-teal-600">
+                    </div>
+                </Card>
+                <Card padding="sm">
+                    <CardLabel className="mb-1">{t("totalDebit")}</CardLabel>
+                    <div className="text-lg font-bold text-brand-ink tabular-nums">
                         {formatIDR(totalDebit)}
-                    </span>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-navy-100">
-                    <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider block mb-1">Total Credit</span>
-                    <span className="text-lg font-bold text-rose-600">
+                    </div>
+                </Card>
+                <Card padding="sm">
+                    <CardLabel className="mb-1">{t("totalCredit")}</CardLabel>
+                    <div className="text-lg font-bold text-error-strong tabular-nums">
                         {formatIDR(totalCredit)}
-                    </span>
-                </div>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-navy-100 bg-teal-50/20 border-teal-100">
-                    <span className="text-xs font-semibold text-teal-600 uppercase tracking-wider block mb-1">Ending Balance</span>
-                    <span className="text-lg font-bold text-teal-700">
+                    </div>
+                </Card>
+                <Card padding="sm">
+                    <CardLabel className="mb-1 text-brand-ink">{t("endingBalance")}</CardLabel>
+                    <div className="text-lg font-bold text-brand-ink tabular-nums">
                         {formatIDR(endingBalance)}
-                    </span>
-                </div>
+                    </div>
+                </Card>
             </div>
 
-            <DataTable columns={["Date", "Journal Reference", "Description", "Debit", "Credit", "Running Balance"]}>
-                {isLoading && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-500">
-                            Loading ledger lines...
-                        </td>
-                    </tr>
-                )}
-                {!isLoading && ledgerLines.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-navy-400 italic">
-                            No ledger lines found for this period.
-                        </td>
-                    </tr>
-                )}
+            <DataTable
+                columns={[
+                    t("columns.date"),
+                    t("columns.reference"),
+                    t("columns.description"),
+                    { label: t("columns.debit"), align: "end" },
+                    { label: t("columns.credit"), align: "end" },
+                    { label: t("columns.balance"), align: "end" },
+                ]}
+                loading={isLoading}
+            >
+                <TableStateRow
+                    isLoading={isLoading}
+                    count={ledgerLines.length}
+                    columns={6}
+                    emptyMessage={t("empty")}
+                />
                 {ledgerLines.map((line, idx) => (
-                    <tr key={idx} className="hover:bg-navy-50/50 transition-colors">
-                        <td className="px-6 py-4 text-navy-700">{formatDateID(line.entry_date)}</td>
-                        <td className="px-6 py-4">
-                            <Link href={`/finance/journals/${line.journal_entry_id}`} className="font-semibold text-teal-600 hover:text-teal-700 hover:underline">
+                    <tr key={idx}>
+                        <td>{formatDateID(line.entry_date)}</td>
+                        <td>
+                            <Link
+                                href={`/finance/journals/${line.journal_entry_id}`}
+                                className="font-semibold text-brand-ink hover:underline"
+                            >
                                 {line.entry_number}
                             </Link>
                         </td>
-                        <td className="px-6 py-4 text-navy-950">{line.description}</td>
-                        <td className="px-6 py-4 text-navy-900 text-right">
+                        <td className="text-ink">{line.description}</td>
+                        <td className="text-end tabular-nums">
                             {line.debit > 0 ? formatIDR(line.debit) : "-"}
                         </td>
-                        <td className="px-6 py-4 text-navy-900 text-right">
+                        <td className="text-end tabular-nums">
                             {line.credit > 0 ? formatIDR(line.credit) : "-"}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-navy-900 text-right bg-navy-50/10">
+                        <td className="text-end font-semibold text-ink tabular-nums">
                             {formatIDR(line.balance)}
                         </td>
                     </tr>

@@ -2,12 +2,15 @@
 
 import { toast } from "sonner"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Dialog } from "@/components/ui/dialog"
+import { DataTable } from "@/components/ui/data-table"
 import { Field } from "@/components/ui/field"
 import { Icon } from "@/components/ui/icon"
+import { Modal } from "@/components/ui/modal"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { StatusPill } from "@/components/ui/status-pill"
+import { TableStateRow } from "@/components/ui/table-state-row"
 import { useSession } from "@/features/auth/session-provider"
 import { PosPageHeader } from "@/features/pos/components/pos-page-header"
 import {
@@ -20,8 +23,11 @@ import {
 import type { Register, Shift } from "@/features/pos/pos-types"
 import { formatCurrency, toNumber } from "@/lib/money"
 import { formatDateTimeID } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 export function ShiftsView() {
+    const t = useTranslations("pos.shifts")
+    const rootT = useTranslations()
     const { token, activeCompanyId } = useSession()
     const [shifts, setShifts] = useState<Shift[]>([])
     const [registers, setRegisters] = useState<Register[]>([])
@@ -37,6 +43,7 @@ export function ShiftsView() {
         return { token, companyId: activeCompanyId }
     }, [token, activeCompanyId])
 
+    const loadErrorFallback = t("loadError")
     const refreshData = useCallback(async () => {
         if (!requestOptions) return
         setIsLoading(true)
@@ -48,11 +55,11 @@ export function ShiftsView() {
             setShifts(loadedShifts)
             setRegisters(loadedRegisters)
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "Unable to load shifts.")
+            toast.error(caught instanceof Error ? caught.message : loadErrorFallback)
         } finally {
             setIsLoading(false)
         }
-    }, [requestOptions])
+    }, [requestOptions, loadErrorFallback])
 
     useEffect(() => {
         let active = true
@@ -72,15 +79,15 @@ export function ShiftsView() {
             toast.success(successMessage)
             await refreshData()
         } catch (caught) {
-            toast.error(caught instanceof Error ? caught.message : "The request failed.")
+            toast.error(caught instanceof Error ? caught.message : rootT("common.requestFailed"))
         } finally {
             setIsLoading(false)
         }
     }
 
     const registerName = useCallback(
-        (id: number) => registers.find((r) => r.id === id)?.name ?? `Register #${id}`,
-        [registers],
+        (id: number) => registers.find((r) => r.id === id)?.name ?? t("registerRef", { id }),
+        [registers, t],
     )
 
     const closeVariance = closeTarget
@@ -90,8 +97,8 @@ export function ShiftsView() {
     return (
         <div className="grid gap-6">
             <PosPageHeader
-                title="Cashier Shifts"
-                subtitle="Open and close cashier shifts. A shift must be open before sales can be rung up on a register."
+                title={t("title")}
+                subtitle={t("subtitle")}
                 hasCompany={!!activeCompanyId}
                 isLoading={isLoading}
                 actions={
@@ -102,120 +109,110 @@ export function ShiftsView() {
                         onClick={() =>
                             setOpenForm({ register_id: "", opening_float: "", notes: "" })
                         }
-                        className="bg-teal-700 hover:bg-teal-800 text-white"
                     >
                         <Icon name="add" size={18} />
-                        Open shift
+                        {t("openShift")}
                     </Button>
                 }
             />
 
-            <div className="rounded-2xl border border-navy-100 bg-white p-6">
-                <h2 className="mb-4 flex items-center gap-2 border-b border-navy-50 pb-3 text-lg font-bold text-navy-900 font-display">
-                    <Icon name="history" className="text-teal-700" />
-                    <span>Shifts ({shifts.length})</span>
-                </h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left text-sm">
-                        <thead>
-                            <tr className="bg-navy-50/30 text-xs font-bold uppercase tracking-wider text-navy-500">
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Register</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Status</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Opened</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Opening float</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display">Counted / Variance</th>
-                                <th className="border-b border-navy-100 px-4 py-3 font-display text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {shifts.map((shift) => (
-                                <tr key={shift.id} className="transition-colors hover:bg-navy-50/20">
-                                    <td className="border-b border-navy-100/50 px-4 py-3 font-bold text-navy-900">
-                                        {registerName(shift.register_id)}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3">
-                                        <StatusPill tone={shift.status === "open" ? "green" : "neutral"}>
-                                            {shift.status}
-                                        </StatusPill>
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-navy-600 font-medium">
-                                        {shift.opened_at ? formatDateTimeID(shift.opened_at) : "-"}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-navy-700 font-medium">
-                                        {formatCurrency(shift.opening_float)}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-navy-700 font-medium">
-                                        {shift.status === "closed" ? (
-                                            <>
-                                                {formatCurrency(shift.counted_cash)}
-                                                <span
-                                                    className={`ml-2 text-xs font-semibold ${
-                                                        toNumber(shift.cash_variance) === 0
-                                                            ? "text-navy-400"
-                                                            : toNumber(shift.cash_variance) > 0
-                                                              ? "text-emerald-700"
-                                                              : "text-rose-700"
-                                                    }`}
-                                                >
-                                                    ({toNumber(shift.cash_variance) > 0 ? "+" : ""}
-                                                    {formatCurrency(shift.cash_variance)})
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className="text-navy-300">-</span>
+            <DataTable
+                columns={[
+                    t("columns.register"),
+                    t("columns.status"),
+                    t("columns.opened"),
+                    t("columns.openingFloat"),
+                    t("columns.countedVariance"),
+                    { label: t("columns.actions"), align: "end" },
+                ]}
+                minWidth={720}
+                toolbar={
+                    <h2 className="type-section flex items-center gap-2">
+                        <Icon name="history" className="text-brand-ink" />
+                        <span>{t("listTitle", { count: shifts.length })}</span>
+                    </h2>
+                }
+            >
+                {shifts.map((shift) => (
+                    <tr key={shift.id}>
+                        <td className="px-6 py-4 font-bold text-ink">
+                            {registerName(shift.register_id)}
+                        </td>
+                        <td>
+                            <StatusPill tone={shift.status === "open" ? "green" : "neutral"}>
+                                {shift.status === "open" ? t("status.open") : t("status.closed")}
+                            </StatusPill>
+                        </td>
+                        <td>{shift.opened_at ? formatDateTimeID(shift.opened_at) : "-"}</td>
+                        <td className="tabular-nums">{formatCurrency(shift.opening_float)}</td>
+                        <td className="tabular-nums">
+                            {shift.status === "closed" ? (
+                                <>
+                                    {formatCurrency(shift.counted_cash)}
+                                    <span
+                                        className={cn(
+                                            "ms-2 text-xs font-semibold",
+                                            toNumber(shift.cash_variance) === 0
+                                                ? "text-ink-faint"
+                                                : toNumber(shift.cash_variance) > 0
+                                                  ? "text-success-strong"
+                                                  : "text-error-strong",
                                         )}
-                                    </td>
-                                    <td className="border-b border-navy-100/50 px-4 py-3 text-right">
-                                        {shift.status === "open" ? (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setCloseTarget(shift)
-                                                    setCountedCash("")
-                                                    setCloseNotes("")
-                                                }}
-                                            >
-                                                Close
-                                            </Button>
-                                        ) : (
-                                            <span className="text-navy-300 text-xs">-</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                            {shifts.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="bg-navy-50/10 py-8 text-center font-medium text-navy-400">
-                                        No shifts yet.
-                                    </td>
-                                </tr>
+                                    >
+                                        ({toNumber(shift.cash_variance) > 0 ? "+" : ""}
+                                        {formatCurrency(shift.cash_variance)})
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-ink-faint">-</span>
                             )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        </td>
+                        <td className="text-end">
+                            {shift.status === "open" ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setCloseTarget(shift)
+                                        setCountedCash("")
+                                        setCloseNotes("")
+                                    }}
+                                >
+                                    {t("close")}
+                                </Button>
+                            ) : (
+                                <span className="text-xs text-ink-faint">-</span>
+                            )}
+                        </td>
+                    </tr>
+                ))}
+                <TableStateRow
+                    isLoading={isLoading && shifts.length === 0}
+                    count={shifts.length}
+                    columns={6}
+                    emptyMessage={t("empty")}
+                />
+            </DataTable>
 
             {/* Open shift dialog */}
-            <Dialog
+            <Modal
                 open={openForm !== null}
                 onClose={() => setOpenForm(null)}
-                title="Open shift"
-                description="Select a register and record the opening cash float."
+                title={t("openDialog.title")}
+                description={t("openDialog.description")}
                 footer={
                     <>
                         <Button type="button" variant="outline" size="xl" onClick={() => setOpenForm(null)}>
-                            Cancel
+                            {rootT("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
                             form="open-shift-form"
                             size="xl"
                             disabled={isLoading || !openForm?.register_id || openForm?.opening_float === ""}
-                            className="bg-teal-700 hover:bg-teal-800 text-white"
                         >
-                            Open shift
+                            {t("openDialog.submit")}
                         </Button>
                     </>
                 }
@@ -233,20 +230,20 @@ export function ShiftsView() {
                                         opening_float: toNumber(openForm.opening_float),
                                         notes: openForm.notes || undefined,
                                     }),
-                                "Shift opened.",
+                                t("openSuccess"),
                             ).then(() => setOpenForm(null))
                         }}
                     >
                         <SearchableSelect
-                            label="Register"
+                            label={t("openDialog.register")}
                             value={openForm.register_id}
                             onChange={(val) => setOpenForm((cur) => (cur ? { ...cur, register_id: String(val) } : cur))}
                             required
                             options={registers.map((r) => ({ value: r.id, label: `${r.name} (${r.code})` }))}
-                            placeholder="Select register"
+                            placeholder={t("openDialog.selectRegister")}
                         />
                         <Field
-                            label="Opening float"
+                            label={t("openDialog.openingFloat")}
                             type="number"
                             min="0"
                             step="0.01"
@@ -258,36 +255,35 @@ export function ShiftsView() {
                             required
                         />
                         <Field
-                            label="Notes"
+                            label={t("openDialog.notes")}
                             value={openForm.notes}
                             onChange={(event) =>
                                 setOpenForm((cur) => (cur ? { ...cur, notes: event.target.value } : cur))
                             }
-                            placeholder="Optional"
+                            placeholder={t("openDialog.optional")}
                         />
                     </form>
                 )}
-            </Dialog>
+            </Modal>
 
             {/* Close shift dialog */}
-            <Dialog
+            <Modal
                 open={closeTarget !== null}
                 onClose={() => setCloseTarget(null)}
-                title="Close shift"
-                description="Count the cash drawer. The variance against expected cash is shown below."
+                title={t("closeDialog.title")}
+                description={t("closeDialog.description")}
                 footer={
                     <>
                         <Button type="button" variant="outline" size="xl" onClick={() => setCloseTarget(null)}>
-                            Cancel
+                            {rootT("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
                             form="close-shift-form"
                             size="xl"
                             disabled={isLoading || countedCash === ""}
-                            className="bg-teal-700 hover:bg-teal-800 text-white"
                         >
-                            Close shift
+                            {t("closeDialog.submit")}
                         </Button>
                     </>
                 }
@@ -304,31 +300,32 @@ export function ShiftsView() {
                                         counted_cash: toNumber(countedCash),
                                         notes: closeNotes || undefined,
                                     }),
-                                "Shift closed.",
+                                t("closeSuccess"),
                             ).then(() => setCloseTarget(null))
                         }}
                     >
-                        <div className="rounded-xl border border-navy-100 bg-navy-50/30 p-4 text-sm">
+                        <div className="rounded-md bg-surface-muted p-4 text-sm">
                             <div className="flex justify-between py-1">
-                                <span className="text-navy-500">Register</span>
-                                <span className="font-semibold text-navy-900">{registerName(closeTarget.register_id)}</span>
+                                <span className="text-ink-muted">{t("closeDialog.register")}</span>
+                                <span className="font-semibold text-ink">{registerName(closeTarget.register_id)}</span>
                             </div>
                             <div className="flex justify-between py-1">
-                                <span className="text-navy-500">Expected cash</span>
-                                <span className="font-semibold text-navy-900">
+                                <span className="text-ink-muted">{t("closeDialog.expectedCash")}</span>
+                                <span className="font-semibold text-ink tabular-nums">
                                     {formatCurrency(closeTarget.expected_cash ?? closeTarget.opening_float)}
                                 </span>
                             </div>
                             <div className="flex justify-between py-1">
-                                <span className="text-navy-500">Variance</span>
+                                <span className="text-ink-muted">{t("closeDialog.variance")}</span>
                                 <span
-                                    className={`font-bold ${
+                                    className={cn(
+                                        "font-bold tabular-nums",
                                         closeVariance === 0
-                                            ? "text-navy-900"
+                                            ? "text-ink"
                                             : closeVariance > 0
-                                              ? "text-emerald-700"
-                                              : "text-rose-700"
-                                    }`}
+                                              ? "text-success-strong"
+                                              : "text-error-strong",
+                                    )}
                                 >
                                     {closeVariance > 0 ? "+" : ""}
                                     {formatCurrency(closeVariance)}
@@ -336,7 +333,7 @@ export function ShiftsView() {
                             </div>
                         </div>
                         <Field
-                            label="Counted cash"
+                            label={t("closeDialog.countedCash")}
                             type="number"
                             min="0"
                             step="0.01"
@@ -346,14 +343,14 @@ export function ShiftsView() {
                             required
                         />
                         <Field
-                            label="Notes"
+                            label={t("closeDialog.notes")}
                             value={closeNotes}
                             onChange={(event) => setCloseNotes(event.target.value)}
-                            placeholder="Optional"
+                            placeholder={t("openDialog.optional")}
                         />
                     </form>
                 )}
-            </Dialog>
+            </Modal>
         </div>
     )
 }
